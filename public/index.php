@@ -17,7 +17,7 @@ $items = [
         'title' => 'Black Leather Wallet',
         'category' => 'Valuables',
         'location' => 'Main Library',
-        'date' => 'Oct 24, 2023',
+        'date' => 'Jan 24, 2026',
         'status' => 'In OSA Custody',
         'type' => 'found',
         'image' => 'https://images.unsplash.com/photo-1627123424574-724758594e93?auto=format&fit=crop&w=300&q=80'
@@ -27,7 +27,7 @@ $items = [
         'title' => 'Calculus Textbook',
         'category' => 'Books',
         'location' => 'Innovation Bldg',
-        'date' => 'Oct 23, 2023',
+        'date' => 'Jan 26, 2026',
         'status' => 'Pending Turnover',
         'type' => 'found',
         'image' => 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&w=300&q=80'
@@ -37,7 +37,7 @@ $items = [
         'title' => 'Blue Water Bottle',
         'category' => 'Personal Items',
         'location' => 'University Canteen',
-        'date' => 'Oct 22, 2023',
+        'date' => 'Jan 21, 2026',
         'status' => 'Lost Report',
         'type' => 'lost',
         'image' => 'https://images.unsplash.com/photo-1631201553014-776760c89381?auto=format&fit=crop&w=300&q=80'
@@ -47,7 +47,7 @@ $items = [
         'title' => 'Silver Earbuds',
         'category' => 'Electronics',
         'location' => 'Quadrangle',
-        'date' => 'Oct 24, 2023',
+        'date' => 'Jan 25, 2026',
         'status' => 'In OSA Custody',
         'type' => 'found',
         'image' => 'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&w=300&q=80'
@@ -114,7 +114,7 @@ $filtered_items = array_filter($items, function($item) use ($view_mode) {
                 <div class="flex items-center space-x-4">
                     <div class="text-right hidden sm:block">
                         <p class="text-xs text-blue-200">Logged in as</p>
-                        <p class="text-sm font-semibold">Juan Dela Cruz</p>
+                        <p class="text-sm font-semibold">Abdul Montefalco</p>
                     </div>
                     <button class="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center hover:bg-white/20">
                         <i class="fas fa-user-circle text-xl"></i>
