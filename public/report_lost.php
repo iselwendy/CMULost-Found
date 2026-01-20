@@ -198,6 +198,9 @@
         </div>
     </main>
 
+    <!-- Footer -->
+    <?php require_once '../includes/footer.php'; ?>
+
     <script>
         // Real-time Duplicate Check Logic
         const titleInput = document.getElementById('itemTitle');

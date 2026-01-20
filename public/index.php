@@ -257,15 +257,7 @@ $filtered_items = array_filter($items, function($item) use ($view_mode) {
     </main>
 
     <!-- Footer -->
-    <footer class="bg-white border-t border-gray-200 mt-20 py-10">
-        <div class="max-w-7xl mx-auto px-4 text-center">
-            <div class="flex justify-center space-x-6 mb-4">
-                <img src="../assets/images/cmu-logo.png" alt="CMU Logo" class="h-10 opacity-50 grayscale hover:grayscale-0 transition cursor-pointer">
-            </div>
-            <p class="text-sm text-gray-400">© 2026 City of Malabon University - Office of Student Affairs</p>
-            <p class="text-[10px] text-gray-300 mt-1 uppercase tracking-widest">Campus Lost and Found System</p>
-        </div>
-    </footer>
+    <?php require_once '../includes/footer.php'; ?>
 
 </body>
 </html>

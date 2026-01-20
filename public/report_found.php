@@ -214,6 +214,9 @@
         </div>
     </div>
 
+    <!-- Footer -->
+    <?php require_once '../includes/footer.php'; ?>
+
     <script>
         // Image Preview Logic
         const fileUpload = document.getElementById('file-upload');

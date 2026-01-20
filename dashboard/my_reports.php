@@ -257,6 +257,9 @@
         </div>
     </div>
 
+    <!-- Footer -->
+    <?php require_once '../includes/footer.php'; ?>
+
     <script>
         function switchTab(tab) {
             // Update Tab Styling

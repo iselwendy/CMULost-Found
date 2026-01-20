@@ -29,8 +29,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .bg-cmu-blue { background-color: var(--cmu-blue); }
         .text-cmu-blue { color: var(--cmu-blue); }
         .border-cmu-blue { border-color: var(--cmu-blue); }
-        
         .auth-card { transition: all 0.3s ease; }
+
+        .legal-tooltip {
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.2s;
+            bottom: 120%;
+        }
+        .legal-link:hover .legal-tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen flex items-center justify-center p-4">
@@ -71,7 +81,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="z-10 mt-8">
                 <div class="flex items-center space-x-4 mb-6">
                     <div class="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
-                        <i class="fas fa-shield-alt text-cmu-gold"></i>
+                        <i class="fas fa-shield-alt text-amber-400"></i>
                     </div>
                     <div>
                         <h4 class="font-semibold">Secure Verification</h4>
@@ -80,7 +90,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
                 <div class="flex items-center space-x-4">
                     <div class="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
-                        <i class="fas fa-bell text-cmu-gold"></i>
+                        <i class="fas fa-bell text-amber-400"></i>
                     </div>
                     <div>
                         <h4 class="font-semibold">Real-time SMS</h4>
@@ -127,12 +137,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </span>
                             <input type="password" name="password" required placeholder="••••••••" class="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition">
                         </div>
-                        <div class="text-right mt-2">
+                        <div class="text-right mt-4">
                             <a href="#" class="text-sm text-blue-600 hover:underline">Forgot password?</a>
                         </div>
+
+                        <!-- <div class="flex items-start gap-3 py-2 mt-4">
+                            <input type="checkbox" required id="terms" class="mt-1 w-4 h-4 text-cmu-blue border-gray-300 rounded focus:ring-cmu-blue">
+                            <label for="terms" class="text-sm text-gray-600">
+                                I agree to the 
+                                <span class="relative legal-link inline-block">
+                                    <a href="legal.html" class="text-cmu-blue font-bold hover:underline">Terms & Privacy Policy</a>
+                                    <div class="legal-tooltip absolute left-1/2 -translate-x-1/2 w-64 p-4 bg-slate-800 text-white text-[10px] rounded-xl shadow-2xl z-50 pointer-events-none">
+                                        <p class="font-bold mb-1 uppercase text-amber-400">Policy Highlights:</p>
+                                        <ul class="space-y-1 list-disc pl-3">
+                                            <li>60-day item holding period.</li>
+                                            <li>SSO data used for accountability.</li>
+                                            <li>Agreement to provide truthful info.</li>
+                                        </ul>
+                                        <div class="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-slate-800"></div>
+                                    </div>
+                                </span>
+                            </label>
+                        </div> -->
                     </div>
 
-                    <button type="submit" class="w-full bg-cmu-blue text-white font-bold py-3 rounded-xl hover:bg-opacity-90 transform transition active:scale-[0.98] shadow-lg shadow-blue-900/20">
+                    <button type="submit" class="w-full bg-cmu-blue text-white font-bold py-3 rounded-xl hover:bg-slate-800 transition shadow-lg">
                         Log In
                     </button>
                 </form>
