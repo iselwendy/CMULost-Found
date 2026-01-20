@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Report Lost Item | CMU Campus Recovery</title>
+    <title>Report Lost Item | CMU Lost & Found</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="icon" href="../assets/images/system-icon.png">
@@ -46,23 +46,6 @@
 <body class="bg-slate-50 min-h-screen text-slate-900">
 
     <!-- Navigation -->
-    <!-- <nav class="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200">
-        <div class="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between">
-            <a href="index.php" class="flex items-center gap-2 text-indigo-600 font-bold text-xl">
-                <i class="fas fa-arrow-left text-sm text-slate-400"></i>
-                <span>Campus Recovery</span>
-            </a>
-            <div class="flex items-center gap-4">
-                <div class="hidden md:block text-right">
-                    <p class="text-[10px] text-slate-400 uppercase font-bold tracking-tight">Logged in as</p>
-                    <p class="text-xs font-semibold text-slate-700"><?php echo $user_id; ?></p>
-                </div>
-                <div class="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-xs border border-indigo-200">
-                    CR
-                </div>
-            </div>
-        </div>
-    </nav> -->
     <nav class="bg-cmu-blue text-white shadow-md sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-20">
@@ -74,7 +57,8 @@
                 <div class="hidden md:flex items-center space-x-8">
                     <a href="index.php" class="hover:text-cmu-gold transition text-sm font-medium">Public Gallery</a>
                     <a href="report_lost.php" class="nav-link active py-7 text-sm font-medium">Report Lost</a>
-                    <a href="dashboard/my_reports.php" class="hover:text-cmu-gold transition text-sm font-medium">My Dashboard</a>
+                    <a href="report_found.php" class="hover:text-cmu-gold transition text-sm font-medium">Report Found</a>
+                    <a href="../dashboard/my_reports.php" class="hover:text-cmu-gold transition text-sm font-medium">My Dashboard</a>
                 </div>
 
                 <div class="flex items-center space-x-4">

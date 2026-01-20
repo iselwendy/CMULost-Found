@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Report Found Item | CMU Campus Recovery</title>
+    <title>Report Found Item | CMU Lost & Found</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="icon" href="../assets/images/system-icon.png">
@@ -49,7 +49,7 @@
                     <a href="index.php" class="hover:text-cmu-gold transition text-sm font-medium">Public Gallery</a>
                     <a href="report_lost.php" class="hover:text-cmu-gold transition text-sm font-medium">Report Lost</a>
                     <a href="report_found.php" class="nav-link active py-7 text-sm font-medium text-cmu-gold">Report Found</a>
-                    <a href="dashboard/my_reports.php" class="hover:text-cmu-gold transition text-sm font-medium">My Dashboard</a>
+                    <a href="../dashboard/my_reports.php" class="hover:text-cmu-gold transition text-sm font-medium">My Dashboard</a>
                 </div>
 
                 <div class="flex items-center space-x-4">
@@ -207,7 +207,7 @@
                     </div>
                 </div>
 
-                <a href="dashboard/my_reports.php" class="block w-full bg-cmu-blue text-white font-bold py-4 rounded-xl hover:bg-slate-800 transition-colors">
+                <a href="../dashboard/my_reports.php" class="block w-full bg-cmu-blue text-white font-bold py-4 rounded-xl hover:bg-slate-800 transition-colors">
                     View My Dashboard
                 </a>
             </div>
