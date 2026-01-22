@@ -1,18 +1,84 @@
 <?php
 /**
  * CMU Lost & Found - Authentication Page
- * Refined Login-only view with dual-logo branding.
+ * Integrated with database for real login functionality.
  */
 
-// Placeholder for form processing
+// Start the session to store user data
+session_set_cookie_params([
+    'path' => '/',
+    'samesite' => 'Lax'
+]);
+session_start();
+
+// Redirect if already logged in
+if (isset($_SESSION['user_id'])) {
+    header("Location: ../public/index.php");
+    exit();
+}
+
+require_once __DIR__ . '/db_config.php';
+
 $message = "";
+$messageType = "info"; // info, error, success
+
+$debug_mode = false; 
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
+    
     if ($action === 'login') {
-        $message = "Login attempt received for: " . htmlspecialchars($_POST['email']);
+        $email = trim($_POST['email']);
+        $password = $_POST['password'];
+
+        if (!empty($email) && !empty($password)) {
+            try {
+                // Fetch user by email
+                $stmt = $pdo->prepare("SELECT * FROM users WHERE email = ? LIMIT 1");
+                $stmt->execute([$email]);
+                $user = $stmt->fetch();
+
+                // if ($debug_mode) {
+                //     if (!$user) { echo "DEBUG: Email not found in DB."; }
+                //     else {
+                //         $check = password_verify($password, $user['password']);
+                //         echo "DEBUG: User found. Verify result: " . ($check ? "MATCH" : "FAIL");
+                //         echo "<br>Hash in DB: " . $user['password'];
+                //     }
+                //     exit();
+                // }
+
+                // Verify user existence and password hash
+                if ($user && password_verify($password, $user['password'])) {
+                    // Regenerate session ID for security
+                    session_regenerate_id(true);
+
+                    // Store essential user data in session
+                    $_SESSION['user_id'] = $user['id'];
+                    $_SESSION['student_id'] = $user['student_id'];
+                    $_SESSION['user_name'] = $user['first_name'] . ' ' . $user['last_name'];
+                    $_SESSION['user_role'] = $user['role'];
+                    $_SESSION['user_email'] = $user['email'];
+
+                    // Redirect based on role or to home
+                    header("Location: ../public/index.php");
+                    exit();
+                } else {
+                    $message = "Invalid email or password. Please try again.";
+                    $messageType = "error";
+                }
+            } catch (PDOException $e) {
+                $message = "A system error occurred. Please try again later.";
+                $messageType = "error";
+            }
+        } else {
+            $message = "Please fill in all fields.";
+            $messageType = "error";
+        }
     }
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -117,7 +183,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <p class="text-gray-500 mt-1">Please enter your university details to access the portal.</p>
                 </div>
 
-                <form action="auth.html" method="POST" class="space-y-5">
+                <form action="auth.php" method="POST" class="space-y-5">
                     <input type="hidden" name="action" value="login">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">University Email</label>
@@ -140,25 +206,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div class="text-right mt-4">
                             <a href="#" class="text-sm text-blue-600 hover:underline">Forgot password?</a>
                         </div>
-
-                        <!-- <div class="flex items-start gap-3 py-2 mt-4">
-                            <input type="checkbox" required id="terms" class="mt-1 w-4 h-4 text-cmu-blue border-gray-300 rounded focus:ring-cmu-blue">
-                            <label for="terms" class="text-sm text-gray-600">
-                                I agree to the 
-                                <span class="relative legal-link inline-block">
-                                    <a href="legal.html" class="text-cmu-blue font-bold hover:underline">Terms & Privacy Policy</a>
-                                    <div class="legal-tooltip absolute left-1/2 -translate-x-1/2 w-64 p-4 bg-slate-800 text-white text-[10px] rounded-xl shadow-2xl z-50 pointer-events-none">
-                                        <p class="font-bold mb-1 uppercase text-amber-400">Policy Highlights:</p>
-                                        <ul class="space-y-1 list-disc pl-3">
-                                            <li>60-day item holding period.</li>
-                                            <li>SSO data used for accountability.</li>
-                                            <li>Agreement to provide truthful info.</li>
-                                        </ul>
-                                        <div class="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-slate-800"></div>
-                                    </div>
-                                </span>
-                            </label>
-                        </div> -->
                     </div>
 
                     <button type="submit" class="w-full bg-cmu-blue text-white font-bold py-3 rounded-xl hover:bg-slate-800 transition shadow-lg">
@@ -167,8 +214,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </form>
 
                 <p class="mt-8 text-center text-sm text-gray-500">
-                    Don't have an account? <br>
-                    <span class="text-cmu-blue font-semibold">Please contact the OSA Administrator.</span>
+                    By logging in, you agree to our <br>
+                    <a href="../public/legal.html" class="text-cmu-blue font-bold hover:underline">Terms & Privacy Policy</a>
                 </p>
             </div>
         </div>
