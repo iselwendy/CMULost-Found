@@ -291,9 +291,9 @@ $filtered_items = array_filter($items, function($item) use ($view_mode) {
                                 </div>
                             </div>
 
-                            <button class="mt-auto w-full py-2.5 rounded-xl border-2 border-gray-100 text-gray-700 font-bold text-sm hover:bg-cmu-blue hover:text-white hover:border-cmu-blue transition">
+                            <a href="item_details.php?id=<?php echo $item['id']; ?>"><button class="mt-auto w-full py-2.5 rounded-xl border-2 border-gray-100 text-gray-700 font-bold text-sm hover:bg-cmu-blue hover:text-white hover:border-cmu-blue transition">
                                 View Details
-                            </button>
+                            </button></a>
                         </div>
                     </div>
                 <?php endforeach; ?>

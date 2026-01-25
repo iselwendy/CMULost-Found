@@ -121,27 +121,29 @@
                                    class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 outline-none">
                         </div>
                     </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold mb-1.5 text-slate-700">Public Description</label>
+                        <textarea name="description" rows="3" required
+                                  placeholder="Provide a general description that helps the owner recognize it. (e.g. 'Blue AquaFlask with some anime stickers')"
+                                  class="w-full px-4 py-2.5 rounded-xl border border-slate-200 outline-none resize-none focus:border-cmu-blue transition-all"></textarea>
+                        <p class="text-[10px] text-slate-400 mt-1 uppercase tracking-tight">This description will be visible in the Public Gallery.</p>
+                    </div>
                 </section>
 
                 <!-- Step 2: Verification Security -->
                 <section class="space-y-4 pt-4">
                     <div class="flex items-center gap-2 border-b pb-2">
                         <h3 class="text-sm font-bold uppercase tracking-wider text-slate-400">Security & Privacy</h3>
-                        <span class="text-[10px] bg-amber-500 text-white px-2 py-0.5 rounded-full font-bold">REDACTED</span>
+                        <span class="text-[10px] bg-amber-500 text-white px-2 py-0.5 rounded-full font-bold">REDACTED FROM GALLERY</span>
                     </div>
 
                     <p class="text-xs text-slate-500 italic bg-slate-100 p-3 rounded-lg border-l-4 border-indigo-500">
                         <i class="fas fa-user-shield mr-1"></i>
-                        <strong>Guardian Protocol:</strong> These details are <u>NOT</u> shown in the public gallery. To prevent fraudulent claims, please describe a specific feature (like a name inside a wallet or a specific serial number). 
+                        <strong>Guardian Protocol:</strong> Please describe a <strong>specific identifying mark that only the owner would know</strong> (e.g., a specific serial number, a name written inside, or a unique scratch).
+                        <br><br>
+                        <strong>This field is hidden from the public to prevent fraudulent claims.</strong>
                     </p>
-                    
-                    <!-- <div class="bg-blue-50 p-4 rounded-xl flex gap-3">
-                        <i class="fas fa-shield-halved text-blue-600 mt-1"></i>
-                        <p class="text-xs text-blue-800 leading-relaxed">
-                            <strong>Guardian Protocol:</strong> To prevent fraudulent claims, please describe a specific feature (like a name inside a wallet or a specific serial number). 
-                            <span class="font-bold">This detail will be hidden from the Public Gallery.</span>
-                        </p>
-                    </div> -->
 
                     <div>
                         <label class="block text-sm font-semibold mb-1.5 text-slate-700">Identifying Details</label>
