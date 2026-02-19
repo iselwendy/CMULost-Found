@@ -3,7 +3,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
 ?>
 
 <nav class="bg-cmu-blue text-white shadow-md sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-5">
             <div class="flex justify-between h-20">
                 <div class="flex items-center space-x-3">
                     <img src="../assets/images/system-icon.png" alt="Logo" class="h-12 w-12" onerror="this.src='https://ui-avatars.com/api/?name=LF&background=FFCC00&color=003366'">
@@ -11,19 +11,19 @@ $current_page = basename($_SERVER['PHP_SELF']);
                 </div>
 
                 <div class="hidden md:flex items-center space-x-8">
-                    <a href="../public/index.php" class="text-sm font-medium py-7 <?php echo ($current_page == 'index.php') ? 'nav-link active' : 'hover:text-cmu-gold transition'; ?>">
+                    <a href="../public/index.php" class="text-sm font-medium py-7 px-2 transition-all duration-300 hover:bg-white/20 <?php echo ($current_page == 'index.php') ? 'nav-link active' : 'hover:text-cmu-gold transition'; ?>">
                         Public Gallery
                     </a>
                     
-                    <a href="../public/report_lost.php" class="text-sm font-medium py-7 <?php echo ($current_page == 'report_lost.php') ? 'nav-link active' : 'hover:text-cmu-gold transition'; ?>">
+                    <a href="../public/report_lost.php" class="text-sm font-medium py-7 px-2 transition-all duration-300 hover:bg-white/20 <?php echo ($current_page == 'report_lost.php') ? 'nav-link active' : 'hover:text-cmu-gold transition'; ?>">
                         Report Lost
                     </a>
                     
-                    <a href="../public/report_found.php" class="text-sm font-medium py-7 <?php echo ($current_page == 'report_found.php') ? 'nav-link active' : 'hover:text-cmu-gold transition'; ?>">
+                    <a href="../public/report_found.php" class="text-sm font-medium py-7 px-2 transition-all duration-300 hover:bg-white/20 <?php echo ($current_page == 'report_found.php') ? 'nav-link active' : 'hover:text-cmu-gold transition'; ?>">
                         Report Found
                     </a>
                     
-                    <a href="../dashboard/my_reports.php" class="text-sm font-medium py-7 <?php echo ($current_page == 'my_reports.php') ? 'nav-link active' : 'hover:text-cmu-gold transition'; ?>">
+                    <a href="../dashboard/my_reports.php" class="text-sm font-medium py-7 px-2 transition-all duration-300 hover:bg-white/20 <?php echo ($current_page == 'my_reports.php') ? 'nav-link active' : 'hover:text-cmu-gold transition'; ?>">
                         My Dashboard
                     </a>
                 </div>
