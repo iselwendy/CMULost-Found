@@ -24,7 +24,7 @@
             'name' => 'Abdul Montefalco',
             'email' => 'johndoe@cmu.edu.ph',
             'id_number' => '2023-10421',
-            'department' => 'College of Engineering',
+            'department' => 'College of Computer Studies',
             'profile_pic' => 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
             'joined_date' => 'Sept 2023'
         ];
