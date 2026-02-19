@@ -37,27 +37,8 @@
 </head>
 <body class="bg-slate-50 min-h-screen text-slate-900">
 
-    <!-- Navigation -->
-    <nav class="bg-cmu-blue text-white shadow-md sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-20">
-                <div class="flex items-center space-x-3">
-                    <img src="../assets/images/system-icon.png" alt="Logo" class="h-12 w-12" onerror="this.src='https://ui-avatars.com/api/?name=LF&background=FFCC00&color=003366'">
-                    <span class="font-bold text-xl tracking-tight hidden sm:block">CMU Lost & Found</span>
-                </div>
-                
-                <div class="hidden md:flex items-center space-x-8">
-                    <a href="index.php" class="hover:text-cmu-gold transition text-sm font-medium">Public Gallery</a>
-                    <a href="report_lost.php" class="hover:text-cmu-gold transition text-sm font-medium">Report Lost</a>
-                    <a href="report_found.php" class="nav-link active py-7 text-sm font-medium text-cmu-gold">Report Found</a>
-                    <a href="../dashboard/my_reports.php" class="hover:text-cmu-gold transition text-sm font-medium">My Dashboard</a>
-                </div>
-
-                <!-- User Profile & Dropdown -->
-                <?php require_once '../includes/profile-dropdown.php'; ?>
-            </div>
-        </div>
-    </nav>
+    <!-- Navbar -->
+    <?php require_once '../includes/header.php'; ?>
 
     <main class="max-w-2xl mx-auto px-4 py-8">
         <div class="glass-card rounded-2xl shadow-xl p-6 md:p-8">
