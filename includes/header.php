@@ -27,13 +27,6 @@ $current_page = basename($_SERVER['PHP_SELF']);
                         My Dashboard
                     </a>
                 </div>
-                
-                <!-- <div class="hidden md:flex items-center space-x-8">
-                    <a href="index.php" class="nav-link active py-7 text-sm font-medium">Public Gallery</a>
-                    <a href="report_lost.php" class="hover:text-cmu-gold transition text-sm font-medium">Report Lost</a>
-                    <a href="report_found.php" class="hover:text-cmu-gold transition text-sm font-medium">Report Found</a>
-                    <a href="../dashboard/my_reports.php" class="hover:text-cmu-gold transition text-sm font-medium">My Dashboard</a>
-                </div> -->
 
                 <!-- User Profile & Dropdown -->
                 <div class="flex items-center space-x-4 relative">

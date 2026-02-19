@@ -1,0 +1,20 @@
+:root {
+    --cmu-blue: #003366;
+    --cmu-gold: #FFCC00;
+}
+
+.bg-cmu-blue {
+    background-color: var(--cmu-blue);
+}
+
+.text-cmu-blue {
+    color: var(--cmu-blue);
+}
+
+.border-cmu-blue {
+    border-color: var(--cmu-blue);
+}
+
+.bg-cmu-gold {
+    background-color: var(--cmu-gold);
+}

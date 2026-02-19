@@ -7,20 +7,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        :root {
-            --cmu-blue: #003366;
-            --cmu-gold: #FFCC00;
-        }
-        .bg-cmu-blue { background-color: var(--cmu-blue); }
-        .text-cmu-blue { color: var(--cmu-blue); }
-        .border-cmu-blue { border-color: var(--cmu-blue); }
-        .bg-cmu-gold { background-color: var(--cmu-gold); }
-
-        .nav-link.active {
-            border-bottom: 3px solid var(--cmu-gold);
-            color: white;
-        }
-        
         .tab-active {
             border-bottom: 3px solid var(--cmu-blue);
             color: var(--cmu-blue);
@@ -35,7 +21,8 @@
             text-transform: uppercase;
         }
     </style>
-    <link rel="stylesheet" href="../assets/styles/profile-dropdown.css"></link>
+    <link rel="stylesheet" href="../assets/styles/header.css"></link>
+    <link rel="stylesheet" href="../assets/styles/root.css"></link>
 </head>
 <body class="bg-slate-50 min-h-screen text-slate-900">
 
