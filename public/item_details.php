@@ -30,6 +30,17 @@ $items_db = [
         'description' => '12th Edition Calculus textbook. It has some highlighting on the first few chapters. Found at Room 302.',
         'image' => 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&w=800&q=80',
         'poster' => 'Jane Smith (Finder)'
+    ],
+    4 => [
+        'title' => 'Silver Earbuds',
+        'category' => 'Electronics',
+        'location' => 'Quadrangle',
+        'date' => 'Jan 25, 2026',
+        'status' => 'In OSA Custody',
+        'type' => 'found',
+        'description' => 'A pair of silver wireless earbuds found near the fountain area. They are in a black charging case with some scratches.',
+        'image' => 'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&w=300&q=80',
+        'poster' => 'Jane Smith (Finder)'
     ]
 ];
 

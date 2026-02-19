@@ -82,31 +82,8 @@ $filtered_items = array_filter($items, function($item) use ($view_mode) {
             border-bottom: 3px solid var(--cmu-gold);
             color: white;
         }
-
-        /* Custom Dropdown Styling */
-        .filter-select {
-            appearance: none;
-            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
-            background-position: right 0.5rem center;
-            background-repeat: no-repeat;
-            background-size: 1.5em 1.5em;
-            padding-right: 2.5rem;
-        }
-
-        /* User Dropdown Transition */
-        #userDropdown {
-            display: none;
-            transform-origin: top right;
-        }
-        #userDropdown.show {
-            display: block;
-            animation: dropdownFade 0.2s ease-out;
-        }
-        @keyframes dropdownFade {
-            from { opacity: 0; transform: scale(0.95) translateY(-10px); }
-            to { opacity: 1; transform: scale(1) translateY(0); }
-        }
     </style>
+    <link rel="stylesheet" href="../assets/styles/profile-dropdown.css"></link>
 </head>
 <body class="bg-gray-100 min-h-screen">
 
@@ -127,46 +104,7 @@ $filtered_items = array_filter($items, function($item) use ($view_mode) {
                 </div>
 
                 <!-- User Profile & Dropdown -->
-                <div class="flex items-center space-x-4 relative">
-                    <div class="text-right hidden sm:block">
-                        <p class="text-xs text-blue-200">Logged in as</p>
-                        <p class="text-sm font-semibold">Abdul Montefalco</p>
-                    </div>
-                    
-                    <div class="relative">
-                        <button id="userMenuBtn" class="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center hover:bg-white/20 transition focus:outline-none">
-                            <i class="fas fa-user-circle text-xl"></i>
-                        </button>
-
-                        <!-- Dropdown Menu -->
-                        <div id="userDropdown" class="absolute right-0 mt-3 w-56 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-50">
-                            <div class="px-4 py-3 border-b border-gray-50 md:hidden">
-                                <p class="text-xs text-gray-400">Logged in as</p>
-                                <p class="text-sm font-bold text-gray-800">Abdul Montefalco</p>
-                            </div>
-                            
-                            <a href="../dashboard/profile.php" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition">
-                                <i class="fas fa-user-edit w-5 text-gray-400"></i>
-                                <span>Edit Profile</span>
-                            </a>
-                            <a href="../dashboard/my_reports.php" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition">
-                                <i class="fas fa-clipboard-list w-5 text-gray-400"></i>
-                                <span>My Reports</span>
-                            </a>
-                            <a href="../dashboard/settings.php" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition">
-                                <i class="fas fa-cog w-5 text-gray-400"></i>
-                                <span>Account Settings</span>
-                            </a>
-                            
-                            <div class="border-t border-gray-50 mt-2">
-                                <a href="../core/logout.php" class="flex items-center px-4 py-2.5 text-sm text-red-600 font-bold hover:bg-red-50 transition">
-                                    <i class="fas fa-sign-out-alt w-5"></i>
-                                    <span>Sign Out</span>
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <?php require_once '../includes/profile-dropdown.php'; ?>
             </div>
         </div>
     </nav>
@@ -306,24 +244,6 @@ $filtered_items = array_filter($items, function($item) use ($view_mode) {
     <?php require_once '../includes/footer.php'; ?>
 
     <!-- Scripts -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const userMenuBtn = document.getElementById('userMenuBtn');
-            const userDropdown = document.getElementById('userDropdown');
-
-            // Toggle dropdown on click (for mobile and explicit control)
-            userMenuBtn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                userDropdown.classList.toggle('show');
-            });
-
-            // Close when clicking outside
-            window.addEventListener('click', function(e) {
-                if (!userMenuBtn.contains(e.target) && !userDropdown.contains(e.target)) {
-                    userDropdown.classList.remove('show');
-                }
-            });
-        });
-    </script>
+    <script src="../assets/scripts/profile-dropdown.js"></script>
 </body>
 </html>

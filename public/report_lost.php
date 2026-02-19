@@ -42,6 +42,7 @@
             ring-color: #4f46e5;
         }
     </style>
+    <link rel="stylesheet" href="../assets/styles/profile-dropdown.css"></link>
 </head>
 <body class="bg-slate-50 min-h-screen text-slate-900">
 
@@ -61,15 +62,8 @@
                     <a href="../dashboard/my_reports.php" class="hover:text-cmu-gold transition text-sm font-medium">My Dashboard</a>
                 </div>
 
-                <div class="flex items-center space-x-4">
-                    <div class="text-right hidden sm:block">
-                        <p class="text-xs text-blue-200">Logged in as</p>
-                        <p class="text-sm font-semibold">Abdul Montefalco</p>
-                    </div>
-                    <button class="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center hover:bg-white/20">
-                        <i class="fas fa-user-circle text-xl"></i>
-                    </button>
-                </div>
+                <!-- User Profile & Dropdown -->
+                <?php require_once '../includes/profile-dropdown.php'; ?>
             </div>
         </div>
     </nav>
@@ -201,7 +195,7 @@
     <!-- Footer -->
     <?php require_once '../includes/footer.php'; ?>
 
-    <script>
+    <script src="../assets/scripts/profile-dropdown.js">
         // Real-time Duplicate Check Logic
         const titleInput = document.getElementById('itemTitle');
         const alertBox = document.getElementById('duplicateAlert');

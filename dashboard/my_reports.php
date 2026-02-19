@@ -35,6 +35,7 @@
             text-transform: uppercase;
         }
     </style>
+    <link rel="stylesheet" href="../assets/styles/profile-dropdown.css"></link>
 </head>
 <body class="bg-slate-50 min-h-screen text-slate-900">
 
@@ -54,15 +55,8 @@
                     <a href="my_reports.php" class="nav-link active text-cmu-gold py-7 text-sm font-medium border-b-4 border-cmu-gold">My Dashboard</a>
                 </div>
 
-                <div class="flex items-center space-x-4">
-                    <div class="text-right hidden sm:block">
-                        <p class="text-xs text-blue-200">Logged in as</p>
-                        <p class="text-sm font-semibold">Abdul Montefalco</p>
-                    </div>
-                    <button class="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center hover:bg-white/20">
-                        <i class="fas fa-user-circle text-xl"></i>
-                    </button>
-                </div>
+                <!-- User Profile & Dropdown -->
+                <?php require_once '../includes/profile-dropdown.php'; ?>
             </div>
         </div>
     </nav>
@@ -75,10 +69,10 @@
                 <p class="text-slate-500">Track your reports, view matches, and manage turnovers.</p>
             </div>
             <div class="flex gap-2">
-                <a href="../report_lost.php" class="px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-bold text-slate-700 hover:bg-slate-50 transition shadow-sm">
+                <a href="../public/report_lost.php" class="px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-bold text-slate-700 hover:bg-slate-50 transition shadow-sm">
                     <i class="fas fa-plus mr-2 text-indigo-500"></i>New Lost Report
                 </a>
-                <a href="../report_found.php" class="px-4 py-2 bg-cmu-blue text-white rounded-lg text-sm font-bold hover:bg-slate-800 transition shadow-md">
+                <a href="../public/report_found.php" class="px-4 py-2 bg-cmu-blue text-white rounded-lg text-sm font-bold hover:bg-slate-800 transition shadow-md">
                     <i class="fas fa-hand-holding-heart mr-2 text-cmu-gold"></i>I Found Something
                 </a>
             </div>
@@ -287,5 +281,6 @@
             document.getElementById('qrModal').classList.add('hidden');
         }
     </script>
+    <script src="../assets/scripts/profile-dropdown.js"></script>
 </body>
 </html>
