@@ -26,8 +26,6 @@ $found_id = $_GET['found_id'] ?? 'TRK-88219-AM';
     <title>Matching Portal | CMU Lost & Found</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="../assets/styles/root.css">
-    <link rel="stylesheet" href="../assets/styles/admin_dashboard.css">
     <link rel="stylesheet" href="../assets/styles/root.css"></link>
     <link rel="stylesheet" href="../assets/styles/admin_dashboard.css"></link>
 </head>
@@ -82,7 +80,7 @@ $found_id = $_GET['found_id'] ?? 'TRK-88219-AM';
     </aside>
 
     <!-- Main Workspace -->
-    <main class="flex-grow flex flex-col min-w-0">
+    <main class="flex-grow flex flex-col min-w-0 h-screen overflow-y-auto">
         <!-- Header -->
         <header class="bg-white border-b border-slate-200 px-8 py-4 flex items-center justify-between flex-shrink-0">
             <div>
