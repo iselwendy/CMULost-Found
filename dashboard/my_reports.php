@@ -21,11 +21,57 @@
             text-transform: uppercase;
         }
 
+        /* PRINT STYLES: Forces a single-page centered layout */
         @media print {
-            body * { visibility: hidden; }
-            #qrModalContent, #qrModalContent * { visibility: visible; }
-            #qrModalContent { position: absolute; left: 0; top: 0; width: 100%; }
-            #closeBtn, #saveBtn { display: none; }
+            /* 1. Hide everything by default using display: none to reclaim space */
+            body > *:not(#qrModal) { display: none !important; }
+            
+            /* 2. Force the body to be exactly one page high */
+            html, body { 
+                height: 100% !important; 
+                overflow: hidden !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                background: white !important;
+            }
+
+            #qrModal { 
+                display: flex !important; 
+                visibility: visible !important;
+                position: absolute !important; 
+                inset: 0 !important; 
+                background: white !important;
+                align-items: center;
+                justify-content: center;
+                width: 100% !important;
+                height: 100% !important;
+            }
+
+            #qrModalContent {
+                position: relative !important;
+                transform: none !important;
+                left: auto !important;
+                top: auto !important;
+                width: 350px !important;
+                margin: 0 auto;
+                padding: 2rem;
+                border: 1px solid #e2e8f0;
+                box-shadow: none !important;
+                display: block !important;
+                visibility: visible !important;
+            }
+
+            /* Hide UI controls */
+            #closeBtn, #saveBtn, .fas.fa-times { display: none !important; }
+            
+            /* Print Optimization */
+            #qrTrackingId { color: black !important; font-size: 1.2rem; }
+            .bg-slate-50 { background-color: white !important; }
+            
+            @page { 
+                size: auto;
+                margin: 0; 
+            }
         }
     </style>
     <link rel="stylesheet" href="../assets/styles/header.css"></link>
@@ -62,7 +108,7 @@
                 </div>
                 <div>
                     <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Active Reports</p>
-                    <h3 class="text-2xl font-black text-slate-800">03</h3>
+                    <h3 class="text-2xl font-black text-slate-800">02</h3>
                 </div>
             </div>
 
@@ -73,7 +119,7 @@
                 </div>
                 <div class="z-10">
                     <p class="text-xs font-bold text-indigo-200 uppercase tracking-widest">Potential Matches</p>
-                    <h3 class="text-2xl font-black">02 Found</h3>
+                    <h3 class="text-2xl font-black">01 Found</h3>
                 </div>
                 <i class="fas fa-magnifying-glass absolute -right-4 -bottom-4 text-white/10 text-8xl"></i>
             </div>
@@ -100,7 +146,7 @@
                     My Reports (3)
                 </button>
                 <button onclick="switchTab('potential-matches')" id="tab-potential-matches" class="px-8 py-5 text-sm font-bold text-slate-400 hover:text-slate-600 transition-all border-b-3 border-transparent">
-                    Potential Matches <span class="ml-2 bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full">2</span>
+                    Potential Matches <span class="ml-2 bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full">1</span>
                 </button>
             </div>
 
@@ -143,7 +189,7 @@
                     <!-- Item 2: Lost Report -->
                     <div class="group flex flex-col md:flex-row items-center gap-6 p-4 rounded-2xl border border-slate-100 hover:border-cmu-blue/30 hover:bg-slate-50 transition-all">
                         <div class="w-full md:w-32 h-32 rounded-xl bg-slate-200 overflow-hidden flex-shrink-0 relative">
-                            <img src="https://images.unsplash.com/photo-1631201553018-86851b43950a?auto=format&fit=crop&w=300&q=80" alt="Item" class="w-full h-full object-cover">
+                            <img src="https://images.unsplash.com/photo-1631201553014-776760c89381?auto=format&fit=crop&w=300&q=80" alt="Item" class="w-full h-full object-cover">
                             <span class="absolute top-2 left-2 status-badge bg-red-500 text-white">Lost</span>
                         </div>
                         <div class="flex-grow space-y-1">
@@ -179,7 +225,7 @@
                         <div class="bg-white border-2 border-indigo-100 rounded-2xl p-4 flex flex-col gap-4 relative">
                             <span class="absolute -top-3 left-4 bg-indigo-600 text-white text-[10px] px-3 py-1 rounded-full font-bold">85% MATCH</span>
                             <div class="flex gap-4">
-                                <img src="https://images.unsplash.com/photo-1627123424574-724758594e93?auto=format&fit=crop&w=300&q=80" class="w-20 h-20 rounded-xl object-cover">
+                                <img src="https://images.unsplash.com/photo-1631201553014-776760c89381?auto=format&fit=crop&w=300&q=80" class="w-20 h-20 rounded-xl object-cover">
                                 <div>
                                     <h5 class="font-bold text-slate-800">Navy Blue Water Bottle</h5>
                                     <p class="text-xs text-slate-500 mb-2">Turned in: Oct 24 (Canteen)</p>
