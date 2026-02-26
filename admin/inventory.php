@@ -26,13 +26,6 @@ $status_filter = $_GET['status'] ?? 'all';
     <title>Physical Inventory | CMU Lost & Found</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
-        .status-pill-custody { @apply bg-green-100 text-green-700 border-green-200; }
-        .status-pill-pending { @apply bg-amber-100 text-amber-700 border-amber-200; }
-        .status-pill-claimed { @apply bg-slate-100 text-slate-500 border-slate-200; }
-        
-        
-    </style>
     <link rel="stylesheet" href="../assets/styles/root.css"></link>
     <link rel="stylesheet" href="../assets/styles/admin_dashboard.css"></link>
 </head>
