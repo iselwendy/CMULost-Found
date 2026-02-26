@@ -13,7 +13,11 @@ session_start();
 
 // Redirect if already logged in
 if (isset($_SESSION['user_id'])) {
-    header("Location: ../public/index.php");
+    if ($_SESSION['user_role'] === 'admin') {
+        header("Location: ../admin/dashboard.php");
+    } else {
+        header("Location: ../public/index.php");
+    }
     exit();
 }
 
@@ -21,8 +25,6 @@ require_once __DIR__ . '/db_config.php';
 
 $message = "";
 $messageType = "info"; // info, error, success
-
-$debug_mode = false; 
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
@@ -38,16 +40,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt->execute([$email]);
                 $user = $stmt->fetch();
 
-                // if ($debug_mode) {
-                //     if (!$user) { echo "DEBUG: Email not found in DB."; }
-                //     else {
-                //         $check = password_verify($password, $user['password']);
-                //         echo "DEBUG: User found. Verify result: " . ($check ? "MATCH" : "FAIL");
-                //         echo "<br>Hash in DB: " . $user['password'];
-                //     }
-                //     exit();
-                // }
-
                 // Verify user existence and password hash
                 if ($user && password_verify($password, $user['password'])) {
                     // Regenerate session ID for security
@@ -55,13 +47,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     // Store essential user data in session
                     $_SESSION['user_id'] = $user['id'];
-                    $_SESSION['student_id'] = $user['student_id'];
+                    $_SESSION['unique_id'] = $user['unique_id'];
                     $_SESSION['user_name'] = $user['first_name'] . ' ' . $user['last_name'];
-                    $_SESSION['user_role'] = $user['role'];
+                    $_SESSION['user_role'] = $user['role']; // 'admin', 'faculty', or 'student'
                     $_SESSION['user_email'] = $user['email'];
 
-                    // Redirect based on role or to home
-                    header("Location: ../public/index.php");
+                    // Role-Based Redirection
+                    if ($_SESSION['user_role'] === 'admin') {
+                        // Redirect to the Admin Dashboard (Canvas)
+                        header("Location: ../admin/dashboard.php");
+                    } else {
+                        // Redirect to the regular user home
+                        header("Location: ../public/index.php");
+                    }
                     exit();
                 } else {
                     $message = "Invalid email or password. Please try again.";
@@ -191,7 +189,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
                                 <i class="fas fa-envelope"></i>
                             </span>
-                            <input type="email" name="email" required placeholder="student@cmu.edu.ph" class="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition">
+                            <input type="email" name="email" required placeholder="email@cmu.edu.ph" class="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition">
                         </div>
                     </div>
 

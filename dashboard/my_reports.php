@@ -136,7 +136,7 @@
                                 <i class="fas fa-map-marker-alt"></i> University Canteen
                             </p>
                             <div class="inline-flex items-center gap-1.5 mt-2 bg-indigo-50 text-indigo-600 px-3 py-1 rounded-lg text-xs font-bold">
-                                <i class="fas fa-magnifying-glass text-[10px]"></i> 2 Potential Matches Found
+                                <i class="fas fa-magnifying-glass text-[10px]"></i> 1 Potential Matches Found
                             </div>
                         </div>
                         <div class="flex md:flex-col gap-2 w-full md:w-auto">
