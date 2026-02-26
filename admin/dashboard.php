@@ -31,11 +31,8 @@ $stats = [
     <title>Admin Dashboard | CMU Lost & Found</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
-        .sidebar-link:hover { background-color: rgba(255,255,255,0.1); }
-        .sidebar-link.active { background-color: rgba(255,255,255,0.2); border-left: 4px solid var(--cmu-gold); }
-    </style>
     <link rel="stylesheet" href="../assets/styles/root.css"></link>
+    <link rel="stylesheet" href="../assets/styles/admin_dashboard.css"></link>
 </head>
 <body class="bg-slate-50 min-h-screen flex">
 
