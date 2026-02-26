@@ -20,6 +20,13 @@
             border-radius: 99px;
             text-transform: uppercase;
         }
+
+        @media print {
+            body * { visibility: hidden; }
+            #qrModalContent, #qrModalContent * { visibility: visible; }
+            #qrModalContent { position: absolute; left: 0; top: 0; width: 100%; }
+            #closeBtn, #saveBtn { display: none; }
+        }
     </style>
     <link rel="stylesheet" href="../assets/styles/header.css"></link>
     <link rel="stylesheet" href="../assets/styles/root.css"></link>
@@ -82,7 +89,7 @@
                         <h3 class="text-sm font-bold text-slate-800">Pending Surrender</h3>
                     </div>
                 </div>
-                <button onclick="openQRModal()" class="text-cmu-blue hover:text-blue-800 font-bold text-sm underline">View Code</button>
+                <button onclick="openQRModal('TRK-88219-AM')" class="text-cmu-blue hover:text-blue-800 font-bold text-sm underline">View Code</button>
             </div>
         </div>
 
@@ -128,7 +135,7 @@
                             </div>
                         </div>
                         <div class="flex md:flex-col gap-2 w-full md:w-auto">
-                            <button onclick="openQRModal()" class="flex-1 px-4 py-2 bg-cmu-blue text-white rounded-lg text-xs font-bold hover:bg-slate-800 transition">Get QR Code</button>
+                            <button onclick="openQRModal('TRK-88219-AM')" class="flex-1 px-4 py-2 bg-cmu-blue text-white rounded-lg text-xs font-bold hover:bg-slate-800 transition">Get QR Code</button>
                             <button class="flex-1 px-4 py-2 border border-slate-200 text-slate-600 rounded-lg text-xs font-bold hover:bg-white transition">Edit</button>
                         </div>
                     </div>
@@ -186,20 +193,21 @@
         </div>
     </main>
 
-    <!-- Turnover QR Modal -->
+    <!-- Dynamic Turnover QR Modal -->
     <div id="qrModal" class="fixed inset-0 z-[60] hidden flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm">
-        <div class="bg-white rounded-3xl max-w-sm w-full p-8 shadow-2xl text-center">
+        <div id="qrModalContent" class="bg-white rounded-3xl max-w-sm w-full p-8 shadow-2xl text-center">
             <div class="flex justify-between items-center mb-6">
                 <h3 class="font-bold text-slate-800">Turnover QR Code</h3>
-                <button onclick="closeQRModal()" class="text-slate-400 hover:text-slate-600"><i class="fas fa-times"></i></button>
+                <button id="closeBtn" onclick="closeQRModal()" class="text-slate-400 hover:text-slate-600"><i class="fas fa-times"></i></button>
             </div>
             
             <div class="bg-slate-50 p-6 rounded-2xl mb-6">
-                <!-- Mock QR Code -->
+                <!-- QR Code generated via External API based on ID -->
                 <div class="w-48 h-48 bg-white border-8 border-white shadow-sm mx-auto flex items-center justify-center p-2">
-                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=FOUND-TRK-88219" alt="QR Code" class="w-full h-full grayscale">
+                    <img id="qrImage" src="" alt="QR Code" class="w-full h-full grayscale">
                 </div>
-                <p class="mt-4 font-mono text-sm text-slate-500 tracking-widest">TRK-88219-AM</p>
+                <!-- Dynamic Tracking ID Text -->
+                <p id="qrTrackingId" class="mt-4 font-mono text-sm text-slate-500 tracking-widest uppercase">---</p>
             </div>
 
             <div class="space-y-4 text-left">
@@ -213,8 +221,8 @@
                 </div>
             </div>
 
-            <button onclick="window.print()" class="w-full mt-8 py-3 bg-slate-100 text-slate-700 rounded-xl font-bold text-sm hover:bg-slate-200 transition">
-                <i class="fas fa-download mr-2"></i>Save as Image
+            <button id="saveBtn" onclick="window.print()" class="w-full mt-8 py-3 bg-slate-100 text-slate-700 rounded-xl font-bold text-sm hover:bg-slate-200 transition">
+                <i class="fas fa-download mr-2"></i>Save/Print QR Code
             </button>
         </div>
     </div>
@@ -241,12 +249,34 @@
             });
         }
 
-        function openQRModal() {
+        /**
+         * Dynamic QR Modal Logic
+         * @param {string} trackingId - The unique ID for the turnover transaction
+         */
+        function openQRModal(trackingId) {
+            const qrImg = document.getElementById('qrImage');
+            const qrText = document.getElementById('qrTrackingId');
+            
+            // Generate QR code URL using the tracking ID
+            // Using goqr.me API for reliable generation
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(trackingId)}`;
+            
+            qrImg.src = qrUrl;
+            qrText.innerText = trackingId;
+
             document.getElementById('qrModal').classList.remove('hidden');
         }
 
         function closeQRModal() {
             document.getElementById('qrModal').classList.add('hidden');
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('qrModal');
+            if (event.target == modal) {
+                closeQRModal();
+            }
         }
     </script>
     <script src="../assets/scripts/profile-dropdown.js"></script>
