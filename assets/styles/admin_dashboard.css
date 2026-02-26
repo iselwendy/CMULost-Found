@@ -89,5 +89,23 @@ select#html5-qrcode-select-camera {
     font-size: 0.875rem;
     line-height: 1.25rem;
     margin-right: 0.5rem;
+}
 
+.match-card-active {
+    box-shadow: 0 0 0 2px var(--cmu-blue);
+    background-color: rgb(239 246 255 / 0.5);
+}
+
+.comparison-pane {
+    height: calc(100vh - 180px);
+}
+
+.score-high {
+    color: rgb(22 163 74);
+    background-color: rgb(220 252 231);
+}
+
+.score-mid {
+    color: rgb(217 119 6);
+    background-color: rgb(253 230 138);
 }
