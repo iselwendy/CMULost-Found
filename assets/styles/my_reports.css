@@ -1,0 +1,80 @@
+.tab-active {
+    border-bottom: 3px solid var(--cmu-blue);
+    color: var(--cmu-blue);
+    font-weight: 700;
+}
+
+.status-badge {
+    font-size: 10px;
+    font-weight: 800;
+    padding: 2px 8px;
+    border-radius: 99px;
+    text-transform: uppercase;
+}
+
+/* PRINT STYLES: Forces a single-page centered layout */
+@media print {
+
+    /* 1. Hide everything by default using display: none to reclaim space */
+    body>*:not(#qrModal) {
+        display: none !important;
+    }
+
+    /* 2. Force the body to be exactly one page high */
+    html,
+    body {
+        height: 100% !important;
+        overflow: hidden !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: white !important;
+    }
+
+    #qrModal {
+        display: flex !important;
+        visibility: visible !important;
+        position: absolute !important;
+        inset: 0 !important;
+        background: white !important;
+        align-items: center;
+        justify-content: center;
+        width: 100% !important;
+        height: 100% !important;
+    }
+
+    #qrModalContent {
+        position: relative !important;
+        transform: none !important;
+        left: auto !important;
+        top: auto !important;
+        width: 350px !important;
+        margin: 0 auto;
+        padding: 2rem;
+        border: 1px solid #e2e8f0;
+        box-shadow: none !important;
+        display: block !important;
+        visibility: visible !important;
+    }
+
+    /* Hide UI controls */
+    #closeBtn,
+    #saveBtn,
+    .fas.fa-times {
+        display: none !important;
+    }
+
+    /* Print Optimization */
+    #qrTrackingId {
+        color: black !important;
+        font-size: 1.2rem;
+    }
+
+    .bg-slate-50 {
+        background-color: white !important;
+    }
+
+    @page {
+        size: auto;
+        margin: 0;
+    }
+}

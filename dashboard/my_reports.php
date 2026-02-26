@@ -6,75 +6,8 @@
     <title>My Reports | CMU Lost & Found</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
-        .tab-active {
-            border-bottom: 3px solid var(--cmu-blue);
-            color: var(--cmu-blue);
-            font-weight: 700;
-        }
-
-        .status-badge {
-            font-size: 10px;
-            font-weight: 800;
-            padding: 2px 8px;
-            border-radius: 99px;
-            text-transform: uppercase;
-        }
-
-        /* PRINT STYLES: Forces a single-page centered layout */
-        @media print {
-            /* 1. Hide everything by default using display: none to reclaim space */
-            body > *:not(#qrModal) { display: none !important; }
-            
-            /* 2. Force the body to be exactly one page high */
-            html, body { 
-                height: 100% !important; 
-                overflow: hidden !important;
-                margin: 0 !important;
-                padding: 0 !important;
-                background: white !important;
-            }
-
-            #qrModal { 
-                display: flex !important; 
-                visibility: visible !important;
-                position: absolute !important; 
-                inset: 0 !important; 
-                background: white !important;
-                align-items: center;
-                justify-content: center;
-                width: 100% !important;
-                height: 100% !important;
-            }
-
-            #qrModalContent {
-                position: relative !important;
-                transform: none !important;
-                left: auto !important;
-                top: auto !important;
-                width: 350px !important;
-                margin: 0 auto;
-                padding: 2rem;
-                border: 1px solid #e2e8f0;
-                box-shadow: none !important;
-                display: block !important;
-                visibility: visible !important;
-            }
-
-            /* Hide UI controls */
-            #closeBtn, #saveBtn, .fas.fa-times { display: none !important; }
-            
-            /* Print Optimization */
-            #qrTrackingId { color: black !important; font-size: 1.2rem; }
-            .bg-slate-50 { background-color: white !important; }
-            
-            @page { 
-                size: auto;
-                margin: 0; 
-            }
-        }
-    </style>
     <link rel="stylesheet" href="../assets/styles/header.css"></link>
+    <link rel="stylesheet" href="../assets/styles/my_reports.css"></link>
     <link rel="stylesheet" href="../assets/styles/root.css"></link>
 </head>
 <body class="bg-slate-50 min-h-screen text-slate-900">
@@ -276,55 +209,7 @@
     <!-- Footer -->
     <?php require_once '../includes/footer.php'; ?>
 
-    <script>
-        function switchTab(tab) {
-            // Update Tab Styling
-            const tabs = ['my-reports', 'potential-matches'];
-            tabs.forEach(t => {
-                const el = document.getElementById(`tab-${t}`);
-                const content = document.getElementById(`content-${t}`);
-                if (t === tab) {
-                    el.classList.add('tab-active');
-                    el.classList.remove('text-slate-400');
-                    content.classList.remove('hidden');
-                } else {
-                    el.classList.remove('tab-active');
-                    el.classList.add('text-slate-400');
-                    content.classList.add('hidden');
-                }
-            });
-        }
-
-        /**
-         * Dynamic QR Modal Logic
-         * @param {string} trackingId - The unique ID for the turnover transaction
-         */
-        function openQRModal(trackingId) {
-            const qrImg = document.getElementById('qrImage');
-            const qrText = document.getElementById('qrTrackingId');
-            
-            // Generate QR code URL using the tracking ID
-            // Using goqr.me API for reliable generation
-            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(trackingId)}`;
-            
-            qrImg.src = qrUrl;
-            qrText.innerText = trackingId;
-
-            document.getElementById('qrModal').classList.remove('hidden');
-        }
-
-        function closeQRModal() {
-            document.getElementById('qrModal').classList.add('hidden');
-        }
-
-        // Close modal when clicking outside
-        window.onclick = function(event) {
-            const modal = document.getElementById('qrModal');
-            if (event.target == modal) {
-                closeQRModal();
-            }
-        }
-    </script>
+    <script src="../assets/scripts/qr_generator.js"></script>
     <script src="../assets/scripts/profile-dropdown.js"></script>
 </body>
 </html>
