@@ -202,7 +202,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <input type="password" name="password" required placeholder="••••••••" class="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition">
                         </div>
                         <div class="text-right mt-4">
-                            <a href="#" class="text-sm text-blue-600 hover:underline">Forgot password?</a>
+                            <a href="forgot_password.php" class="text-sm text-blue-600 hover:underline">Forgot password?</a>
                         </div>
                     </div>
 
