@@ -76,7 +76,7 @@
         <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
             <div class="flex border-b border-slate-100 bg-slate-50/50">
                 <button onclick="switchTab('my-reports')" id="tab-my-reports" class="px-8 py-5 text-sm font-bold transition-all tab-active">
-                    My Reports (3)
+                    My Reports (2)
                 </button>
                 <button onclick="switchTab('potential-matches')" id="tab-potential-matches" class="px-8 py-5 text-sm font-bold text-slate-400 hover:text-slate-600 transition-all border-b-3 border-transparent">
                     Potential Matches <span class="ml-2 bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full">1</span>

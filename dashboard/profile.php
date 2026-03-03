@@ -22,11 +22,11 @@
     <?php
         $user = [
             'name' => 'Abdul Montefalco',
-            'email' => 'johndoe@cmu.edu.ph',
-            'id_number' => '2023-10421',
+            'email' => 'abdul.montefalco@cityofmalabonuniversity.edu.ph',
+            'id_number' => '202600274',
             'department' => 'College of Computer Studies',
             'profile_pic' => 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
-            'joined_date' => 'Sept 2023'
+            'joined_date' => 'Jul 2026'
         ];
 
         $my_items = [
@@ -99,10 +99,10 @@
                 <!-- Actions -->
                 <div class="flex gap-3">
                     <button class="bg-white border border-gray-200 text-gray-700 px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-gray-50 transition shadow-sm">
-                        Edit Profile
+                        <a href="../dashboard/edit_profile.php">Edit Profile</a>
                     </button>
                     <button class="bg-cmu-blue text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:shadow-lg transition shadow-sm">
-                        Account Settings
+                        <a href="../dashboard/settings.php">Account Settings</a>
                     </button>
                 </div>
             </div>

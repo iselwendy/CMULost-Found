@@ -1,7 +1,7 @@
 <?php
 /**
  * CMU Lost & Found - Forgot Password Page
- * Handles password reset requests for university members.
+ * Handles password reset requests via University or Recovery Email.
  */
 
 session_start();
@@ -17,26 +17,23 @@ $message = "";
 $messageType = "info"; // info, success, error
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $email = trim($_POST['email'] ?? '');
+    $emailInput = trim($_POST['email'] ?? '');
 
-    if (!empty($email)) {
+    if (!empty($emailInput)) {
         try {
-            // Check if user exists
-            $stmt = $pdo->prepare("SELECT id, first_name FROM users WHERE email = ? LIMIT 1");
-            $stmt->execute([$email]);
+            // Check if user exists by primary university email OR recovery email
+            $stmt = $pdo->prepare("SELECT id, email, first_name FROM users WHERE email = ? OR recovery_email = ? LIMIT 1");
+            $stmt->execute([$emailInput, $emailInput]);
             $user = $stmt->fetch();
 
             if ($user) {
-                /* LOGIC: In a production environment, you would generate a unique token, 
-                   save it to a `password_resets` table, and send an email using PHPMailer.
-                   For this implementation, we simulate the success message.
+                /* LOGIC: Generate token and send email.
+                   In this simulation, we notify the user that a link is sent.
                 */
-                $message = "A reset link has been sent to your university email (" . htmlspecialchars($email) . "). Please check your inbox.";
+                $message = "A reset link has been sent to the email address associated with your account. Please check your inbox.";
                 $messageType = "success";
             } else {
-                // For security reasons, sometimes it's better to show the same message, 
-                // but here we notify if the email isn't in the system.
-                $message = "We couldn't find an account associated with that university email.";
+                $message = "We couldn't find an account associated with that email address.";
                 $messageType = "error";
             }
         } catch (PDOException $e) {
@@ -44,7 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $messageType = "error";
         }
     } else {
-        $message = "Please enter your university email address.";
+        $message = "Please enter your university or recovery email.";
         $messageType = "error";
     }
 }
@@ -73,15 +70,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <!-- Left Side: Instructional Branding -->
         <div class="hidden md:flex md:w-1/2 bg-cmu-blue p-12 flex-col justify-between text-white relative">
             <div class="z-10">
+                <!-- Dual Logo Section -->
                 <div class="flex gap-4 mb-8">
-                    <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center p-1">
-                        <img src="../assets/images/system-icon.png" alt="Logo" class="w-full h-full object-contain" onerror="this.src='https://ui-avatars.com/api/?name=LF&background=fff&color=003366';">
+                    <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-lg p-1">
+                        <img 
+                            src="../assets/images/system-icon.png" 
+                            alt="System Logo" 
+                            class="w-full h-full object-contain"
+                            onerror="this.src='https://ui-avatars.com/api/?name=LF&background=fff&color=003366';"
+                        >
+                    </div>
+                    <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-lg p-2">
+                        <img 
+                            src="../assets/images/cmu-logo.png" 
+                            alt="CMU Logo" 
+                            class="w-full h-full object-contain rounded-xl"
+                            onerror="this.src='https://ui-avatars.com/api/?name=CMU&background=fff&color=003366';"
+                        >
                     </div>
                 </div>
 
                 <h1 class="text-3xl font-bold mb-4">Recovery Portal</h1>
                 <p class="text-blue-100 text-lg leading-relaxed">
-                    Forgot your password? No worries. Enter your registered CMU email address and we'll send you instructions to reset it.
+                    Forgot your password? Enter your university email or your registered recovery email to reset your credentials.
                 </p>
             </div>
 
@@ -90,7 +101,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <i class="fas fa-info-circle mt-1 text-amber-400"></i>
                     <span>For security reasons, reset links expire after 24 hours. Please check your "Spam" or "Junk" folder if you don't see the email.</span>
                 </p>
+                <p class="text-sm flex items-start gap-3 mt-4">
+                    <i class="fas fa-shield-alt mt-1 text-amber-400"></i>
+                    <span>Identity verification is required. If you no longer have access to either email, please visit the Office of Student Affairs (OSA).</span>
+                </p>
             </div>
+
+            
             
             <div class="absolute bottom-0 left-0 w-full h-32 bg-gradient-to-t from-black/20 to-transparent"></div>
         </div>
@@ -100,8 +117,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             <div class="auth-card">
                 <div class="mb-8">
-                    <h2 class="text-2xl font-bold text-gray-800">Reset Password</h2>
-                    <p class="text-gray-500 mt-1">Provide your university email to continue.</p>
+                    <h2 class="text-2xl font-bold text-gray-800">Account Recovery</h2>
+                    <p class="text-gray-500 mt-1">Search for your account using your email.</p>
                 </div>
 
                 <?php if ($message): ?>
@@ -120,14 +137,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <?php if ($messageType !== 'success'): ?>
                     <form action="forgot_password.php" method="POST" class="space-y-6">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">University Email Address</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">University or Recovery Email</label>
                             <div class="relative">
                                 <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
-                                    <i class="fas fa-envelope"></i>
+                                    <i class="fas fa-user-shield"></i>
                                 </span>
-                                <input type="email" name="email" required placeholder="example@cmu.edu.ph" 
+                                <input type="email" name="email" required placeholder="email@cityofmalabonuniversity.edu.ph" 
                                     class="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition">
                             </div>
+                            <p class="mt-2 text-xs text-gray-400 italic">Example: @gmail.com or @cityofmalabonuniversity.edu.ph</p>
                         </div>
 
                         <button type="submit" class="w-full bg-cmu-blue text-white font-bold py-3 rounded-xl hover:bg-slate-800 transition shadow-lg">
@@ -135,9 +153,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </button>
                     </form>
                 <?php else: ?>
-                    <div class="text-center">
-                        <a href="auth.php" class="inline-block px-6 py-2 bg-gray-100 text-gray-700 font-semibold rounded-lg hover:bg-gray-200 transition">
-                            Return to Login
+                    <div class="text-center bg-gray-50 p-6 rounded-2xl border border-dashed border-gray-200">
+                        <i class="fas fa-paper-plane text-4xl text-cmu-blue mb-4"></i>
+                        <p class="text-gray-600 mb-6">If the email exists in our system, you will receive reset instructions shortly.</p>
+                        <a href="auth.php" class="inline-block px-8 py-3 bg-cmu-blue text-white font-bold rounded-xl hover:bg-slate-800 transition">
+                            Back to Login
                         </a>
                     </div>
                 <?php endif; ?>

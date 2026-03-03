@@ -98,7 +98,7 @@
                                         <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">CMU Email Address</label>
                                         <div class="relative">
                                             <i class="fas fa-university absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                                            <input type="email" value="abdul.montefalco@cmu.edu.ph" class="w-full pl-11 pr-4 py-3 bg-gray-100 border border-gray-200 rounded-xl text-gray-500 outline-none text-sm font-medium cursor-not-allowed" readonly>
+                                            <input type="email" value="abdul.montefalco@cityofmalabonuniversity.edu.ph" class="w-full pl-11 pr-4 py-3 bg-gray-100 border border-gray-200 rounded-xl text-gray-500 outline-none text-sm font-medium cursor-not-allowed" readonly>
                                         </div>
                                         <p class="text-[10px] text-gray-400 mt-1 italic">University email cannot be changed.</p>
                                     </div>

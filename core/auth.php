@@ -189,7 +189,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
                                 <i class="fas fa-envelope"></i>
                             </span>
-                            <input type="email" name="email" required placeholder="email@cmu.edu.ph" class="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition">
+                            <input type="email" name="email" required placeholder="email@cityofmalabonuniversity.edu.ph" class="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition">
                         </div>
                     </div>
 
