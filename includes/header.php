@@ -45,8 +45,8 @@ $current_page = basename($_SERVER['PHP_SELF']);
                                 <p class="text-sm font-bold text-gray-800">Abdul Montefalco</p>
                             </div>
                             <a href="../dashboard/profile.php" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition">
-                            <i class="fas fa-user-edit w-5 text-gray-400"></i>
-                            <span>Edit Profile</span>
+                            <i class="fas fa-user w-5 text-gray-400"></i>
+                            <span>View Profile</span>
                             </a>
                             <a href="../dashboard/my_reports.php" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition">
                             <i class="fas fa-clipboard-list w-5 text-gray-400"></i>

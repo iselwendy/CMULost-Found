@@ -76,7 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <img 
                             src="../assets/images/system-icon.png" 
                             alt="System Logo" 
-                            class="w-full h-full object-contain"
+                            class="w-full h-full object-contain rounded-xl"
                             onerror="this.src='https://ui-avatars.com/api/?name=LF&background=fff&color=003366';"
                         >
                     </div>
