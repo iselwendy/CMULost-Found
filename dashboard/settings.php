@@ -1,3 +1,26 @@
+<?php
+require_once '../core/auth_functions.php';
+
+// Fetch FRESH data from DB using the ID in the session
+$stmt = $pdo->prepare("SELECT * FROM users WHERE user_id = ?");
+$stmt->execute([$_SESSION['user_id']]);
+$freshUser = $stmt->fetch();
+
+$user = [
+    "user_id"         => $freshUser['user_id'],
+    "full_name"       => $freshUser['full_name'],
+    "cmu_email"       => $freshUser['cmu_email'],
+    "school_number"   => $freshUser['school_number'],
+    "department"      => $freshUser['department'],
+    "course_and_year" => $freshUser['course_and_year'],
+    "role"            => $freshUser['role'],
+    "phone_number"    => $freshUser['phone_number'],
+    "recovery_email"  => $freshUser['recovery_email'],
+    "created_at"      => date('M Y', strtotime($freshUser['created_at'])),
+    "profile_picture" => 'https://ui-avatars.com/api/?name=' . urlencode($freshUser['full_name']) . '&background=FFCC00&color=003366'
+];
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -13,6 +36,13 @@
 
     <!-- Navbar -->
     <?php require_once '../includes/header.php'; ?>
+
+    <?php if (isset($_GET['status']) && $_GET['status'] === 'updated'): ?>
+        <div id="success-alert" class="mb-6 p-4 bg-green-100 border border-green-200 text-green-700 rounded-xl flex items-center gap-3 transition-opacity duration-500">
+            <i class="fas fa-check-circle"></i>
+            <p class="text-sm font-bold">Profile updated successfully!</p>
+        </div>
+    <?php endif; ?>
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <div class="flex flex-col md:flex-row gap-8">
@@ -46,8 +76,8 @@
             <div class="flex-1 space-y-6">
                 
                 <!-- Profile Section -->
-                <section id="profile" class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                    <div class="p-6 border-b border-gray-50">
+                <section id="profile" class="bg-white rounded-2xl shadow-sm border border-gray-50 overflow-hidden">
+                    <div class="p-6 border-b border-gray-100">
                         <h3 class="text-lg font-bold text-gray-900">Profile Information</h3>
                         <p class="text-sm text-gray-500">Update your public profile and university details.</p>
                     </div>
@@ -56,7 +86,7 @@
                             <!-- Avatar Upload -->
                             <div class="flex items-center gap-6 pb-6 border-b border-gray-50">
                                 <div class="relative">
-                                    <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" alt="Avatar" class="w-20 h-20 rounded-2xl object-cover border-2 border-gray-100">
+                                    <img src="<?php echo htmlspecialchars($user['profile_picture']); ?>" alt="Avatar" class="w-20 h-20 rounded-2xl object-cover border-2 border-gray-100">
                                     <label class="absolute -bottom-2 -right-2 bg-cmu-blue text-white p-1.5 rounded-lg cursor-pointer shadow-md hover:scale-110 transition">
                                         <i class="fas fa-camera text-xs"></i>
                                         <input type="file" class="hidden">
@@ -69,24 +99,54 @@
                             </div>
 
                             <!-- Basic Info -->
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div class="md:col-span-2">
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                                <div class="md:col-span-4">
                                     <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Full Name</label>
-                                    <input type="text" value="Abdul Montefalco" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-cmu-blue outline-none transition text-sm font-medium">
+                                    <input type="text" value="<?php echo htmlspecialchars($user['full_name']); ?>" name="full_name" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-cmu-blue outline-none transition text-sm font-medium">
                                 </div>
-                                
-                                <div>
-                                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Department</label>
-                                    <select class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-cmu-blue outline-none transition text-sm font-medium">
-                                        <option selected>College of Computer Studies</option>
-                                        <option>College of Arts and Sciences</option>
-                                        <option>College of Agriculture</option>
-                                        <option>College of Nursing</option>
-                                    </select>
+
+                                <div class="space-y-2 md:col-span-2">
+                                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                                        Department / Office
+                                    </label>
+                                    <div class="relative">
+                                        <input type="text" value="<?php echo htmlspecialchars($user['department']); ?>" 
+                                            disabled 
+                                            class="w-full px-4 py-3 bg-gray-100 border border-gray-200 rounded-xl text-gray-500 text-sm font-medium appearance-none cursor-not-allowed">
+                                        <div class="absolute inset-y-0 right-4 flex items-center pointer-events-none text-gray-400">
+                                            <i class="fas fa-lock text-xs"></i>
+                                        </div>
+                                    </div>
+                                    <p class="text-[10px] text-gray-400 mt-1 italic">
+                                        * Contact OSA to update your official university department.
+                                    </p>
                                 </div>
-                                <div>
-                                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Course & Year</label>
-                                    <input type="text" value="BSIT 1A" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-cmu-blue outline-none transition text-sm font-medium">
+
+                                <div class="space-y-2 md:col-span-1">
+                                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                                        School Number
+                                    </label>
+                                    <div class="relative">
+                                        <input type="text" value="<?php echo htmlspecialchars($user['school_number']); ?>" disabled 
+                                            class="w-full px-4 py-3 bg-gray-100 border border-gray-200 rounded-xl text-gray-500 text-sm font-medium appearance-none cursor-not-allowed">
+                                        <div class="absolute inset-y-0 right-4 flex items-center pointer-events-none text-gray-400">
+                                            <i class="fas fa-lock text-xs"></i>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="space-y-2 md:col-span-1">
+                                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                                        Course & Year
+                                    </label>
+                                    <div class="relative">
+                                        <input type="text" value="<?php echo htmlspecialchars($user['course_and_year']); ?>" disabled 
+                                            class="w-full px-4 py-3 bg-gray-100 border border-gray-200 rounded-xl text-gray-500 text-sm font-medium appearance-none cursor-not-allowed">
+                                        </select>
+                                        <div class="absolute inset-y-0 right-4 flex items-center pointer-events-none text-gray-400">
+                                            <i class="fas fa-lock text-xs"></i>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
@@ -98,22 +158,28 @@
                                         <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">CMU Email Address</label>
                                         <div class="relative">
                                             <i class="fas fa-university absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                                            <input type="email" value="abdul.montefalco@cityofmalabonuniversity.edu.ph" class="w-full pl-11 pr-4 py-3 bg-gray-100 border border-gray-200 rounded-xl text-gray-500 outline-none text-sm font-medium cursor-not-allowed" readonly>
+                                            <input type="email" value="<?php echo htmlspecialchars($user['cmu_email'] ?? ''); ?>" class="w-full pl-11 pr-4 py-3 bg-gray-100 border border-gray-200 rounded-xl text-gray-500 outline-none text-sm font-medium cursor-not-allowed" readonly>
+                                            <div class="absolute inset-y-0 right-4 flex items-center pointer-events-none text-gray-400">
+                                                <i class="fas fa-lock text-xs"></i>
+                                            </div>
                                         </div>
-                                        <p class="text-[10px] text-gray-400 mt-1 italic">University email cannot be changed.</p>
                                     </div>
                                     <div>
                                         <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Secondary Email</label>
                                         <div class="relative">
                                             <i class="fas fa-envelope absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                                            <input type="email" placeholder="e.g. personal@gmail.com" class="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-cmu-blue outline-none transition text-sm font-medium">
+                                            <input type="email" name="recovery_email" placeholder="e.g. personal@gmail.com" required
+                                            value="<?php echo htmlspecialchars($user['recovery_email'] ?? ''); ?>"
+                                            class="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-cmu-blue outline-none transition text-sm font-medium">
                                         </div>
                                     </div>
                                     <div class="md:col-span-2">
                                         <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Phone Number</label>
                                         <div class="relative">
                                             <span class="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold text-gray-400">+63</span>
-                                            <input type="tel" placeholder="912 345 6789" class="w-full pl-14 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-cmu-blue outline-none transition text-sm font-medium">
+                                            <input type="tel" name="phone_number" placeholder="912 345 6789" required
+                                            value="<?php echo htmlspecialchars(ltrim($user['phone_number'] ?? '', '0')); ?>"
+                                            class="w-full pl-14 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-cmu-blue outline-none transition text-sm font-medium">
                                         </div>
                                         <p class="text-[10px] text-gray-400 mt-1">This will be used by OSA to contact you regarding matched items.</p>
                                     </div>
@@ -131,7 +197,7 @@
 
                 <!-- Security Section -->
                 <section id="security" class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                    <div class="p-6 border-b border-gray-50">
+                    <div class="p-6 border-b border-gray-100">
                         <h3 class="text-lg font-bold text-gray-900">Security & Password</h3>
                         <p class="text-sm text-gray-500">Manage your password and account protection.</p>
                     </div>
@@ -173,7 +239,7 @@
 
                 <!-- Notifications Section -->
                 <section id="notifications" class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                    <div class="p-6 border-b border-gray-50">
+                    <div class="p-6 border-b border-gray-100">
                         <h3 class="text-lg font-bold text-gray-900">Notifications</h3>
                         <p class="text-sm text-gray-500">Choose what updates you want to receive.</p>
                     </div>
@@ -221,5 +287,15 @@
     <?php require_once '../includes/footer.php'; ?>
 
     <script src="../assets/scripts/profile-dropdown.js"></script>
+    <script>
+        // Auto-hide success alert after 3 seconds
+        const successAlert = document.getElementById('success-alert');
+        if (successAlert) {
+            setTimeout(() => {
+                successAlert.style.opacity = '0';
+                setTimeout(() => successAlert.remove(), 500);
+            }, 3000);
+        }
+    </script>
 </body>
 </html>

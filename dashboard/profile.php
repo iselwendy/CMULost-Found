@@ -110,14 +110,12 @@ $my_items = [
                     </div>
                 </div>
 
-                <!-- Actions -->
-                <div class="flex gap-3">
-                    <button class="bg-white border border-gray-200 text-gray-700 px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-gray-50 transition shadow-sm">
-                        <a href="../dashboard/edit_profile.php">Edit Profile</a>
-                    </button>
-                    <button class="bg-cmu-blue text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:shadow-lg transition shadow-sm">
-                        <a href="../dashboard/settings.php">Account Settings</a>
-                    </button>
+                <div class="flex flex-wrap gap-3">
+                    <a href="../dashboard/settings.php" 
+                    class="inline-flex items-center justify-center gap-2 bg-cmu-blue text-white px-6 py-3 rounded-xl font-bold text-sm hover:bg-blue-800 hover:shadow-lg active:scale-95 transition-all duration-200 shadow-sm border border-transparent">
+                        <i class="fas fa-cog"></i>
+                        Account Settings
+                    </a>
                 </div>
             </div>
         </div>
