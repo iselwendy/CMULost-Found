@@ -8,7 +8,7 @@
 $host     = 'localhost';
 $dbname   = 'cmu_lost_found';
 $username = 'mariel'; // Default XAMPP username
-$password = '00112233';     // Default XAMPP password (empty)
+$password = '00112233';     // Default XAMPP password
 $charset  = 'utf8mb4';
 
 // Data Source Name

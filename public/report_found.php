@@ -1,3 +1,11 @@
+<?php
+require_once '../core/auth_functions.php';
+
+$stmt = $pdo->prepare("SELECT * FROM users WHERE user_id = ?");
+$user_id = $_SESSION['user_id'] ?? null; // Get user ID from session
+$stmt->execute([$user_id]);
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -37,10 +45,12 @@
                 <p class="text-slate-500 mt-1">Thank you for being a responsible CMU student! Your report helps return items to their rightful owners.</p>
             </header>
 
-            <form id="foundItemForm" action="../core/process_found.php" method="POST" enctype="multipart/form-data" class="space-y-6">
-                <!-- Status Tag -->
-                <input type="hidden" name="status" value="Pending Turnover">
-                
+            <form id="foundItemForm" action="process_report.php" method="POST" enctype="multipart/form-data" class="space-y-6">
+                <!-- Hidden Field for User Association -->
+                <input type="hidden" name="reporter_id" value="<?php echo $user_id; ?>">
+                <input type="hidden" name="report_type" value="found">
+
+
                 <!-- Step 1: Physical Discovery -->
                 <section class="space-y-4">
                     <h3 class="text-sm font-bold uppercase tracking-wider text-slate-400 border-b pb-2 flex justify-between items-center">
@@ -69,8 +79,8 @@
                         </div>
                         <div>
                             <label class="block text-sm font-semibold mb-1.5 text-slate-700">Date Found</label>
-                            <input type="date" name="date_found" required 
-                                   class="w-full px-4 py-2.5 rounded-xl border border-slate-200 outline-none">
+                            <input type="datetime-local" name="date_found" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 outline-none">
+
                         </div>
                     </div>
 
@@ -83,14 +93,6 @@
                                    class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 outline-none">
                         </div>
                     </div>
-
-                    <!-- <div>
-                        <label class="block text-sm font-semibold mb-1.5 text-slate-700">Public Description</label>
-                        <textarea name="description" rows="3" required
-                                  placeholder="Provide a general description that helps the owner recognize it. (e.g. 'Blue AquaFlask with some anime stickers')"
-                                  class="w-full px-4 py-2.5 rounded-xl border border-slate-200 outline-none resize-none focus:border-cmu-blue transition-all"></textarea>
-                        <p class="text-[10px] text-slate-400 mt-1 uppercase tracking-tight">This description will be visible in the Public Gallery.</p>
-                    </div> -->
                 </section>
 
                 <!-- Step 2: Verification Security -->
@@ -109,29 +111,45 @@
 
                     <div>
                         <label class="block text-sm font-semibold mb-1.5 text-slate-700">Identifying Details</label>
-                        <textarea name="confidential_mark" rows="3" required
+                        <textarea name="hidden_marks" rows="3" required
                                   placeholder="e.g. 'The ID inside says Juan Dela Cruz', 'The phone lockscreen is a picture of a dog'"
                                   class="w-full px-4 py-2.5 rounded-xl border border-slate-200 outline-none resize-none focus:border-cmu-blue transition-all"></textarea>
                     </div>
 
+                    <!-- Enhanced Upload Box -->
                     <div>
-                        <label class="block text-sm font-semibold mb-1.5 text-slate-700 text-indigo-600">Reference Photo <span class="text-xs font-normal text-slate-400">(Required)</span></label>
-                        <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-slate-200 border-dashed rounded-xl hover:border-cmu-blue transition-colors cursor-pointer group relative">
-                            <div class="space-y-1 text-center" id="uploadPlaceholder">
-                                <i class="fas fa-cloud-upload-alt text-slate-300 text-3xl mb-2 group-hover:text-cmu-blue transition-colors"></i>
+                        <label class="block text-sm font-semibold mb-1.5 text-slate-700 text-indigo-600">Reference Photo</label>
+                        <div id="dropZone" class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-slate-200 border-dashed rounded-xl hover:border-indigo-400 transition-all cursor-pointer group relative overflow-hidden">
+                            
+                            <!-- State 1: Empty / Placeholder -->
+                            <div class="space-y-1 text-center transition-opacity duration-300" id="uploadPlaceholder">
+                                <i class="fas fa-cloud-upload-alt text-slate-300 text-3xl mb-2 group-hover:text-indigo-500 transition-colors"></i>
                                 <div class="flex text-sm text-slate-600">
-                                    <label for="file-upload" class="relative cursor-pointer bg-white rounded-md font-medium text-cmu-blue hover:underline">
+                                    <label class="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:underline">
                                         <span>Click to upload</span>
-                                        <input id="file-upload" name="photo" type="file" class="sr-only" accept="image/*" required>
+                                        <input id="file-upload" name="photo" type="file" class="sr-only" accept="image/*">
                                     </label>
                                     <p class="pl-1 text-slate-400">or drag and drop</p>
                                 </div>
                                 <p class="text-[10px] text-slate-400 uppercase tracking-widest">PNG, JPG up to 5MB</p>
                             </div>
-                            <!-- Image Preview Container -->
-                            <div id="imagePreview" class="hidden absolute inset-0 bg-white p-2 rounded-xl">
+
+                            <!-- State 2: Attached (Hidden by default) -->
+                            <div id="attachedStatus" class="hidden absolute inset-0 bg-white/90 flex flex-col items-center justify-center p-4 text-center z-10 animate-in fade-in duration-300">
+                                <div class="w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-2">
+                                    <i class="fas fa-check"></i>
+                                </div>
+                                <p class="text-sm font-bold text-slate-800" id="fileNameDisplay">image.jpg</p>
+                                <p class="text-xs text-slate-500">File attached successfully</p>
+                                <button type="button" onclick="clearPreview()" class="mt-3 text-xs text-red-500 font-semibold hover:underline">
+                                    Change photo
+                                </button>
+                            </div>
+
+                            <!-- Image Preview Layer (Optional visual) -->
+                            <div id="imagePreview" class="hidden absolute inset-0 bg-white p-2">
                                 <img src="" alt="Preview" class="w-full h-full object-contain rounded-lg">
-                                <button type="button" onclick="clearPreview()" class="absolute top-4 right-4 bg-red-500 text-white w-8 h-8 rounded-full shadow-lg">
+                                <button type="button" onclick="clearPreview()" class="absolute top-2 right-2 bg-red-500 text-white w-6 h-6 rounded-full shadow-lg flex items-center justify-center text-xs">
                                     <i class="fas fa-times"></i>
                                 </button>
                             </div>
@@ -181,44 +199,7 @@
     <!-- Footer -->
     <?php require_once '../includes/footer.php'; ?>
 
-    <script>
-        // Image Preview Logic
-        const fileUpload = document.getElementById('file-upload');
-        const previewContainer = document.getElementById('imagePreview');
-        const placeholder = document.getElementById('uploadPlaceholder');
-        const previewImg = previewContainer.querySelector('img');
-
-        fileUpload.onchange = function() {
-            const [file] = this.files;
-            if (file) {
-                previewImg.src = URL.createObjectURL(file);
-                previewContainer.classList.remove('hidden');
-                placeholder.classList.add('opacity-0');
-            }
-        };
-
-        function clearPreview() {
-            fileUpload.value = '';
-            previewContainer.classList.add('hidden');
-            placeholder.classList.remove('opacity-0');
-        }
-
-        // Handle Form Submission Mock (Showing Modal)
-        const form = document.getElementById('foundItemForm');
-        const modal = document.getElementById('successModal');
-        const modalContent = document.getElementById('modalContent');
-
-        form.onsubmit = function(e) {
-            e.preventDefault(); // Prevent actual submission for demo purposes
-            
-            // Show Modal
-            modal.classList.remove('hidden');
-            setTimeout(() => {
-                modalContent.classList.remove('scale-95', 'opacity-0');
-                modalContent.classList.add('scale-100', 'opacity-100');
-            }, 10);
-        };
-    </script>
     <script src="../assets/scripts/profile-dropdown.js"></script>
+    <script src="../assets/scripts/item_image_upload.js"></script>
 </body>
 </html>

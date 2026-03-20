@@ -12,46 +12,46 @@ $selected_location = isset($_GET['location']) ? $_GET['location'] : 'All Locatio
 
 // Mock data for the gallery items
 $items = [
-    [
-        'id' => 1,
-        'title' => 'Black Leather Wallet',
-        'category' => 'Valuables',
-        'location' => 'Main Library',
-        'date' => 'Jan 24, 2026',
-        'status' => 'In OSA Custody',
-        'type' => 'found',
-        'image' => 'https://images.unsplash.com/photo-1627123424574-724758594e93?auto=format&fit=crop&w=300&q=80'
-    ],
-    [
-        'id' => 2,
-        'title' => 'Calculus Textbook',
-        'category' => 'Books',
-        'location' => 'Innovation Bldg',
-        'date' => 'Jan 26, 2026',
-        'status' => 'Pending Turnover',
-        'type' => 'found',
-        'image' => 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&w=300&q=80'
-    ],
-    [
-        'id' => 3,
-        'title' => 'Blue Water Bottle',
-        'category' => 'Personal Items',
-        'location' => 'University Canteen',
-        'date' => 'Jan 21, 2026',
-        'status' => 'Lost Report',
-        'type' => 'lost',
-        'image' => 'https://images.unsplash.com/photo-1631201553014-776760c89381?auto=format&fit=crop&w=300&q=80'
-    ],
-    [
-        'id' => 4,
-        'title' => 'Silver Earbuds',
-        'category' => 'Electronics',
-        'location' => 'Quadrangle',
-        'date' => 'Jan 25, 2026',
-        'status' => 'In OSA Custody',
-        'type' => 'found',
-        'image' => 'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&w=300&q=80'
-    ]
+    // [
+    //     'id' => 1,
+    //     'title' => 'Black Leather Wallet',
+    //     'category' => 'Valuables',
+    //     'location' => 'Main Library',
+    //     'date' => 'Jan 24, 2026',
+    //     'status' => 'In OSA Custody',
+    //     'type' => 'found',
+    //     'image' => 'https://images.unsplash.com/photo-1627123424574-724758594e93?auto=format&fit=crop&w=300&q=80'
+    // ],
+    // [
+    //     'id' => 2,
+    //     'title' => 'Calculus Textbook',
+    //     'category' => 'Books',
+    //     'location' => 'Innovation Bldg',
+    //     'date' => 'Jan 26, 2026',
+    //     'status' => 'Pending Turnover',
+    //     'type' => 'found',
+    //     'image' => 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&w=300&q=80'
+    // ],
+    // [
+    //     'id' => 3,
+    //     'title' => 'Blue Water Bottle',
+    //     'category' => 'Personal Items',
+    //     'location' => 'University Canteen',
+    //     'date' => 'Jan 21, 2026',
+    //     'status' => 'Lost Report',
+    //     'type' => 'lost',
+    //     'image' => 'https://images.unsplash.com/photo-1631201553014-776760c89381?auto=format&fit=crop&w=300&q=80'
+    // ],
+    // [
+    //     'id' => 4,
+    //     'title' => 'Silver Earbuds',
+    //     'category' => 'Electronics',
+    //     'location' => 'Quadrangle',
+    //     'date' => 'Jan 25, 2026',
+    //     'status' => 'In OSA Custody',
+    //     'type' => 'found',
+    //     'image' => 'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&w=300&q=80'
+    // ]
 ];
 
 // Simple filter logic for demonstration
