@@ -107,12 +107,12 @@
                 <section class="space-y-4 pt-4">
                     <div class="flex items-center gap-2 border-b pb-2">
                         <h3 class="text-sm font-bold uppercase tracking-wider text-slate-400">Private Verification Marks</h3>
-                        <span class="text-[10px] bg-amber-500 text-white px-2 py-0.5 rounded-full font-bold">REDACTED</span>
+                        <span class="text-[10px] bg-amber-500 text-white px-2 py-0.5 rounded-full font-bold">REDACTED FROM GALLERY</span>
                     </div>
                     
                     <p class="text-xs text-slate-500 italic bg-slate-100 p-3 rounded-lg border-l-4 border-indigo-500">
                         <i class="fas fa-user-shield mr-1"></i>
-                        <strong>Privacy Guard:</strong> These details are <u>NOT</u> shown in the public gallery. They are used by the OSA Admin to verify your ownership during the claim interview.
+                        <strong>Privacy Guard:</strong> These details are <u>NOT</u> shown in the public gallery. They are used by the SAO Admin to verify your ownership during the claim interview and to improve the matching process.
                     </p>
                     
                     <div>

@@ -44,15 +44,15 @@
                 <!-- Step 1: Physical Discovery -->
                 <section class="space-y-4">
                     <h3 class="text-sm font-bold uppercase tracking-wider text-slate-400 border-b pb-2 flex justify-between items-center">
-                        <span>General Discovery Details</span>
-                        <i class="fas fa-eye text-xs"></i>
+                        <span>Public Information</span>
+                        <i class="fas fa-globe-asia text-xs"></i>
                     </h3>
                     
                     <div>
-                        <label class="block text-sm font-semibold mb-1.5 text-slate-700">What did you find?</label>
-                        <input type="text" name="title" required 
-                               placeholder="e.g. Silver Keychain with 3 keys"
-                               class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-cmu-blue transition-all">
+                        <label class="block text-sm font-semibold mb-1.5 text-slate-700">Item Name / Title</label>
+                        <input type="text" name="title" id="itemTitle" required 
+                               placeholder="e.g. Black Leather Wallet"
+                               class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all">
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -84,19 +84,19 @@
                         </div>
                     </div>
 
-                    <div>
+                    <!-- <div>
                         <label class="block text-sm font-semibold mb-1.5 text-slate-700">Public Description</label>
                         <textarea name="description" rows="3" required
                                   placeholder="Provide a general description that helps the owner recognize it. (e.g. 'Blue AquaFlask with some anime stickers')"
                                   class="w-full px-4 py-2.5 rounded-xl border border-slate-200 outline-none resize-none focus:border-cmu-blue transition-all"></textarea>
                         <p class="text-[10px] text-slate-400 mt-1 uppercase tracking-tight">This description will be visible in the Public Gallery.</p>
-                    </div>
+                    </div> -->
                 </section>
 
                 <!-- Step 2: Verification Security -->
                 <section class="space-y-4 pt-4">
                     <div class="flex items-center gap-2 border-b pb-2">
-                        <h3 class="text-sm font-bold uppercase tracking-wider text-slate-400">Security & Privacy</h3>
+                        <h3 class="text-sm font-bold uppercase tracking-wider text-slate-400">Private Verification Marks</h3>
                         <span class="text-[10px] bg-amber-500 text-white px-2 py-0.5 rounded-full font-bold">REDACTED FROM GALLERY</span>
                     </div>
 

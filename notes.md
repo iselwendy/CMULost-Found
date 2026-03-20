@@ -5,4 +5,4 @@ pati yung "view details" sa gallery page, gawin ding modal na lang
 
 ### Maybe tanggalin na lang yung 'edit profile' sa view profile kasi na sa account settings na siya???
 
-- Yung phone number and email sa settings.php is hindi naka-'required'. But since mahalaga tong phone number, before makapag submit ng lost report yung user is dapat malagay niya muna yung phone number niya and email.
+- before makapag submit ng lost report yung user is dapat malagay niya muna yung phone number niya and email.
