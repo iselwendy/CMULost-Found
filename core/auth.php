@@ -1,9 +1,4 @@
 <?php
-/**
- * CMU Lost & Found - Authentication Page
- * Integrated with database for real login functionality.
- */
-
 // Start the session to store user data
 session_set_cookie_params([
     'path' => '/',
@@ -13,7 +8,7 @@ session_start();
 
 // Redirect if already logged in
 if (isset($_SESSION['user_id'])) {
-    if ($_SESSION['user_role'] === 'admin') {
+    if ($_SESSION['role'] === 'admin') {
         header("Location: ../admin/dashboard.php");
     } else {
         header("Location: ../public/index.php");
@@ -30,13 +25,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
     
     if ($action === 'login') {
-        $email = trim($_POST['email']);
+        $email = trim($_POST['cmu_email']);
         $password = $_POST['password'];
 
         if (!empty($email) && !empty($password)) {
             try {
                 // Fetch user by email
-                $stmt = $pdo->prepare("SELECT * FROM users WHERE email = ? LIMIT 1");
+                $stmt = $pdo->prepare("SELECT * FROM users WHERE cmu_email = ? LIMIT 1");
                 $stmt->execute([$email]);
                 $user = $stmt->fetch();
 
@@ -46,14 +41,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     session_regenerate_id(true);
 
                     // Store essential user data in session
-                    $_SESSION['user_id'] = $user['id'];
-                    $_SESSION['unique_id'] = $user['unique_id'];
-                    $_SESSION['user_name'] = $user['first_name'] . ' ' . $user['last_name'];
-                    $_SESSION['user_role'] = $user['role']; // 'admin', 'faculty', or 'student'
-                    $_SESSION['user_email'] = $user['email'];
+                    $_SESSION['user_id'] = $user['user_id'];
+                    $_SESSION['full_name'] = $user['full_name'];
+                    $_SESSION['school_number'] = $user['school_number'];
+                    $_SESSION['role'] = $user['role']; // 'admin', 'faculty', or 'student'
+                    $_SESSION['cmu_email'] = $user['cmu_mail'];
 
                     // Role-Based Redirection
-                    if ($_SESSION['user_role'] === 'admin') {
+                    if ($_SESSION['role'] === 'admin') {
                         // Redirect to the Admin Dashboard (Canvas)
                         header("Location: ../admin/dashboard.php");
                     } else {
@@ -149,7 +144,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
                     <div>
                         <h4 class="font-semibold">Secure Verification</h4>
-                        <p class="text-xs text-blue-200">SSO Integrated Authentication</p>
+                        <p class="text-xs text-blue-200">Standard Secure Login</p>
                     </div>
                 </div>
                 <div class="flex items-center space-x-4">
@@ -189,7 +184,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
                                 <i class="fas fa-envelope"></i>
                             </span>
-                            <input type="email" name="email" required placeholder="email@cityofmalabonuniversity.edu.ph" class="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition">
+                            <input type="email" name="cmu_email" required placeholder="email@cityofmalabonuniversity.edu.ph" class="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition">
                         </div>
                     </div>
 
