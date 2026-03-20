@@ -3,9 +3,30 @@ require_once '../core/auth_functions.php';
 
 $current_page = basename($_SERVER['PHP_SELF']);
 
-if (!isset($_SESSION['user_id']) && $current_page !== 'index.php') {
-    header("Location: ../core/auth.php");
-    exit();
+if (isset($_SESSION['user_id'])) {
+    try {
+        $stmt = $pdo->prepare("SELECT full_name, role FROM users WHERE user_id = ? LIMIT 1");
+        $stmt->execute([$_SESSION['user_id']]);
+        $freshUser = $stmt->fetch();
+
+        if ($freshUser) {
+            $user_display_name = $freshUser['full_name'];
+            $user_role = $freshUser['role'];
+            
+            $_SESSION['full_name'] = $freshUser['full_name'];
+            $_SESSION['role'] = $freshUser['role'];
+        }
+    } catch (PDOException $e) {
+        $user_display_name = $_SESSION['full_name'] ?? 'Guest';
+        $user_role = $_SESSION['role'] ?? 'Visitor';
+    }
+} else {
+    $user_display_name = 'Guest';
+    $user_role = 'Visitor';
+    if ($current_page !== 'index.php') {
+        header("Location: ../core/auth.php");
+        exit();
+    }
 }
 ?>
 
@@ -39,17 +60,17 @@ if (!isset($_SESSION['user_id']) && $current_page !== 'index.php') {
                 <div class="flex items-center space-x-4 relative">
                     <div class="text-right hidden sm:block">
                         <p class="text-xs text-blue-200">Logged in as</p>
-                        <p class="text-sm font-semibold"><?php echo isset($_SESSION['full_name']) ? htmlspecialchars($_SESSION['full_name']) : ''; ?></p>
+                        <p class="text-sm font-semibold"><?php echo isset($user_display_name) ? htmlspecialchars($user_display_name) : 'Guest'; ?></p>
                     </div>
                     <div class="relative">
                         <button id="userMenuBtn" class="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center hover:bg-white/20 transition focus:outline-none">
-                        <i class="fas fa-user-circle text-xl"></i>
+                        <img src="<?php echo isset($_SESSION['profile_picture']) ? htmlspecialchars($_SESSION['profile_picture']) : 'https://ui-avatars.com/api/?name=' . (isset($user_display_name) ? urlencode($user_display_name) : 'Guest') . '&background=FFCC00&color=003366'; ?>" alt="Profile" class="w-8 h-8 rounded-full object-cover">
                         </button>
                         <!-- Dropdown Menu -->
                         <div id="userDropdown" class="absolute right-0 mt-3 w-56 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-50">
                             <div class="px-4 py-3 border-b border-gray-50 md:hidden">
                                 <p class="text-xs text-gray-400">Logged in as</p>
-                                <p class="text-sm font-bold text-gray-800"><?php echo isset($_SESSION['full_name']) ? htmlspecialchars($_SESSION['full_name']) : ''; ?></p>
+                                <p class="text-sm font-bold text-gray-800"><?php echo isset($user_display_name) ? htmlspecialchars($user_display_name) : 'Guest'; ?></p>
                             </div>
                             <a href="../dashboard/profile.php" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition">
                             <i class="fas fa-user w-5 text-gray-400"></i>

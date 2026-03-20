@@ -21,8 +21,12 @@ function handleLogin($pdo) {
                 session_regenerate_id(true);
                 $_SESSION['user_id'] = $user['user_id'];
                 $_SESSION['full_name'] = $user['full_name'];
+                $_SESSION['department'] = $user['department'];
+                $_SESSION['school_number'] = $user['school_number'];
+                $_SESSION['course_and_year'] = $user['course_and_year'];
                 $_SESSION['role'] = $user['role']; 
                 $_SESSION['cmu_email'] = $user['cmu_email'];
+                $_SESSION['created_at'] = date('M Y', strtotime($user['created_at']));
 
                 $location = ($user['role'] === 'admin') ? "../admin/dashboard.php" : "../public/index.php";
                 header("Location: $location");

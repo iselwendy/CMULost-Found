@@ -1,3 +1,47 @@
+<?php
+require_once '../core/auth_functions.php';
+
+// Fetch FRESH data from DB using the ID in the session
+$stmt = $pdo->prepare("SELECT * FROM users WHERE user_id = ?");
+$stmt->execute([$_SESSION['user_id']]);
+$freshUser = $stmt->fetch();
+
+$user = [
+    "user_id"         => $freshUser['user_id'],
+    "full_name"       => $freshUser['full_name'],
+    "cmu_email"       => $freshUser['cmu_email'],
+    "school_number"   => $freshUser['school_number'],
+    "department"      => $freshUser['department'],
+    "course_and_year" => $freshUser['course_and_year'],
+    "role"            => $freshUser['role'],
+    "created_at"      => date('M Y', strtotime($freshUser['created_at'])),
+    "profile_picture" => 'https://ui-avatars.com/api/?name=' . urlencode($freshUser['full_name']) . '&background=FFCC00&color=003366'
+];
+
+
+$my_items = [
+    [
+        'id' => 101,
+        'title' => 'Scientific Calculator',
+        'category' => 'Electronics',
+        'location' => 'Room 302, CAS Bldg',
+        'date' => 'Feb 12, 2026',
+        'status' => 'Returned',
+        'type' => 'found'
+    ],
+    [
+        'id' => 102,
+        'title' => 'Keys with Blue Keychain',
+        'category' => 'Valuables',
+        'location' => 'Grandstand',
+        'date' => 'Feb 18, 2026',
+        'status' => 'In OSA Custody',
+        'type' => 'found'
+    ]
+];
+?>
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -17,40 +61,6 @@
     <link rel="stylesheet" href="../assets/styles/root.css"></link>
 </head>
 <body class="bg-gray-100 min-h-screen">
-
-    <!-- Mock PHP Logic (Equivalent to the Gallery logic provided) -->
-    <?php
-        $user = [
-            'name' => 'Abdul Montefalco',
-            'email' => 'abdul.montefalco@cityofmalabonuniversity.edu.ph',
-            'id_number' => '202600274',
-            'department' => 'College of Computer Studies',
-            'profile_pic' => 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
-            'joined_date' => 'Jul 2026'
-        ];
-
-        $my_items = [
-            [
-                'id' => 101,
-                'title' => 'Scientific Calculator',
-                'category' => 'Electronics',
-                'location' => 'Room 302, CAS Bldg',
-                'date' => 'Feb 12, 2026',
-                'status' => 'Returned',
-                'type' => 'found'
-            ],
-            [
-                'id' => 102,
-                'title' => 'Keys with Blue Keychain',
-                'category' => 'Valuables',
-                'location' => 'Grandstand',
-                'date' => 'Feb 18, 2026',
-                'status' => 'In OSA Custody',
-                'type' => 'found'
-            ]
-        ];
-    ?>
-
     <!-- Navbar -->
     <?php require_once '../includes/header.php'; ?>
 
@@ -59,25 +69,29 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
             <div class="flex flex-col md:flex-row items-center md:items-start gap-8">
                 <!-- Profile Image -->
-                <div class="relative">
-                    <div class="w-32 h-32 rounded-2xl overflow-hidden border-4 border-white shadow-xl">
-                        <img src="<?php echo $user['profile_pic']; ?>" class="w-full h-full object-cover">
+                <div class="relative group">
+                    <div class="w-32 h-32 rounded-2xl overflow-hidden border-4 border-white shadow-xl bg-gray-100">
+                        <img id="profilePreview" 
+                            src="<?php echo !empty($user['profile_picture']) ? $user['profile_picture'] : 'https://ui-avatars.com/api/?name=' . urlencode($user['full_name']) . '&background=FFCC00&color=003366'; ?>" 
+                            class="w-full h-full object-cover">
                     </div>
-                    <button class="absolute -bottom-2 -right-2 bg-white p-2 rounded-lg shadow-md border border-gray-100 text-gray-600 hover:text-cmu-blue transition">
+
+                    <label for="profile_upload" class="absolute -bottom-2 -right-2 bg-white p-2 rounded-lg shadow-md border border-gray-100 text-gray-600 hover:text-cmu-blue transition cursor-pointer hover:scale-110">
                         <i class="fas fa-camera"></i>
-                    </button>
+                        <input type="file" id="profile_upload" name="profile_picture" class="hidden" accept="image/*" onchange="previewImage(this)">
+                    </label>
                 </div>
 
                 <!-- User Info -->
                 <div class="flex-1 text-center md:text-left">
                     <div class="flex flex-col md:flex-row md:items-center gap-3 mb-2">
-                        <h1 class="text-3xl font-bold text-gray-900"><?php echo $user['name']; ?></h1>
-                        <span class="px-3 py-1 bg-blue-50 text-cmu-blue text-xs font-bold rounded-full border border-blue-100 uppercase tracking-wider">Student</span>
+                        <h1 class="text-3xl font-bold text-gray-900"><?php echo $user['full_name']; ?></h1>
+                        <span class="px-3 py-1 bg-blue-50 text-cmu-blue text-xs font-bold rounded-full border border-blue-100 uppercase tracking-wider"><?php echo $user['role']; ?></span>
                     </div>
                     <p class="text-gray-500 flex items-center justify-center md:justify-start gap-2 mb-4">
-                        <i class="far fa-envelope"></i> <?php echo $user['email']; ?>
+                        <i class="far fa-envelope"></i> <?php echo $user['cmu_email']; ?>
                         <span class="text-gray-300">|</span>
-                        <i class="far fa-id-badge"></i> <?php echo $user['id_number']; ?>
+                        <i class="far fa-id-badge"></i> <?php echo $user['school_number']; ?>
                     </p>
                     
                     <div class="flex flex-wrap justify-center md:justify-start gap-4">
@@ -91,7 +105,7 @@
                         </div>
                         <div class="bg-gray-50 px-4 py-2 rounded-xl border border-gray-100">
                             <p class="text-[10px] uppercase text-gray-400 font-bold leading-none mb-1">Member Since</p>
-                            <p class="text-lg font-bold text-gray-800"><?php echo $user['joined_date']; ?></p>
+                            <p class="text-lg font-bold text-gray-800"><?php echo $user['created_at']; ?></p>
                         </div>
                     </div>
                 </div>
@@ -124,7 +138,7 @@
                         </div>
                         <div>
                             <p class="text-xs text-gray-400 font-medium mb-1">Course & Year</p>
-                            <p class="text-gray-800 font-semibold">BSIT 1A</p>
+                            <p class="text-gray-800 font-semibold"><?php echo $user['course_and_year']; ?></p>
                         </div>
                         <div class="pt-4 border-t border-gray-50">
                             <button class="text-cmu-blue text-sm font-bold hover:underline">
