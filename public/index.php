@@ -9,7 +9,7 @@ require_once '../core/db_config.php';
 
 // 2. Initialize Filters from URL Parameters
 $view_mode = isset($_GET['view']) && $_GET['view'] === 'lost' ? 'lost' : 'found'; 
-$search_query = isset($_GET['search']) ? $_GET['search'] : '';
+$search_query = isset($_GET['search']) ? trim($_GET['search']) : '';
 $selected_category = isset($_GET['category']) ? $_GET['category'] : 'All Categories';
 $selected_location = isset($_GET['location']) ? $_GET['location'] : 'All Locations';
 $selected_time = isset($_GET['time']) ? $_GET['time'] : 'Anytime';
@@ -64,8 +64,9 @@ try {
 
     // Apply Search Filter
     if (!empty($search_query)) {
-        $sql .= " AND (item_name LIKE :search OR description LIKE :search)";
-        $params[':search'] = '%' . $search_query . '%';
+        $sql .= " AND (item_name LIKE :search1 OR description LIKE :search2)";
+        $params[':search1'] = '%' . $search_query . '%';
+        $params[':search2'] = '%' . $search_query . '%';
     }
 
     // Apply Category Filter
@@ -117,7 +118,7 @@ try {
     <?php require_once '../includes/header.php'; ?>
 
     <!-- Header Section -->
-    <div class="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
+    <div class="bg-white border-b border-gray-200 top-0 z-10 shadow-sm">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
             <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
@@ -148,7 +149,7 @@ try {
                     <!-- Smart Filter Dropdowns -->
                     <div class="flex flex-wrap md:flex-nowrap gap-3">
                         <div class="relative w-full md:w-48">
-                            <select name="category" onchange="this.form.submit();" class="filter-select w-full pl-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 outline-none focus:ring-2 focus:ring-cmu-blue transition cursor-pointer">
+                            <select name="category" class="filter-select w-full pl-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 outline-none focus:ring-2 focus:ring-cmu-blue transition cursor-pointer">
                                 <option <?php echo $selected_category == 'All Categories' ? 'selected' : ''; ?>>All Categories</option>
                                 <option <?php echo $selected_category == 'Electronics' ? 'selected' : ''; ?>>Electronics</option>
                                 <option <?php echo $selected_category == 'Valuables' ? 'selected' : ''; ?>>Valuables</option>
@@ -161,7 +162,7 @@ try {
                         </div>
 
                         <div class="relative w-full md:w-48">
-                            <select name="location" onchange="this.form.submit();" class="filter-select w-full pl-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 outline-none focus:ring-2 focus:ring-cmu-blue transition cursor-pointer">
+                            <select name="location" class="filter-select w-full pl-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 outline-none focus:ring-2 focus:ring-cmu-blue transition cursor-pointer">
                                 <option <?php echo $selected_location == 'All Locations' ? 'selected' : ''; ?>>All Locations</option>
                                 <option <?php echo $selected_location == 'Main Library' ? 'selected' : ''; ?>>Main Library</option>
                                 <option <?php echo $selected_location == 'Innovation Bldg' ? 'selected' : ''; ?>>Innovation Bldg</option>
@@ -171,23 +172,30 @@ try {
                         </div>
 
                         <div class="relative w-full md:w-48">
-                            <select name="time" onchange="this.form.submit();" class="filter-select w-full pl-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 outline-none focus:ring-2 focus:ring-cmu-blue transition cursor-pointer">
+                            <select name="time" class="filter-select w-full pl-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 outline-none focus:ring-2 focus:ring-cmu-blue transition cursor-pointer">
                                 <option <?php echo $selected_time == 'Anytime' ? 'selected' : ''; ?>>Anytime</option>
                                 <option <?php echo $selected_time == 'Today' ? 'selected' : ''; ?>>Today</option>
                                 <option <?php echo $selected_time == 'Last 7 Days' ? 'selected' : ''; ?>>Last 7 Days</option>
                             </select>
                         </div>
+
+                        <!-- Manual Search Button if user doesn't press Enter -->
+                        <button type="submit" class="bg-cmu-blue text-white px-6  rounded-xl font-bold hover:bg-opacity-90 transition">
+                            Filter
+                        </button>
                     </div>
                 </div>
 
                 <!-- Toggle -->
                 <div class="flex bg-gray-100 p-1 rounded-xl w-fit">
-                    <button type="submit" name="view" value="found" class="px-6 py-2 rounded-lg text-sm font-bold transition <?php echo $view_mode === 'found' ? 'bg-white text-cmu-blue shadow-sm' : 'text-gray-500'; ?>">
+                    <a href="?view=found&search=<?php echo urlencode($search_query); ?>&category=<?php echo urlencode($selected_category); ?>&location=<?php echo urlencode($selected_location); ?>&time=<?php echo urlencode($selected_time); ?>" 
+                    class="px-6 py-2 rounded-lg text-sm font-bold transition <?php echo $view_mode === 'found' ? 'bg-white text-cmu-blue shadow-sm' : 'text-gray-500'; ?>">
                         Found Items
-                    </button>
-                    <button type="submit" name="view" value="lost" class="px-6 py-2 rounded-lg text-sm font-bold transition <?php echo $view_mode === 'lost' ? 'bg-white text-cmu-blue shadow-sm' : 'text-gray-500'; ?>">
+                    </a>
+                    <a href="?view=lost&search=<?php echo urlencode($search_query); ?>&category=<?php echo urlencode($selected_category); ?>&location=<?php echo urlencode($selected_location); ?>&time=<?php echo urlencode($selected_time); ?>" 
+                    class="px-6 py-2 rounded-lg text-sm font-bold transition <?php echo $view_mode === 'lost' ? 'bg-white text-cmu-blue shadow-sm' : 'text-gray-500'; ?>">
                         Lost Reports
-                    </button>
+                    </a>
                 </div>
             </form>
         </div>
