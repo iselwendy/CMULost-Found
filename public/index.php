@@ -4,10 +4,8 @@
  * Fetches data from lost_reports and found_reports tables using PDO.
  */
 
-// 1. Include Database Configuration
 require_once '../core/db_config.php'; 
 
-// 2. Initialize Filters from URL Parameters
 $view_mode = isset($_GET['view']) && $_GET['view'] === 'lost' ? 'lost' : 'found'; 
 $search_query = isset($_GET['search']) ? trim($_GET['search']) : '';
 $selected_category = isset($_GET['category']) ? $_GET['category'] : 'All Categories';
@@ -17,13 +15,6 @@ $selected_time = isset($_GET['time']) ? $_GET['time'] : 'Anytime';
 try {
     $db = getDB();
     
-    /**
-     * 3. Construct the SQL Query
-     * Since we have two separate tables, we use UNION ALL to combine them.
-     * We also JOIN with item_images to get the first image for each report.
-     */
-    
-    // We select specific columns and add a hardcoded 'type' to identify the source
     $base_sql = "
         SELECT 
             'found' as type, 
@@ -58,30 +49,25 @@ try {
         LEFT JOIN item_images img ON l.lost_id = img.report_id AND img.report_type = 'lost'
     ";
 
-    // Wrap the UNION in an outer query to apply filters easily
     $sql = "SELECT * FROM ($base_sql) as combined_gallery WHERE type = :view_mode";
     $params = [':view_mode' => $view_mode];
 
-    // Apply Search Filter
     if (!empty($search_query)) {
         $sql .= " AND (item_name LIKE :search1 OR description LIKE :search2)";
         $params[':search1'] = '%' . $search_query . '%';
         $params[':search2'] = '%' . $search_query . '%';
     }
 
-    // Apply Category Filter
     if ($selected_category !== 'All Categories') {
         $sql .= " AND category = :category";
         $params[':category'] = $selected_category;
     }
 
-    // Apply Location Filter
     if ($selected_location !== 'All Locations') {
         $sql .= " AND location = :location";
         $params[':location'] = $selected_location;
     }
 
-    // Apply Time Filter
     if ($selected_time === 'Today') {
         $sql .= " AND DATE(created_at) = CURDATE()";
     } elseif ($selected_time === 'Last 7 Days') {
@@ -99,7 +85,6 @@ try {
     $error_msg = "Error fetching items: " . $e->getMessage();
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -109,15 +94,19 @@ try {
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="icon" href="../assets/images/system-icon.png">
-    <link rel="stylesheet" href="../assets/styles/header.css"></link>
-    <link rel="stylesheet" href="../assets/styles/root.css"></link>
+    <link rel="stylesheet" href="../assets/styles/header.css">
+    <link rel="stylesheet" href="../assets/styles/root.css">
+    <style>
+        #itemModal { transition: opacity 0.2s ease; }
+        #modalCard { transition: transform 0.25s ease, opacity 0.25s ease; }
+        body.modal-open { overflow: hidden; }
+    </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
 
-    <!-- Navbar -->
     <?php require_once '../includes/header.php'; ?>
 
-    <!-- Header Section -->
+    <!-- Filter Bar -->
     <div class="bg-white border-b border-gray-200 top-0 z-10 shadow-sm">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
             <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -125,7 +114,6 @@ try {
                     <h1 class="text-2xl font-bold text-gray-900">Items Gallery</h1>
                     <p class="text-gray-500 text-sm mt-1">Browse and find belongings misplaced within the campus.</p>
                 </div>
-                
                 <div class="flex flex-wrap gap-3">
                     <a href="report_found.php" class="bg-cmu-gold text-cmu-blue px-6 py-2.5 rounded-lg font-bold shadow-sm hover:shadow-md transition flex items-center">
                         <i class="fas fa-plus-circle mr-2"></i> Found an Item?
@@ -133,54 +121,39 @@ try {
                 </div>
             </div>
 
-            <!-- Enhanced Search and Smart Filter Bar -->
             <form action="index.php" method="GET" class="mt-6 space-y-4">
                 <input type="hidden" name="view" value="<?php echo htmlspecialchars($view_mode); ?>">
-
                 <div class="flex flex-col lg:flex-row gap-3">
-                    <!-- Search Input -->
                     <div class="flex-1 relative">
                         <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
                         <input type="text" name="search" value="<?php echo htmlspecialchars($search_query); ?>" 
                                placeholder="Search by item name or description..." 
                                class="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-cmu-blue outline-none transition">
                     </div>
-
-                    <!-- Smart Filter Dropdowns -->
                     <div class="flex flex-wrap md:flex-nowrap gap-3">
-                        <div class="relative w-full md:w-48">
-                            <select name="category" class="filter-select w-full pl-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 outline-none focus:ring-2 focus:ring-cmu-blue transition cursor-pointer">
-                                <option <?php echo $selected_category == 'All Categories' ? 'selected' : ''; ?>>All Categories</option>
-                                <option <?php echo $selected_category == 'Electronics' ? 'selected' : ''; ?>>Electronics</option>
-                                <option <?php echo $selected_category == 'Valuables' ? 'selected' : ''; ?>>Valuables</option>
-                                <option <?php echo $selected_category == 'Documents' ? 'selected' : ''; ?>>Documents</option>
-                                <option <?php echo $selected_category == 'Books' ? 'selected' : ''; ?>>Books</option>
-                                <option <?php echo $selected_category == 'Clothing' ? 'selected' : ''; ?>>Clothing</option>
-                                <option <?php echo $selected_category == 'Personal' ? 'selected' : ''; ?>>Personal</option>
-                                <option <?php echo $selected_category == 'Other' ? 'selected' : ''; ?>>Other</option>
-                            </select>
-                        </div>
-
-                        <div class="relative w-full md:w-48">
-                            <select name="location" class="filter-select w-full pl-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 outline-none focus:ring-2 focus:ring-cmu-blue transition cursor-pointer">
-                                <option <?php echo $selected_location == 'All Locations' ? 'selected' : ''; ?>>All Locations</option>
-                                <option <?php echo $selected_location == 'Main Library' ? 'selected' : ''; ?>>Main Library</option>
-                                <option <?php echo $selected_location == 'Innovation Bldg' ? 'selected' : ''; ?>>Innovation Bldg</option>
-                                <option <?php echo $selected_location == 'ERC Bldg' ? 'selected' : ''; ?>>ERC Bldg</option>
-                                <option <?php echo $selected_location == 'University Canteen' ? 'selected' : ''; ?>>University Canteen</option>
-                            </select>
-                        </div>
-
-                        <div class="relative w-full md:w-48">
-                            <select name="time" class="filter-select w-full pl-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 outline-none focus:ring-2 focus:ring-cmu-blue transition cursor-pointer">
-                                <option <?php echo $selected_time == 'Anytime' ? 'selected' : ''; ?>>Anytime</option>
-                                <option <?php echo $selected_time == 'Today' ? 'selected' : ''; ?>>Today</option>
-                                <option <?php echo $selected_time == 'Last 7 Days' ? 'selected' : ''; ?>>Last 7 Days</option>
-                            </select>
-                        </div>
-
-                        <!-- Manual Search Button if user doesn't press Enter -->
-                        <button type="submit" class="bg-cmu-blue text-white px-6  rounded-xl font-bold hover:bg-opacity-90 transition">
+                        <select name="category" class="filter-select w-full md:w-48 pl-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 outline-none focus:ring-2 focus:ring-cmu-blue transition cursor-pointer">
+                            <option <?php echo $selected_category == 'All Categories' ? 'selected' : ''; ?>>All Categories</option>
+                            <option <?php echo $selected_category == 'Electronics' ? 'selected' : ''; ?>>Electronics</option>
+                            <option <?php echo $selected_category == 'Valuables' ? 'selected' : ''; ?>>Valuables</option>
+                            <option <?php echo $selected_category == 'Documents' ? 'selected' : ''; ?>>Documents</option>
+                            <option <?php echo $selected_category == 'Books' ? 'selected' : ''; ?>>Books</option>
+                            <option <?php echo $selected_category == 'Clothing' ? 'selected' : ''; ?>>Clothing</option>
+                            <option <?php echo $selected_category == 'Personal' ? 'selected' : ''; ?>>Personal</option>
+                            <option <?php echo $selected_category == 'Other' ? 'selected' : ''; ?>>Other</option>
+                        </select>
+                        <select name="location" class="filter-select w-full md:w-48 pl-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 outline-none focus:ring-2 focus:ring-cmu-blue transition cursor-pointer">
+                            <option <?php echo $selected_location == 'All Locations' ? 'selected' : ''; ?>>All Locations</option>
+                            <option <?php echo $selected_location == 'Main Library' ? 'selected' : ''; ?>>Main Library</option>
+                            <option <?php echo $selected_location == 'Innovation Bldg' ? 'selected' : ''; ?>>Innovation Bldg</option>
+                            <option <?php echo $selected_location == 'ERC Bldg' ? 'selected' : ''; ?>>ERC Bldg</option>
+                            <option <?php echo $selected_location == 'University Canteen' ? 'selected' : ''; ?>>University Canteen</option>
+                        </select>
+                        <select name="time" class="filter-select w-full md:w-48 pl-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 outline-none focus:ring-2 focus:ring-cmu-blue transition cursor-pointer">
+                            <option <?php echo $selected_time == 'Anytime' ? 'selected' : ''; ?>>Anytime</option>
+                            <option <?php echo $selected_time == 'Today' ? 'selected' : ''; ?>>Today</option>
+                            <option <?php echo $selected_time == 'Last 7 Days' ? 'selected' : ''; ?>>Last 7 Days</option>
+                        </select>
+                        <button type="submit" class="bg-cmu-blue text-white px-6 rounded-xl font-bold hover:bg-opacity-90 transition">
                             Filter
                         </button>
                     </div>
@@ -189,11 +162,11 @@ try {
                 <!-- Toggle -->
                 <div class="flex bg-gray-100 p-1 rounded-xl w-fit">
                     <a href="?view=found&search=<?php echo urlencode($search_query); ?>&category=<?php echo urlencode($selected_category); ?>&location=<?php echo urlencode($selected_location); ?>&time=<?php echo urlencode($selected_time); ?>" 
-                    class="px-6 py-2 rounded-lg text-sm font-bold transition <?php echo $view_mode === 'found' ? 'bg-white text-cmu-blue shadow-sm' : 'text-gray-500'; ?>">
+                       class="px-6 py-2 rounded-lg text-sm font-bold transition <?php echo $view_mode === 'found' ? 'bg-white text-cmu-blue shadow-sm' : 'text-gray-500'; ?>">
                         Found Items
                     </a>
                     <a href="?view=lost&search=<?php echo urlencode($search_query); ?>&category=<?php echo urlencode($selected_category); ?>&location=<?php echo urlencode($selected_location); ?>&time=<?php echo urlencode($selected_time); ?>" 
-                    class="px-6 py-2 rounded-lg text-sm font-bold transition <?php echo $view_mode === 'lost' ? 'bg-white text-cmu-blue shadow-sm' : 'text-gray-500'; ?>">
+                       class="px-6 py-2 rounded-lg text-sm font-bold transition <?php echo $view_mode === 'lost' ? 'bg-white text-cmu-blue shadow-sm' : 'text-gray-500'; ?>">
                         Lost Reports
                     </a>
                 </div>
@@ -201,9 +174,8 @@ try {
         </div>
     </div>
 
-    <!-- Main Gallery Content -->
+    <!-- Gallery -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        
         <?php if (empty($items)): ?>
             <div class="text-center py-20 bg-white rounded-3xl border border-gray-100 shadow-sm">
                 <div class="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -214,13 +186,16 @@ try {
             </div>
         <?php else: ?>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                <?php foreach ($items as $item): ?>
+                <?php foreach ($items as $item): 
+                    $image_path = !empty($item['image_path']) 
+                        ? '../' . htmlspecialchars($item['image_path']) 
+                        : 'https://placehold.co/600x400/e2e8f0/64748b?text=No+Photo';
+                    $date_label = $item['type'] === 'found' ? 'Date Found' : 'Date Lost';
+                    $formatted_date = date('M d, Y', strtotime($item['created_at']));
+                    $status_display = str_replace('_', ' ', $item['status']);
+                ?>
                     <div class="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 flex flex-col">
                         <div class="relative h-52 overflow-hidden bg-gray-100">
-                            <?php 
-                                // Using the image_path from the JOIN
-                                $image_path = !empty($item['image_path']) ? '../' . htmlspecialchars($item['image_path']) : 'https://placehold.co/600x400/e2e8f0/64748b?text=No+Photo';
-                            ?>
                             <img src="<?php echo $image_path; ?>" alt="Item" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
                             <div class="absolute top-3 left-3">
                                 <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-white/90 backdrop-blur shadow-sm <?php echo $item['type'] === 'found' ? 'text-green-600' : 'text-red-600'; ?>">
@@ -232,40 +207,144 @@ try {
                         <div class="p-5 flex-1 flex flex-col">
                             <span class="text-[10px] font-bold text-cmu-blue uppercase tracking-tighter mb-1"><?php echo htmlspecialchars($item['category']); ?></span>
                             <h3 class="font-bold text-gray-800 text-lg mb-3 line-clamp-1"><?php echo htmlspecialchars($item['item_name']); ?></h3>
-                            
                             <div class="space-y-2 text-sm text-gray-500 mb-6">
-                                <div class="flex items-center">
-                                    <i class="fas fa-map-marker-alt w-5 text-gray-300"></i>
+                                <div class="flex items-center gap-2">
+                                    <i class="fas fa-map-marker-alt w-4 text-gray-300"></i>
                                     <span class="truncate"><?php echo htmlspecialchars($item['location']); ?></span>
                                 </div>
-                                <div class="flex items-center">
-                                    <i class="fas fa-calendar-alt w-5 text-gray-300"></i>
-                                    <span><?php echo date('M d, Y', strtotime($item['created_at'])); ?></span>
+                                <div class="flex items-center gap-2">
+                                    <i class="fas fa-calendar-alt w-4 text-gray-300"></i>
+                                    <span><?php echo $formatted_date; ?></span>
                                 </div>
-                                <div class="flex items-center">
-                                    <i class="fas fa-info-circle w-5 text-blue-300"></i>
-                                    <span class="text-blue-600 font-semibold capitalize">
-                                        <?php echo str_replace('_', ' ', htmlspecialchars($item['status'])); ?>
-                                    </span>
+                                <div class="flex items-center gap-2">
+                                    <i class="fas fa-info-circle w-4 text-blue-300"></i>
+                                    <span class="text-blue-600 font-semibold capitalize"><?php echo htmlspecialchars($status_display); ?></span>
                                 </div>
                             </div>
 
-                            <a href="item_details.php?id=<?php echo $item['id']; ?>&type=<?php echo $item['type']; ?>" 
-                               class="mt-auto block text-center py-2.5 rounded-xl bg-gray-50 text-gray-700 font-bold hover:bg-cmu-blue hover:text-white transition-all border border-gray-100">
+                            <!-- View Details button — triggers modal -->
+                            <button
+                                onclick="openModal(<?php echo htmlspecialchars(json_encode([
+                                    'id'          => $item['id'],
+                                    'type'        => $item['type'],
+                                    'item_name'   => $item['item_name'],
+                                    'category'    => $item['category'],
+                                    'location'    => $item['location'],
+                                    'date_label'  => $date_label,
+                                    'date'        => $formatted_date,
+                                    'status'      => $status_display,
+                                    'image_path'  => $image_path,
+                                ]), ENT_QUOTES); ?>)"
+                                class="mt-auto w-full py-2.5 rounded-xl bg-gray-50 text-gray-700 font-bold hover:bg-cmu-blue hover:text-white transition-all border border-gray-100">
                                 View Full Details
-                            </a>
+                            </button>
                         </div>
                     </div>
                 <?php endforeach; ?>
             </div>
         <?php endif; ?>
-
     </main>
 
-    <!-- Footer -->
+    <!-- ===================== ITEM DETAIL MODAL ===================== -->
+    <div id="itemModal"
+         class="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm opacity-0 pointer-events-none">
+        <div id="modalCard"
+             class="bg-white rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden scale-95 opacity-0 flex flex-col md:flex-row max-h-[90vh]">
+
+            <!-- Image Side -->
+            <div class="md:w-2/5 h-64 md:h-auto bg-gray-100 flex-shrink-0 relative overflow-hidden">
+                <img id="modalImage" src="" alt="Item Photo" class="w-full h-full object-cover">
+                <!-- Type badge on image -->
+                <span id="modalTypeBadge"
+                      class="absolute top-4 left-4 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-white/90 backdrop-blur shadow-sm">
+                </span>
+            </div>
+
+            <!-- Info Side -->
+            <div class="flex-1 flex flex-col overflow-y-auto">
+                <!-- Header with X button -->
+                <div class="flex items-start justify-between p-6 pb-4 border-b border-gray-100">
+                    <div>
+                        <p id="modalCategory" class="text-[10px] font-black text-cmu-blue uppercase tracking-widest mb-1"></p>
+                        <h2 id="modalTitle" class="text-xl font-black text-gray-900 leading-tight"></h2>
+                    </div>
+                    <button onclick="closeModal()"
+                            class="ml-4 flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-red-100 hover:text-red-500 transition">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <!-- Details -->
+                <div class="p-6 space-y-4 flex-1">
+                    <div class="grid grid-cols-1 gap-3">
+
+                        <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                            <div class="w-9 h-9 bg-white rounded-lg flex items-center justify-center shadow-sm border border-gray-100 flex-shrink-0">
+                                <i class="fas fa-map-marker-alt text-cmu-blue text-sm"></i>
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-black text-gray-400 uppercase tracking-wider">Location</p>
+                                <p id="modalLocation" class="text-sm font-semibold text-gray-800"></p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                            <div class="w-9 h-9 bg-white rounded-lg flex items-center justify-center shadow-sm border border-gray-100 flex-shrink-0">
+                                <i class="fas fa-calendar-alt text-cmu-blue text-sm"></i>
+                            </div>
+                            <div>
+                                <p id="modalDateLabel" class="text-[10px] font-black text-gray-400 uppercase tracking-wider"></p>
+                                <p id="modalDate" class="text-sm font-semibold text-gray-800"></p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                            <div class="w-9 h-9 bg-white rounded-lg flex items-center justify-center shadow-sm border border-gray-100 flex-shrink-0">
+                                <i class="fas fa-info-circle text-cmu-blue text-sm"></i>
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-black text-gray-400 uppercase tracking-wider">Status</p>
+                                <p id="modalStatus" class="text-sm font-semibold text-blue-600 capitalize"></p>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Privacy notice -->
+                    <div class="bg-amber-50 border border-amber-100 rounded-xl p-3 flex gap-2">
+                        <i class="fas fa-user-shield text-amber-500 mt-0.5 text-xs flex-shrink-0"></i>
+                        <p class="text-[11px] text-amber-700 leading-relaxed">
+                            Identifying details are kept private and only visible to OSA staff for verification purposes.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Action Button -->
+                <div class="p-6 pt-0">
+                    <div id="modalActionFound" class="hidden">
+                        <a id="modalClaimLink" href="#"
+                           class="block w-full text-center py-3.5 bg-cmu-gold text-cmu-blue font-black rounded-xl hover:shadow-lg transition text-sm uppercase tracking-wide">
+                            <i class="fas fa-hand-holding-heart mr-2"></i> This Is Mine — Claim Item
+                        </a>
+                        <p class="text-center text-[10px] text-gray-400 mt-2">
+                            You will need to visit OSA and present valid ID for verification.
+                        </p>
+                    </div>
+                    <div id="modalActionLost" class="hidden">
+                        <a id="modalFoundLink" href="#"
+                           class="block w-full text-center py-3.5 bg-cmu-blue text-white font-black rounded-xl hover:bg-slate-800 transition text-sm uppercase tracking-wide">
+                            <i class="fas fa-search mr-2"></i> I Found This Item
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- =================== END MODAL =================== -->
+
     <?php require_once '../includes/footer.php'; ?>
 
-    <!-- Scripts -->
     <script src="../assets/scripts/profile-dropdown.js"></script>
+    <script src="../assets/scripts/item_card.js"></script>
 </body>
 </html>

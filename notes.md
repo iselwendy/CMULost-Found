@@ -7,5 +7,8 @@ pati yung "view details" sa gallery page, gawin ding modal na lang
 - before makapag submit ng lost report yung user is dapat malagay niya muna yung phone number niya and email.
 
 
-NEXT STEP: make the search bar work to search for lost/found itemsS
+NEXT STEP:
+- Fix item_details
 - Create the matching engine (matches table sa database)
+- Improve the search function to allow searching like this (cat sticker + 100 peso bill)
+- Improve the duplicateAlert function in report_lost/report_found
