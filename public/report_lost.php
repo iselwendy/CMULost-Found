@@ -36,7 +36,6 @@ $stmt->execute([$user_id]);
             <form action="process_report.php" method="POST" enctype="multipart/form-data" class="space-y-6" id="lostItemForm">
                 <input type="hidden" name="reporter_id" value="<?php echo $user_id; ?>">
                 <input type="hidden" name="report_type" value="lost">
-                <!-- Hidden field that collects the final compiled description for the DB -->
                 <input type="hidden" name="hidden_marks" id="compiledMarks">
 
                 <!-- ── PUBLIC INFO ── -->
@@ -103,7 +102,7 @@ $stmt->execute([$user_id]);
                         The more specific you are, the faster it finds a match.
                     </p>
 
-                    <!-- ❶ COLOR picker -->
+                    <!-- ❶ COLOR -->
                     <div>
                         <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">
                             <i class="fas fa-palette mr-1 text-indigo-400"></i> Primary Color(s)
@@ -121,29 +120,32 @@ $stmt->execute([$user_id]);
                         <p id="colorError" class="text-xs text-red-500 mt-1 hidden">Please select at least one color.</p>
                     </div>
 
-                    <!-- ❷ DISTINGUISHING TRAITS (category-aware) -->
+                    <!-- ❷ TRAITS -->
                     <div id="traitSection">
                         <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">
                             <i class="fas fa-fingerprint mr-1 text-indigo-400"></i> Distinguishing Traits
                             <span class="text-slate-400 text-[10px] normal-case font-normal ml-1">(select all that apply)</span>
                         </label>
                         <div class="flex flex-wrap gap-2" id="traitChips">
-                            <!-- Populated dynamically by JS based on category -->
                             <span class="text-xs text-slate-400 italic">Select a category above to see suggestions.</span>
                         </div>
                     </div>
 
-                    <!-- ❸ SPECIFIC KEYWORD TAGS -->
+                    <!-- ❸ KEYWORD TAGS -->
                     <div>
                         <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1">
                             <i class="fas fa-tags mr-1 text-indigo-400"></i> Specific Keywords
                             <span class="text-slate-400 text-[10px] normal-case font-normal ml-1">(brand, name written, serial no., sticker, etc.)</span>
                         </label>
-                        <p class="text-[11px] text-slate-400 mb-2">Type a keyword and press <kbd class="bg-slate-100 border border-slate-200 rounded px-1 text-[10px]">Enter</kbd> or <kbd class="bg-slate-100 border border-slate-200 rounded px-1 text-[10px]">,</kbd> to add it.</p>
+                        <p class="text-[11px] text-slate-400 mb-2">
+                            Type a keyword and press
+                            <kbd class="bg-slate-100 border border-slate-200 rounded px-1 text-[10px]">Enter</kbd> or
+                            <kbd class="bg-slate-100 border border-slate-200 rounded px-1 text-[10px]">,</kbd>
+                            to add it. Autocomplete suggests standard terms as you type.
+                        </p>
 
-                        <!-- Tag display area -->
                         <div id="tagContainer"
-                             class="min-h-[44px] w-full px-3 py-2 rounded-xl border border-slate-200 bg-white flex flex-wrap gap-1.5 items-center cursor-text focus-within:ring-2 focus-within:ring-indigo-400 focus-within:border-indigo-400 transition-all">
+                             class="min-h-[44px] w-full px-3 py-2 rounded-xl border border-slate-200 bg-white flex flex-wrap gap-1.5 items-center cursor-text transition-all">
                             <input type="text" id="keywordInput"
                                    placeholder="e.g. Samsung, Juan written inside, anime sticker..."
                                    class="flex-1 min-w-[160px] outline-none text-sm text-slate-700 bg-transparent py-0.5"
@@ -151,14 +153,13 @@ $stmt->execute([$user_id]);
                         </div>
                         <div id="tagError" class="text-xs text-red-500 mt-1 hidden">Please add at least one specific keyword.</div>
 
-                        <!-- Suggested keywords (context-aware) -->
                         <div id="suggestedKeywords" class="mt-2 hidden">
                             <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1.5">Quick add:</p>
                             <div id="suggestedKeywordList" class="flex flex-wrap gap-1.5"></div>
                         </div>
                     </div>
 
-                    <!-- ❹ DESCRIPTION QUALITY METER -->
+                    <!-- ❹ QUALITY METER -->
                     <div id="qualityMeter" class="p-3 bg-slate-50 rounded-xl border border-slate-100">
                         <div class="flex items-center justify-between mb-1.5">
                             <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Description Quality</p>
@@ -170,9 +171,9 @@ $stmt->execute([$user_id]);
                         <p id="qualityHint" class="text-[11px] text-slate-400 mt-1.5 italic">Fill in colors, traits, and keywords to improve match accuracy.</p>
                     </div>
 
-                    <!-- ❺ PHOTO UPLOAD -->
+                    <!-- ❺ PHOTO -->
                     <div>
-                        <label class="block text-sm font-semibold mb-1.5 text-slate-700 text-indigo-600">Reference Photo</label>
+                        <label class="block text-sm font-semibold mb-1.5 text-indigo-600">Reference Photo</label>
                         <div id="dropZone" class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-slate-200 border-dashed rounded-xl hover:border-indigo-400 transition-all cursor-pointer group relative overflow-hidden">
                             <div class="space-y-1 text-center" id="uploadPlaceholder">
                                 <i class="fas fa-cloud-upload-alt text-slate-300 text-3xl mb-2 group-hover:text-indigo-500 transition-colors"></i>
@@ -215,6 +216,204 @@ $stmt->execute([$user_id]);
 
     <script src="../assets/scripts/profile-dropdown.js"></script>
     <script src="../assets/scripts/item_image_upload.js"></script>
-    <script src="../assets/scripts/report_lost_keywords.js"></script>
+    <script src="../assets/scripts/smart_tag_input.js"></script>
+    <script>
+    // ─────────────────────────────────────────────
+    // CATEGORY TRAIT + KEYWORD SUGGESTIONS
+    // Vocabulary must match report_found.php exactly
+    // so the matching engine compares like-for-like
+    // ─────────────────────────────────────────────
+    const CATEGORY_TRAITS = {
+        'Electronics': [
+            'cracked screen','scratched','sticker on back','case/cover','no case',
+            'charger included','dead battery','brand label visible','screen protector'
+        ],
+        'Valuables': [
+            'bi-fold','tri-fold','zipper closure','cards inside','no cash','has coins',
+            'keychain attached','lanyard attached','name engraved','monogram'
+        ],
+        'Documents': [
+            'laminated','torn corner','punched hole','clipped together',
+            'name visible','expired','school id','government issued'
+        ],
+        'Books': [
+            'highlighted pages','annotations','name written inside','dog-eared',
+            'torn cover','bookmarked','loose pages','stamp/seal'
+        ],
+        'Clothing': [
+            'name tag inside','embroidered','ironed-on patch','torn/ripped',
+            'stained','logo visible','hooded','sleeveless'
+        ],
+        'Personal': [
+            'dent/scratch','sticker on back','name engraved','custom design',
+            'broken strap','missing cap','initials marked','worn/faded'
+        ]
+    };
+
+    const CATEGORY_KEYWORDS = {
+        'Electronics': ['Samsung','Apple','Xiaomi','OPPO','Realme','JBL','Anker','serial number'],
+        'Valuables':   ['leather','canvas','metal','name inside','peso bills','cards inside'],
+        'Documents':   ['CMU ID','PhilSys',"Driver's License",'SSS','UMID','birth certificate'],
+        'Books':       ['Calculus','Physics','Chemistry','Engineering','Accounting','Filipino','History'],
+        'Clothing':    ['uniform','PE shirt','jacket','hoodie','jersey'],
+        'Personal':    ['AquaFlask','Hydroflask','umbrella','tote bag','drawstring','lunchbox']
+    };
+
+    // ─────────────────────────────────────────────
+    // STATE
+    // ─────────────────────────────────────────────
+    let selectedColors = new Set();
+    let selectedTraits = new Set();
+
+    // ─────────────────────────────────────────────
+    // CHIP TOGGLE
+    // ─────────────────────────────────────────────
+    function toggleChip(el) {
+        el.classList.toggle('selected');
+        const val   = el.dataset.value;
+        const group = el.dataset.group;
+        if (group === 'color') {
+            el.classList.contains('selected') ? selectedColors.add(val) : selectedColors.delete(val);
+        } else {
+            el.classList.contains('selected') ? selectedTraits.add(val) : selectedTraits.delete(val);
+        }
+        updateQuality();
+    }
+
+    // ─────────────────────────────────────────────
+    // CATEGORY-AWARE TRAIT CHIPS + QUICK-ADD KEYWORDS
+    // ─────────────────────────────────────────────
+    function updateTraitSuggestions() {
+        const cat    = document.getElementById('itemCategory').value;
+        const chips  = document.getElementById('traitChips');
+        const kwList = document.getElementById('suggestedKeywordList');
+        const kwBox  = document.getElementById('suggestedKeywords');
+
+        selectedTraits.clear();
+
+        if (!cat || !CATEGORY_TRAITS[cat]) {
+            chips.innerHTML = '<span class="text-xs text-slate-400 italic">Select a category above to see suggestions.</span>';
+            kwBox.classList.add('hidden');
+            updateQuality();
+            return;
+        }
+
+        chips.innerHTML = CATEGORY_TRAITS[cat].map(t =>
+            `<button type="button" class="trait-chip" data-group="trait" data-value="${t}" onclick="toggleChip(this)">${t}</button>`
+        ).join('');
+
+        kwList.innerHTML = (CATEGORY_KEYWORDS[cat] || []).map(k =>
+            `<button type="button" onclick="addKeyword('${k}')"
+                class="text-[11px] px-2.5 py-1 bg-indigo-50 text-indigo-600 border border-indigo-100
+                       rounded-full font-semibold hover:bg-indigo-100 transition">
+                + ${k}
+            </button>`
+        ).join('');
+        kwBox.classList.remove('hidden');
+        updateQuality();
+    }
+
+    // ─────────────────────────────────────────────
+    // SMART TAG INPUT
+    // ─────────────────────────────────────────────
+    const tagInput = SmartTagInput.init({
+        inputId:     'keywordInput',
+        containerId: 'tagContainer',
+        errorId:     'tagError',
+        accentColor: 'indigo',
+    });
+
+    // Quick-add button handler
+    function addKeyword(val) {
+        tagInput.addSuggested(val);
+        updateQuality();
+    }
+
+    // Re-evaluate quality whenever a tag pill is added or removed
+    new MutationObserver(updateQuality)
+        .observe(document.getElementById('tagContainer'), { childList: true });
+
+    // ─────────────────────────────────────────────
+    // QUALITY METER
+    // color 25 | traits 25 | keywords 30 | photo 20
+    // ─────────────────────────────────────────────
+    function updateQuality() {
+        let score = 0;
+        if (selectedColors.size > 0)                      score += 25;
+        score += Math.min(selectedTraits.size * 5,        25);
+        score += Math.min(tagInput.getTags().length * 10, 30);
+        if (document.getElementById('file-upload').files.length > 0) score += 20;
+
+        const bar   = document.getElementById('qualityBar');
+        const label = document.getElementById('qualityLabel');
+        const hint  = document.getElementById('qualityHint');
+        bar.style.width = score + '%';
+
+        const levels = [
+            { max: 0,  color: '#cbd5e1', text: 'Not started',            cls: 'text-slate-400',  msg: 'Fill in colors, traits, and keywords to improve match accuracy.' },
+            { max: 40, color: '#f97316', text: 'Weak — low match chance', cls: 'text-orange-500', msg: 'Add more traits or keywords. Vague descriptions are harder to match.' },
+            { max: 70, color: '#eab308', text: 'Fair — can be improved',  cls: 'text-yellow-500', msg: 'Good start! Add specific keywords (brand, name, serial no.) for better accuracy.' },
+            { max: 90, color: '#22c55e', text: 'Good — solid match profile', cls: 'text-green-500', msg: 'Nice! Adding a photo will push this to excellent.' },
+            { max: 101,color: '#6366f1', text: 'Excellent — high match chance', cls: 'text-indigo-500', msg: 'Great detail! Your report will have the highest match probability.' },
+        ];
+
+        const lvl = levels.find(l => score <= l.max) || levels[levels.length - 1];
+        bar.style.backgroundColor = lvl.color;
+        label.textContent = lvl.text;
+        label.className = `text-[10px] font-black uppercase ${lvl.cls}`;
+        hint.textContent = lvl.msg;
+    }
+
+    // ─────────────────────────────────────────────
+    // PHOTO UPLOAD PREVIEW
+    // ─────────────────────────────────────────────
+    function clearPreview() {
+        document.getElementById('file-upload').value = '';
+        document.getElementById('attachedStatus').classList.add('hidden');
+        document.getElementById('uploadPlaceholder').classList.remove('hidden');
+        updateQuality();
+    }
+
+    document.getElementById('file-upload').addEventListener('change', function () {
+        if (this.files && this.files[0]) {
+            document.getElementById('fileNameDisplay').textContent = this.files[0].name;
+            document.getElementById('attachedStatus').classList.remove('hidden');
+            document.getElementById('uploadPlaceholder').classList.add('hidden');
+            updateQuality();
+        }
+    });
+
+    // ─────────────────────────────────────────────
+    // FORM SUBMIT — validate + compile hidden_marks
+    // ─────────────────────────────────────────────
+    document.getElementById('lostItemForm').addEventListener('submit', function (e) {
+        let valid = true;
+
+        if (selectedColors.size === 0) {
+            document.getElementById('colorError').classList.remove('hidden');
+            document.getElementById('colorChips').classList.add('shake');
+            setTimeout(() => document.getElementById('colorChips').classList.remove('shake'), 400);
+            valid = false;
+        } else {
+            document.getElementById('colorError').classList.add('hidden');
+        }
+
+        if (!tagInput.validate()) valid = false;
+
+        if (!valid) {
+            e.preventDefault();
+            document.getElementById('identifyingSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            return;
+        }
+
+        // Compile: "Colors: Black, Blue | Traits: cracked screen | Keywords: samsung, name written inside"
+        const parts = [];
+        if (selectedColors.size > 0) parts.push('Colors: ' + [...selectedColors].join(', '));
+        if (selectedTraits.size > 0) parts.push('Traits: ' + [...selectedTraits].join(', '));
+        parts.push(tagInput.getCompiledKeywords());
+
+        document.getElementById('compiledMarks').value = parts.join(' | ');
+    });
+    </script>
 </body>
 </html>

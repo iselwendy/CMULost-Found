@@ -1,40 +1,12 @@
+/* ── report_found.css ── */
+
 .glass-card {
     background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(10px);
     border: 1px solid rgba(229, 231, 235, 0.5);
 }
 
-/* Keyword tag pills */
-.keyword-tag {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 10px;
-    background: #f0fdf4;
-    border: 1px solid #bbf7d0;
-    color: #15803d;
-    border-radius: 99px;
-    font-size: 11px;
-    font-weight: 700;
-    cursor: default;
-    transition: background 0.15s;
-}
-
-.keyword-tag button {
-    color: #86efac;
-    font-size: 10px;
-    line-height: 1;
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 0;
-}
-
-.keyword-tag button:hover {
-    color: #dc2626;
-}
-
-/* Trait chip toggles */
+/* Trait chip toggles — green accent for found form */
 .trait-chip {
     padding: 6px 14px;
     border: 1.5px solid #e2e8f0;
@@ -64,7 +36,7 @@
     transition: width 0.4s ease, background-color 0.4s ease;
 }
 
-/* Warning shake */
+/* Shake animation for validation errors */
 @keyframes shake {
 
     0%,

@@ -36,7 +36,6 @@ $stmt->execute([$user_id]);
             <form id="foundItemForm" action="process_report.php" method="POST" enctype="multipart/form-data" class="space-y-6">
                 <input type="hidden" name="reporter_id" value="<?php echo $user_id; ?>">
                 <input type="hidden" name="report_type" value="found">
-                <!-- Compiled structured description for DB + matching engine -->
                 <input type="hidden" name="hidden_marks" id="compiledMarks">
 
                 <!-- ── PUBLIC INFO ── -->
@@ -104,7 +103,7 @@ $stmt->execute([$user_id]);
                         The more specific you are, the faster the owner is found.
                     </p>
 
-                    <!-- ❶ COLOR picker -->
+                    <!-- ❶ COLOR -->
                     <div>
                         <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">
                             <i class="fas fa-palette mr-1 text-green-500"></i> Primary Color(s) of the Item
@@ -122,7 +121,7 @@ $stmt->execute([$user_id]);
                         <p id="colorError" class="text-xs text-red-500 mt-1 hidden">Please select at least one color.</p>
                     </div>
 
-                    <!-- ❷ DISTINGUISHING TRAITS (category-aware) -->
+                    <!-- ❷ TRAITS -->
                     <div id="traitSection">
                         <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">
                             <i class="fas fa-fingerprint mr-1 text-green-500"></i> Observed Traits
@@ -133,18 +132,21 @@ $stmt->execute([$user_id]);
                         </div>
                     </div>
 
-                    <!-- ❸ SPECIFIC KEYWORD TAGS -->
+                    <!-- ❸ KEYWORD TAGS -->
                     <div>
                         <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1">
                             <i class="fas fa-tags mr-1 text-green-500"></i> Specific Observations
                             <span class="text-slate-400 text-[10px] normal-case font-normal ml-1">(name on item, brand, visible text, serial no., etc.)</span>
                         </label>
                         <p class="text-[11px] text-slate-400 mb-2">
-                            Type an observation and press <kbd class="bg-slate-100 border border-slate-200 rounded px-1 text-[10px]">Enter</kbd> or <kbd class="bg-slate-100 border border-slate-200 rounded px-1 text-[10px]">,</kbd> to add it.
+                            Type an observation and press
+                            <kbd class="bg-slate-100 border border-slate-200 rounded px-1 text-[10px]">Enter</kbd> or
+                            <kbd class="bg-slate-100 border border-slate-200 rounded px-1 text-[10px]">,</kbd>
+                            to add it. Autocomplete suggests standard terms as you type.
                         </p>
 
                         <div id="tagContainer"
-                             class="min-h-[44px] w-full px-3 py-2 rounded-xl border border-slate-200 bg-white flex flex-wrap gap-1.5 items-center cursor-text focus-within:ring-2 focus-within:ring-green-400 focus-within:border-green-400 transition-all">
+                             class="min-h-[44px] w-full px-3 py-2 rounded-xl border border-slate-200 bg-white flex flex-wrap gap-1.5 items-center cursor-text transition-all">
                             <input type="text" id="keywordInput"
                                    placeholder='e.g. "Juan Dela Cruz" written inside, dog lockscreen, CMU ID...'
                                    class="flex-1 min-w-[160px] outline-none text-sm text-slate-700 bg-transparent py-0.5"
@@ -152,26 +154,25 @@ $stmt->execute([$user_id]);
                         </div>
                         <div id="tagError" class="text-xs text-red-500 mt-1 hidden">Please add at least one specific observation.</div>
 
-                        <!-- Category-aware quick-add suggestions -->
                         <div id="suggestedKeywords" class="mt-2 hidden">
                             <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1.5">Quick add:</p>
                             <div id="suggestedKeywordList" class="flex flex-wrap gap-1.5"></div>
                         </div>
                     </div>
 
-                    <!-- ❹ EXACT SPOT sub-field (finder-specific) -->
+                    <!-- ❹ EXACT SPOT (finder-specific) -->
                     <div>
                         <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1">
                             <i class="fas fa-map-pin mr-1 text-green-500"></i> Exact Spot Found
                             <span class="text-slate-400 text-[10px] normal-case font-normal ml-1">(be as specific as possible)</span>
                         </label>
                         <input type="text" name="exact_spot" id="exactSpot"
-                               placeholder="e.g. Left side of the bench near the entrance, Table 3 second floor..."
+                               placeholder="e.g. Left side bench near the entrance, Table 3 second floor..."
                                class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-green-400 outline-none transition-all text-sm">
-                        <p class="text-[10px] text-slate-400 mt-1">This is kept private and helps the owner confirm the location — a strong ownership signal.</p>
+                        <p class="text-[10px] text-slate-400 mt-1">Kept private — a strong ownership signal for verification.</p>
                     </div>
 
-                    <!-- ❺ DESCRIPTION QUALITY METER -->
+                    <!-- ❺ QUALITY METER -->
                     <div id="qualityMeter" class="p-3 bg-slate-50 rounded-xl border border-slate-100">
                         <div class="flex items-center justify-between mb-1.5">
                             <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Match Quality</p>
@@ -183,7 +184,7 @@ $stmt->execute([$user_id]);
                         <p id="qualityHint" class="text-[11px] text-slate-400 mt-1.5 italic">Fill in colors, traits, and observations to help the matching engine find the owner faster.</p>
                     </div>
 
-                    <!-- ❻ PHOTO UPLOAD (required for found items) -->
+                    <!-- ❻ PHOTO (required for found items) -->
                     <div>
                         <label class="block text-sm font-semibold mb-1.5 text-slate-700">
                             Reference Photo <span class="text-xs font-normal text-slate-400">(Required — photo of the actual item)</span>
@@ -254,6 +255,207 @@ $stmt->execute([$user_id]);
 
     <script src="../assets/scripts/profile-dropdown.js"></script>
     <script src="../assets/scripts/item_image_upload.js"></script>
-    <script src="../assets/scripts/report_found_keywords.js"></script>
+    <script src="../assets/scripts/smart_tag_input.js"></script>
+    <script>
+    // ─────────────────────────────────────────────
+    // CATEGORY TRAIT + KEYWORD SUGGESTIONS
+    // Must match report_lost.php exactly
+    // ─────────────────────────────────────────────
+    const CATEGORY_TRAITS = {
+        'Electronics': [
+            'cracked screen','scratched','sticker on back','case/cover','no case',
+            'charger included','dead battery','brand label visible','screen protector'
+        ],
+        'Valuables': [
+            'bi-fold','tri-fold','zipper closure','cards inside','no cash','has coins',
+            'keychain attached','lanyard attached','name engraved','monogram'
+        ],
+        'Documents': [
+            'laminated','torn corner','punched hole','clipped together',
+            'name visible','expired','school id','government issued'
+        ],
+        'Books': [
+            'highlighted pages','annotations','name written inside','dog-eared',
+            'torn cover','bookmarked','loose pages','stamp/seal'
+        ],
+        'Clothing': [
+            'name tag inside','embroidered','ironed-on patch','torn/ripped',
+            'stained','logo visible','hooded','sleeveless'
+        ],
+        'Personal': [
+            'dent/scratch','sticker on back','name engraved','custom design',
+            'broken strap','missing cap','initials marked','worn/faded'
+        ]
+    };
+
+    const CATEGORY_KEYWORDS = {
+        'Electronics': ['Samsung','Apple','Xiaomi','OPPO','Realme','JBL','Anker','serial number'],
+        'Valuables':   ['leather','canvas','metal','name inside','peso bills','cards inside'],
+        'Documents':   ['CMU ID','PhilSys',"Driver's License",'SSS','UMID','birth certificate'],
+        'Books':       ['Calculus','Physics','Chemistry','Engineering','Accounting','Filipino','History'],
+        'Clothing':    ['uniform','PE shirt','jacket','hoodie','jersey'],
+        'Personal':    ['AquaFlask','Hydroflask','umbrella','tote bag','drawstring','lunchbox']
+    };
+
+    // ─────────────────────────────────────────────
+    // STATE
+    // ─────────────────────────────────────────────
+    let selectedColors = new Set();
+    let selectedTraits = new Set();
+
+    // ─────────────────────────────────────────────
+    // CHIP TOGGLE
+    // ─────────────────────────────────────────────
+    function toggleChip(el) {
+        el.classList.toggle('selected');
+        const val   = el.dataset.value;
+        const group = el.dataset.group;
+        if (group === 'color') {
+            el.classList.contains('selected') ? selectedColors.add(val) : selectedColors.delete(val);
+        } else {
+            el.classList.contains('selected') ? selectedTraits.add(val) : selectedTraits.delete(val);
+        }
+        updateQuality();
+    }
+
+    // ─────────────────────────────────────────────
+    // CATEGORY-AWARE TRAIT CHIPS + QUICK-ADD KEYWORDS
+    // ─────────────────────────────────────────────
+    function updateTraitSuggestions() {
+        const cat    = document.getElementById('itemCategory').value;
+        const chips  = document.getElementById('traitChips');
+        const kwList = document.getElementById('suggestedKeywordList');
+        const kwBox  = document.getElementById('suggestedKeywords');
+
+        selectedTraits.clear();
+
+        if (!cat || !CATEGORY_TRAITS[cat]) {
+            chips.innerHTML = '<span class="text-xs text-slate-400 italic">Select a category above to see suggestions.</span>';
+            kwBox.classList.add('hidden');
+            updateQuality();
+            return;
+        }
+
+        chips.innerHTML = CATEGORY_TRAITS[cat].map(t =>
+            `<button type="button" class="trait-chip" data-group="trait" data-value="${t}" onclick="toggleChip(this)">${t}</button>`
+        ).join('');
+
+        kwList.innerHTML = (CATEGORY_KEYWORDS[cat] || []).map(k =>
+            `<button type="button" onclick="addKeyword('${k}')"
+                class="text-[11px] px-2.5 py-1 bg-green-50 text-green-700 border border-green-100
+                       rounded-full font-semibold hover:bg-green-100 transition">
+                + ${k}
+            </button>`
+        ).join('');
+        kwBox.classList.remove('hidden');
+        updateQuality();
+    }
+
+    // ─────────────────────────────────────────────
+    // SMART TAG INPUT
+    // ─────────────────────────────────────────────
+    const tagInput = SmartTagInput.init({
+        inputId:     'keywordInput',
+        containerId: 'tagContainer',
+        errorId:     'tagError',
+        accentColor: 'green',
+    });
+
+    function addKeyword(val) {
+        tagInput.addSuggested(val);
+        updateQuality();
+    }
+
+    new MutationObserver(updateQuality)
+        .observe(document.getElementById('tagContainer'), { childList: true });
+
+    // ─────────────────────────────────────────────
+    // QUALITY METER
+    // color 20 | traits 20 | keywords 30 | exact spot 15 | photo 15
+    // ─────────────────────────────────────────────
+    function updateQuality() {
+        let score = 0;
+        if (selectedColors.size > 0)                      score += 20;
+        score += Math.min(selectedTraits.size * 4,        20);
+        score += Math.min(tagInput.getTags().length * 10, 30);
+        if (document.getElementById('exactSpot').value.trim().length > 5) score += 15;
+        if (document.getElementById('file-upload').files.length > 0)      score += 15;
+
+        const bar   = document.getElementById('qualityBar');
+        const label = document.getElementById('qualityLabel');
+        const hint  = document.getElementById('qualityHint');
+        bar.style.width = score + '%';
+
+        const levels = [
+            { max: 0,  color: '#cbd5e1', text: 'Not started',                cls: 'text-slate-400',  msg: 'Fill in colors, traits, and observations to help find the owner faster.' },
+            { max: 40, color: '#f97316', text: 'Weak — low match chance',    cls: 'text-orange-500', msg: 'Add more traits or observations. Vague reports are harder to match.' },
+            { max: 70, color: '#eab308', text: 'Fair — can be improved',     cls: 'text-yellow-500', msg: 'Good start! Add specific observations (name on item, brand) for better accuracy.' },
+            { max: 90, color: '#22c55e', text: 'Good — solid match profile', cls: 'text-green-500',  msg: 'Nice! The exact spot and a photo will push this to excellent.' },
+            { max: 101,color: '#16a34a', text: 'Excellent — high match chance', cls: 'text-green-700', msg: 'Great detail! This report will have the highest match probability.' },
+        ];
+
+        const lvl = levels.find(l => score <= l.max) || levels[levels.length - 1];
+        bar.style.backgroundColor = lvl.color;
+        label.textContent = lvl.text;
+        label.className = `text-[10px] font-black uppercase ${lvl.cls}`;
+        hint.textContent = lvl.msg;
+    }
+
+    document.getElementById('exactSpot').addEventListener('input', updateQuality);
+
+    // ─────────────────────────────────────────────
+    // PHOTO UPLOAD PREVIEW
+    // ─────────────────────────────────────────────
+    function clearPreview() {
+        document.getElementById('file-upload').value = '';
+        document.getElementById('attachedStatus').classList.add('hidden');
+        document.getElementById('uploadPlaceholder').classList.remove('hidden');
+        updateQuality();
+    }
+
+    document.getElementById('file-upload').addEventListener('change', function () {
+        if (this.files && this.files[0]) {
+            document.getElementById('fileNameDisplay').textContent = this.files[0].name;
+            document.getElementById('attachedStatus').classList.remove('hidden');
+            document.getElementById('uploadPlaceholder').classList.add('hidden');
+            updateQuality();
+        }
+    });
+
+    // ─────────────────────────────────────────────
+    // FORM SUBMIT — validate + compile hidden_marks
+    // ─────────────────────────────────────────────
+    document.getElementById('foundItemForm').addEventListener('submit', function (e) {
+        let valid = true;
+
+        if (selectedColors.size === 0) {
+            document.getElementById('colorError').classList.remove('hidden');
+            document.getElementById('colorChips').classList.add('shake');
+            setTimeout(() => document.getElementById('colorChips').classList.remove('shake'), 400);
+            valid = false;
+        } else {
+            document.getElementById('colorError').classList.add('hidden');
+        }
+
+        if (!tagInput.validate()) valid = false;
+
+        if (!valid) {
+            e.preventDefault();
+            document.getElementById('identifyingSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            return;
+        }
+
+        // Compile: "Colors: Black | Traits: cracked screen | Keywords: samsung | Exact Spot: stairs near entrance"
+        const parts = [];
+        if (selectedColors.size > 0) parts.push('Colors: ' + [...selectedColors].join(', '));
+        if (selectedTraits.size > 0) parts.push('Traits: ' + [...selectedTraits].join(', '));
+        parts.push(tagInput.getCompiledKeywords());
+
+        const spot = document.getElementById('exactSpot').value.trim();
+        if (spot) parts.push('Exact Spot: ' + spot);
+
+        document.getElementById('compiledMarks').value = parts.join(' | ');
+    });
+    </script>
 </body>
 </html>
