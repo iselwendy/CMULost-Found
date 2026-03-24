@@ -102,12 +102,13 @@ $stmt->execute([$user_id]);
 
                     <div>
                         <label class="block text-sm font-semibold mb-1.5 text-slate-700">Location Last Seen</label>
-                        <div class="relative">
-                            <i class="fas fa-map-marker-alt absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                            <input type="text" name="location" required 
-                                   placeholder="e.g. Main Library, 2nd Floor"
-                                   class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 outline-none">
-                        </div>
+                        <select name="location" id="itemLocation" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white outline-none">
+                            <option value="">Select location</option>
+                            <option value="Main Library">Main Library</option>
+                            <option value="Innovation Bldg">Innovation Bldg</option>
+                            <option value="ERC Bldg">ERC Bldg</option>
+                            <option value="University Canteen">University Canteen</option>
+                        </select>
                     </div>
                 </section>
 
@@ -126,7 +127,7 @@ $stmt->execute([$user_id]);
                     <div>
                         <label class="block text-sm font-semibold mb-1.5 text-slate-700">Identifying Details</label>
                         <textarea name="hidden_marks" rows="3" required
-                                  placeholder="Describe internal contents, scratches, or stickers (e.g. 'Sticker of a cat on the back', 'Contains a P20 bill and my ID')"
+                                  placeholder="Describe SPECIFIC LOCATION and internal contents, scratches, or stickers (e.g. 'Left at ICE 202 in the Innovation Bldg', 'Sticker of a cat on the back', 'Contains a P20 bill and my ID')"
                                   class="w-full px-4 py-2.5 rounded-xl border border-slate-200 outline-none resize-none focus:ring-2 focus:ring-indigo-500 transition-all"></textarea>
                     </div>
 

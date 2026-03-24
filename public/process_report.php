@@ -45,7 +45,7 @@ $user_id     = $_POST['reporter_id'];
 $report_type = $_POST['report_type'] ?? 'lost'; 
 $title       = $_POST['title'] ?? 'Untitled Item';
 $category_n  = $_POST['category'] ?? 'Other';
-$location    = $_POST['location'] ?? 'Unknown Location';
+$location_n   = $_POST['location'] ?? 'Other';
 $description = $_POST['hidden_marks'] ?? '';
 
 /**
@@ -57,7 +57,7 @@ $raw_date    = $_POST['date_lost'] ?? $_POST['date_found'] ?? date('Y-m-d H:i:s'
 $date_event  = date('Y-m-d H:i:s', strtotime($raw_date));
 
 /**
- * 3. Category Mapping
+ * 3. Category and Location Mapping
  */
 $category_map = [
     'Electronics' => 1,
@@ -70,16 +70,26 @@ $category_map = [
 ];
 $category_id = $category_map[$category_n] ?? 7;
 
+$location_map = [
+    'Main Library' => 1,
+    'Innovation Bldg' => 2,
+    'ERC Bldg' => 3,
+    'University Canteen' => 4,
+    'Other' => 5
+];
+$location_id = $location_map[$location_n] ?? 5;
+
+
 // 4. Prepare Database Insertion
 try {
     // Start Transaction
     $pdo->beginTransaction();
 
     if ($report_type === 'found') {
-        $sql = "INSERT INTO found_reports (reported_by, category_id, title, private_description, location_found, date_found, status) 
+        $sql = "INSERT INTO found_reports (reported_by, category_id, title, private_description, location_id, date_found, status) 
                 VALUES (?, ?, ?, ?, ?, ?, 'in custody')";
     } else {
-        $sql = "INSERT INTO lost_reports (user_id, category_id, title, private_description, location_lost, date_lost, status) 
+        $sql = "INSERT INTO lost_reports (user_id, category_id, title, private_description, location_id, date_lost, status) 
                 VALUES (?, ?, ?, ?, ?, ?, 'open')";
     }
 
@@ -89,7 +99,7 @@ try {
         $category_id, 
         $title, 
         $description, 
-        $location, 
+        $location_id, 
         $date_event
     ]);
 

@@ -86,12 +86,13 @@ $stmt->execute([$user_id]);
 
                     <div>
                         <label class="block text-sm font-semibold mb-1.5 text-slate-700">Where was it found?</label>
-                        <div class="relative">
-                            <i class="fas fa-location-dot absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                            <input type="text" name="location" required 
-                                   placeholder="e.g. Admin Bldg, Ground Floor Bench"
-                                   class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 outline-none">
-                        </div>
+                        <select name="location" id="itemLocation" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white outline-none">
+                            <option value="">Select location</option>
+                            <option value="Main Library">Main Library</option>
+                            <option value="Innovation Bldg">Innovation Bldg</option>
+                            <option value="ERC Bldg">ERC Bldg</option>
+                            <option value="University Canteen">University Canteen</option>
+                        </select>
                     </div>
                 </section>
 
@@ -104,7 +105,7 @@ $stmt->execute([$user_id]);
 
                     <p class="text-xs text-slate-500 italic bg-slate-100 p-3 rounded-lg border-l-4 border-indigo-500">
                         <i class="fas fa-user-shield mr-1"></i>
-                        <strong>Guardian Protocol:</strong> Please describe a <strong>specific identifying mark that only the owner would know</strong> (e.g., a specific serial number, a name written inside, or a unique scratch).
+                        <strong>Guardian Protocol:</strong> Please describe a <strong>specific identifying mark that only the owner would know</strong> (e.g., a specific serial number, a name written inside, a unique scratch, or the specific location where the item is found).
                         <br><br>
                         <strong>This field is hidden from the public to prevent fraudulent claims.</strong>
                     </p>
@@ -112,7 +113,7 @@ $stmt->execute([$user_id]);
                     <div>
                         <label class="block text-sm font-semibold mb-1.5 text-slate-700">Identifying Details</label>
                         <textarea name="hidden_marks" rows="3" required
-                                  placeholder="e.g. 'The ID inside says Juan Dela Cruz', 'The phone lockscreen is a picture of a dog'"
+                                  placeholder="e.g. 'The ID inside says Juan Dela Cruz', 'The phone lockscreen is a picture of a dog', 'Found at the stairs in the Innovation Bldg'"
                                   class="w-full px-4 py-2.5 rounded-xl border border-slate-200 outline-none resize-none focus:border-cmu-blue transition-all"></textarea>
                     </div>
 
