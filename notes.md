@@ -12,3 +12,4 @@ NEXT STEP:
 - Create the matching engine (matches table sa database)
 - Improve the search function to allow searching like this (cat sticker + 100 peso bill)
 - Improve the duplicateAlert function in report_lost/report_found
+- Improve the keywords system

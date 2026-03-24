@@ -2,7 +2,7 @@
 require_once '../core/auth_functions.php';
 
 $stmt = $pdo->prepare("SELECT * FROM users WHERE user_id = ?");
-$user_id = $_SESSION['user_id'] ?? null; // Get user ID from session
+$user_id = $_SESSION['user_id'] ?? null;
 $stmt->execute([$user_id]);
 ?>
 
@@ -15,33 +15,12 @@ $stmt->execute([$user_id]);
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="icon" href="../assets/images/system-icon.png">
-    <style>
-        /* Custom Dropdown Styling */
-        .filter-select {
-            appearance: none;
-            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
-            background-position: right 0.5rem center;
-            background-repeat: no-repeat;
-            background-size: 1.5em 1.5em;
-            padding-right: 2.5rem;
-        }
-
-        .glass-card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(229, 231, 235, 0.5);
-        }
-        input:focus, select:focus, textarea:focus {
-            ring: 2px;
-            ring-color: #4f46e5;
-        }
-    </style>
-    <link rel="stylesheet" href="../assets/styles/header.css"></link>
-    <link rel="stylesheet" href="../assets/styles/root.css"></link>
+    <link rel="stylesheet" href="../assets/styles/header.css">
+    <link rel="stylesheet" href="../assets/styles/root.css">
+    <link rel="stylesheet" href="../assets/styles/report_lost.css">
 </head>
 <body class="bg-slate-50 min-h-screen text-slate-900">
 
-    <!-- Navbar -->
     <?php require_once '../includes/header.php'; ?>
 
     <main class="max-w-2xl mx-auto px-4 py-8">
@@ -54,30 +33,22 @@ $stmt->execute([$user_id]);
                 <p class="text-slate-500 mt-1">Provide details to help our matching engine find your item.</p>
             </header>
 
-            <!-- Duplicate Check Alert (Hidden by default) -->
-            <!-- <div id="duplicateAlert" class="hidden mb-8 p-4 bg-amber-50 border border-amber-200 rounded-xl flex gap-3 animate-pulse">
-                <i class="fas fa-exclamation-triangle text-amber-500 mt-1"></i>
-                <div>
-                    <h4 class="font-semibold text-amber-800 text-sm">Potential Match Found!</h4>
-                    <p class="text-xs text-amber-700 mt-1">We noticed similar items in the <a href="index.php" class="underline font-bold">Public Gallery</a>. Please verify if your item is already turned in before submitting a new report.</p>
-                </div>
-            </div> -->
-
-            <form action="process_report.php" method="POST" enctype="multipart/form-data" class="space-y-6">
-                <!-- Hidden Field for User Association -->
+            <form action="process_report.php" method="POST" enctype="multipart/form-data" class="space-y-6" id="lostItemForm">
                 <input type="hidden" name="reporter_id" value="<?php echo $user_id; ?>">
                 <input type="hidden" name="report_type" value="lost">
-                
-                <!-- Basic Info Section -->
+                <!-- Hidden field that collects the final compiled description for the DB -->
+                <input type="hidden" name="hidden_marks" id="compiledMarks">
+
+                <!-- ── PUBLIC INFO ── -->
                 <section class="space-y-4">
                     <h3 class="text-sm font-bold uppercase tracking-wider text-slate-400 border-b pb-2 flex justify-between items-center">
                         <span>Public Information</span>
                         <i class="fas fa-globe-asia text-xs"></i>
                     </h3>
-                    
+
                     <div>
                         <label class="block text-sm font-semibold mb-1.5 text-slate-700">Item Name / Title</label>
-                        <input type="text" name="title" id="itemTitle" required 
+                        <input type="text" name="title" id="itemTitle" required
                                placeholder="e.g. Black Leather Wallet"
                                class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all">
                     </div>
@@ -85,25 +56,31 @@ $stmt->execute([$user_id]);
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-semibold mb-1.5 text-slate-700">Category</label>
-                            <select name="category" id="itemCategory" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white outline-none">
+                            <select name="category" id="itemCategory" required
+                                    class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white outline-none"
+                                    onchange="updateTraitSuggestions()">
                                 <option value="">Select category</option>
                                 <option value="Electronics">Electronics</option>
-                                <option value="Valuables">Valuables (Wallet/Keys)</option>
+                                <option value="Valuables">Valuables</option>
                                 <option value="Documents">Documents/IDs</option>
                                 <option value="Books">Books/Stationery</option>
+                                <option value="Clothing">Clothing</option>
                                 <option value="Personal">Personal Items</option>
                             </select>
                         </div>
                         <div>
                             <label class="block text-sm font-semibold mb-1.5 text-slate-700">Date Lost</label>
-                            <input type="datetime-local" name="date_lost" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 outline-none">
+                            <input type="datetime-local" name="date_lost" required
+                                   class="w-full px-4 py-2.5 rounded-xl border border-slate-200 outline-none">
                         </div>
                     </div>
 
                     <div>
                         <label class="block text-sm font-semibold mb-1.5 text-slate-700">Location Last Seen</label>
-                        <select name="location" id="itemLocation" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white outline-none">
+                        <select name="location" id="itemLocation" required
+                                class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white outline-none">
                             <option value="">Select location</option>
+                            <option value="Other">Other</option>
                             <option value="Main Library">Main Library</option>
                             <option value="Innovation Bldg">Innovation Bldg</option>
                             <option value="ERC Bldg">ERC Bldg</option>
@@ -112,34 +89,94 @@ $stmt->execute([$user_id]);
                     </div>
                 </section>
 
-                <!-- Private/Verification Section -->
-                <section class="space-y-4 pt-4">
+                <!-- ── IDENTIFYING DETAILS (PRIVATE) ── -->
+                <section class="space-y-5 pt-4" id="identifyingSection">
                     <div class="flex items-center gap-2 border-b pb-2">
                         <h3 class="text-sm font-bold uppercase tracking-wider text-slate-400">Private Verification Marks</h3>
                         <span class="text-[10px] bg-amber-500 text-white px-2 py-0.5 rounded-full font-bold">REDACTED FROM GALLERY</span>
                     </div>
-                    
+
                     <p class="text-xs text-slate-500 italic bg-slate-100 p-3 rounded-lg border-l-4 border-indigo-500">
                         <i class="fas fa-user-shield mr-1"></i>
-                        <strong>Privacy Guard:</strong> These details are <u>NOT</u> shown in the public gallery. They are used by the SAO Admin to verify your ownership during the claim interview and to improve the matching process.
+                        <strong>Privacy Guard:</strong> These details are <u>NOT</u> shown in the public gallery.
+                        They are used by OSA to verify ownership and by the <strong>matching engine</strong> to find your item.
+                        The more specific you are, the faster it finds a match.
                     </p>
-                    
+
+                    <!-- ❶ COLOR picker -->
                     <div>
-                        <label class="block text-sm font-semibold mb-1.5 text-slate-700">Identifying Details</label>
-                        <textarea name="hidden_marks" rows="3" required
-                                  placeholder="Describe SPECIFIC LOCATION and internal contents, scratches, or stickers (e.g. 'Left at ICE 202 in the Innovation Bldg', 'Sticker of a cat on the back', 'Contains a P20 bill and my ID')"
-                                  class="w-full px-4 py-2.5 rounded-xl border border-slate-200 outline-none resize-none focus:ring-2 focus:ring-indigo-500 transition-all"></textarea>
+                        <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">
+                            <i class="fas fa-palette mr-1 text-indigo-400"></i> Primary Color(s)
+                            <span class="text-red-400 ml-1">*</span>
+                        </label>
+                        <div class="flex flex-wrap gap-2" id="colorChips">
+                            <?php
+                            $colors = ['Black','White','Gray','Brown','Red','Orange','Yellow','Green','Blue','Purple','Pink','Gold','Silver'];
+                            foreach ($colors as $c): ?>
+                                <button type="button" class="trait-chip" data-group="color" data-value="<?php echo $c; ?>" onclick="toggleChip(this)">
+                                    <?php echo $c; ?>
+                                </button>
+                            <?php endforeach; ?>
+                        </div>
+                        <p id="colorError" class="text-xs text-red-500 mt-1 hidden">Please select at least one color.</p>
                     </div>
 
-                    <!-- Enhanced Upload Box -->
+                    <!-- ❷ DISTINGUISHING TRAITS (category-aware) -->
+                    <div id="traitSection">
+                        <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">
+                            <i class="fas fa-fingerprint mr-1 text-indigo-400"></i> Distinguishing Traits
+                            <span class="text-slate-400 text-[10px] normal-case font-normal ml-1">(select all that apply)</span>
+                        </label>
+                        <div class="flex flex-wrap gap-2" id="traitChips">
+                            <!-- Populated dynamically by JS based on category -->
+                            <span class="text-xs text-slate-400 italic">Select a category above to see suggestions.</span>
+                        </div>
+                    </div>
+
+                    <!-- ❸ SPECIFIC KEYWORD TAGS -->
+                    <div>
+                        <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1">
+                            <i class="fas fa-tags mr-1 text-indigo-400"></i> Specific Keywords
+                            <span class="text-slate-400 text-[10px] normal-case font-normal ml-1">(brand, name written, serial no., sticker, etc.)</span>
+                        </label>
+                        <p class="text-[11px] text-slate-400 mb-2">Type a keyword and press <kbd class="bg-slate-100 border border-slate-200 rounded px-1 text-[10px]">Enter</kbd> or <kbd class="bg-slate-100 border border-slate-200 rounded px-1 text-[10px]">,</kbd> to add it.</p>
+
+                        <!-- Tag display area -->
+                        <div id="tagContainer"
+                             class="min-h-[44px] w-full px-3 py-2 rounded-xl border border-slate-200 bg-white flex flex-wrap gap-1.5 items-center cursor-text focus-within:ring-2 focus-within:ring-indigo-400 focus-within:border-indigo-400 transition-all">
+                            <input type="text" id="keywordInput"
+                                   placeholder="e.g. Samsung, Juan written inside, anime sticker..."
+                                   class="flex-1 min-w-[160px] outline-none text-sm text-slate-700 bg-transparent py-0.5"
+                                   autocomplete="off">
+                        </div>
+                        <div id="tagError" class="text-xs text-red-500 mt-1 hidden">Please add at least one specific keyword.</div>
+
+                        <!-- Suggested keywords (context-aware) -->
+                        <div id="suggestedKeywords" class="mt-2 hidden">
+                            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1.5">Quick add:</p>
+                            <div id="suggestedKeywordList" class="flex flex-wrap gap-1.5"></div>
+                        </div>
+                    </div>
+
+                    <!-- ❹ DESCRIPTION QUALITY METER -->
+                    <div id="qualityMeter" class="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                        <div class="flex items-center justify-between mb-1.5">
+                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Description Quality</p>
+                            <span id="qualityLabel" class="text-[10px] font-black text-slate-400 uppercase">Not started</span>
+                        </div>
+                        <div class="h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                            <div id="qualityBar" class="h-full rounded-full bg-slate-300" style="width: 0%"></div>
+                        </div>
+                        <p id="qualityHint" class="text-[11px] text-slate-400 mt-1.5 italic">Fill in colors, traits, and keywords to improve match accuracy.</p>
+                    </div>
+
+                    <!-- ❺ PHOTO UPLOAD -->
                     <div>
                         <label class="block text-sm font-semibold mb-1.5 text-slate-700 text-indigo-600">Reference Photo</label>
                         <div id="dropZone" class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-slate-200 border-dashed rounded-xl hover:border-indigo-400 transition-all cursor-pointer group relative overflow-hidden">
-                            
-                            <!-- State 1: Empty / Placeholder -->
-                            <div class="space-y-1 text-center transition-opacity duration-300" id="uploadPlaceholder">
+                            <div class="space-y-1 text-center" id="uploadPlaceholder">
                                 <i class="fas fa-cloud-upload-alt text-slate-300 text-3xl mb-2 group-hover:text-indigo-500 transition-colors"></i>
-                                <div class="flex text-sm text-slate-600">
+                                <div class="flex text-sm text-slate-600 justify-center">
                                     <label class="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:underline">
                                         <span>Click to upload</span>
                                         <input id="file-upload" name="photo" type="file" class="sr-only" accept="image/*">
@@ -148,36 +185,25 @@ $stmt->execute([$user_id]);
                                 </div>
                                 <p class="text-[10px] text-slate-400 uppercase tracking-widest">PNG, JPG up to 5MB</p>
                             </div>
-
-                            <!-- State 2: Attached (Hidden by default) -->
-                            <div id="attachedStatus" class="hidden absolute inset-0 bg-white/90 flex flex-col items-center justify-center p-4 text-center z-10 animate-in fade-in duration-300">
+                            <div id="attachedStatus" class="hidden absolute inset-0 bg-white/90 flex flex-col items-center justify-center p-4 text-center z-10">
                                 <div class="w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-2">
                                     <i class="fas fa-check"></i>
                                 </div>
                                 <p class="text-sm font-bold text-slate-800" id="fileNameDisplay">image.jpg</p>
                                 <p class="text-xs text-slate-500">File attached successfully</p>
-                                <button type="button" onclick="clearPreview()" class="mt-3 text-xs text-red-500 font-semibold hover:underline">
-                                    Change photo
-                                </button>
-                            </div>
-
-                            <!-- Image Preview Layer (Optional visual) -->
-                            <div id="imagePreview" class="hidden absolute inset-0 bg-white p-2">
-                                <img src="" alt="Preview" class="w-full h-full object-contain rounded-lg">
-                                <button type="button" onclick="clearPreview()" class="absolute top-2 right-2 bg-red-500 text-white w-6 h-6 rounded-full shadow-lg flex items-center justify-center text-xs">
-                                    <i class="fas fa-times"></i>
-                                </button>
+                                <button type="button" onclick="clearPreview()" class="mt-3 text-xs text-red-500 font-semibold hover:underline">Change photo</button>
                             </div>
                         </div>
                     </div>
                 </section>
 
                 <div class="pt-6">
-                    <button type="submit" class="w-full bg-cmu-blue hover:bg-slate-800 text-white font-bold py-4 rounded-xl shadow-lg shadow-indigo-200 transition-all transform active:scale-[0.98] flex items-center justify-center gap-2">
+                    <button type="submit" id="submitBtn"
+                            class="w-full bg-cmu-blue hover:bg-slate-800 text-white font-bold py-4 rounded-xl shadow-lg transition-all transform active:scale-[0.98] flex items-center justify-center gap-2">
                         <i class="fas fa-check-circle"></i>
                         Confirm & Post Report
                     </button>
-                    <p class="text-center text-[11px] text-slate-400 mt-6 px-4">
+                    <p class="text-center text-[11px] text-slate-400 mt-4 px-4">
                         By submitting, you acknowledge that providing false information is a violation of the Student Code of Conduct.
                     </p>
                 </div>
@@ -185,10 +211,10 @@ $stmt->execute([$user_id]);
         </div>
     </main>
 
-    <!-- Footer -->
     <?php require_once '../includes/footer.php'; ?>
 
     <script src="../assets/scripts/profile-dropdown.js"></script>
     <script src="../assets/scripts/item_image_upload.js"></script>
+    <script src="../assets/scripts/report_lost_keywords.js"></script>
 </body>
 </html>

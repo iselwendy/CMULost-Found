@@ -1,0 +1,86 @@
+.glass-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(229, 231, 235, 0.5);
+}
+
+/* Keyword tag pills */
+.keyword-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    color: #15803d;
+    border-radius: 99px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: default;
+    transition: background 0.15s;
+}
+
+.keyword-tag button {
+    color: #86efac;
+    font-size: 10px;
+    line-height: 1;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+}
+
+.keyword-tag button:hover {
+    color: #dc2626;
+}
+
+/* Trait chip toggles */
+.trait-chip {
+    padding: 6px 14px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 99px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+    background: white;
+    cursor: pointer;
+    transition: all 0.15s;
+    user-select: none;
+}
+
+.trait-chip:hover {
+    border-color: #86efac;
+    color: #15803d;
+}
+
+.trait-chip.selected {
+    background: #16a34a;
+    border-color: #16a34a;
+    color: white;
+}
+
+/* Quality meter bar */
+#qualityBar {
+    transition: width 0.4s ease, background-color 0.4s ease;
+}
+
+/* Warning shake */
+@keyframes shake {
+
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+
+    25% {
+        transform: translateX(-6px);
+    }
+
+    75% {
+        transform: translateX(6px);
+    }
+}
+
+.shake {
+    animation: shake 0.3s ease;
+}
