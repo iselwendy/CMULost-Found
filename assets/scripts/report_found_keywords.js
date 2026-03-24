@@ -1,7 +1,6 @@
-// ─────────────────────────────────────────────
 // TRAIT SUGGESTIONS — same vocabulary as report_lost.php
 // so the matching engine compares apples to apples
-// ─────────────────────────────────────────────
+
 const CATEGORY_TRAITS = {
     'Electronics': [
         'cracked screen', 'scratched', 'sticker on back', 'case/cover', 'no case',
@@ -38,16 +37,13 @@ const CATEGORY_KEYWORDS = {
     'Personal': ['AquaFlask', 'Hydroflask', 'umbrella', 'tote bag', 'drawstring', 'lunchbox']
 };
 
-// ─────────────────────────────────────────────
+
 // STATE
-// ─────────────────────────────────────────────
 let selectedColors = new Set();
 let selectedTraits = new Set();
 let keywords = [];
 
-// ─────────────────────────────────────────────
 // CHIP TOGGLE
-// ─────────────────────────────────────────────
 function toggleChip(el) {
     el.classList.toggle('selected');
     const val = el.dataset.value;
@@ -60,9 +56,7 @@ function toggleChip(el) {
     updateQuality();
 }
 
-// ─────────────────────────────────────────────
 // CATEGORY-AWARE TRAIT CHIPS
-// ─────────────────────────────────────────────
 function updateTraitSuggestions() {
     const cat = document.getElementById('itemCategory').value;
     const chips = document.getElementById('traitChips');
@@ -92,9 +86,8 @@ function updateTraitSuggestions() {
     updateQuality();
 }
 
-// ─────────────────────────────────────────────
+
 // KEYWORD TAG INPUT
-// ─────────────────────────────────────────────
 const keywordInput = document.getElementById('keywordInput');
 
 keywordInput.addEventListener('keydown', function (e) {
@@ -140,7 +133,7 @@ function escapeHtml(str) {
     return str.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
 }
 
-// ─────────────────────────────────────────────
+
 // QUALITY METER
 // Scoring:
 //   color(s)    → 20 pts
@@ -148,7 +141,6 @@ function escapeHtml(str) {
 //   keywords    → 30 pts (10 pts each, max 3)
 //   exact spot  → 15 pts
 //   photo       → 15 pts (required for found items)
-// ─────────────────────────────────────────────
 function updateQuality() {
     let score = 0;
 
@@ -196,10 +188,8 @@ function updateQuality() {
 document.getElementById('exactSpot').addEventListener('input', updateQuality);
 document.getElementById('file-upload').addEventListener('change', updateQuality);
 
-// ─────────────────────────────────────────────
 // COMPILE HIDDEN FIELD BEFORE SUBMIT
 // Format: "Colors: Black | Traits: cracked screen | Keywords: samsung, juan | Exact Spot: stairs near entrance"
-// ─────────────────────────────────────────────
 document.getElementById('foundItemForm').addEventListener('submit', function (e) {
     let valid = true;
 
@@ -239,9 +229,8 @@ document.getElementById('foundItemForm').addEventListener('submit', function (e)
     document.getElementById('compiledMarks').value = parts.join(' | ');
 });
 
-// ─────────────────────────────────────────────
+
 // PHOTO UPLOAD PREVIEW
-// ─────────────────────────────────────────────
 function clearPreview() {
     document.getElementById('file-upload').value = '';
     document.getElementById('attachedStatus').classList.add('hidden');

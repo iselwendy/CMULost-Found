@@ -1,7 +1,6 @@
-// ─────────────────────────────────────────────
 // TRAIT SUGGESTIONS PER CATEGORY
 // These keywords become the matching engine fodder
-// ─────────────────────────────────────────────
+
 const CATEGORY_TRAITS = {
     'Electronics': [
         'cracked screen', 'scratched', 'sticker on back', 'case/cover', 'no case',
@@ -38,16 +37,14 @@ const CATEGORY_KEYWORDS = {
     'Personal': ['AquaFlask', 'Hydroflask', 'umbrella', 'tote bag', 'drawstring', 'lunchbox']
 };
 
-// ─────────────────────────────────────────────
 // STATE
-// ─────────────────────────────────────────────
+
 let selectedColors = new Set();
 let selectedTraits = new Set();
 let keywords = [];
 
-// ─────────────────────────────────────────────
+
 // CHIP TOGGLE
-// ─────────────────────────────────────────────
 function toggleChip(el) {
     el.classList.toggle('selected');
     const val = el.dataset.value;
@@ -61,9 +58,8 @@ function toggleChip(el) {
     updateQuality();
 }
 
-// ─────────────────────────────────────────────
+
 // CATEGORY-AWARE TRAIT CHIPS
-// ─────────────────────────────────────────────
 function updateTraitSuggestions() {
     const cat = document.getElementById('itemCategory').value;
     const chips = document.getElementById('traitChips');
@@ -94,9 +90,8 @@ function updateTraitSuggestions() {
     updateQuality();
 }
 
-// ─────────────────────────────────────────────
+
 // KEYWORD TAG INPUT
-// ─────────────────────────────────────────────
 const keywordInput = document.getElementById('keywordInput');
 
 keywordInput.addEventListener('keydown', function (e) {
@@ -145,14 +140,13 @@ function escapeHtml(str) {
     return str.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
 }
 
-// ─────────────────────────────────────────────
+
 // QUALITY METER
 // Scoring rubric mirrors what the matching engine values:
 //   color(s)   → 25 pts
 //   traits     → 25 pts (5 pts each, max 5)
 //   keywords   → 30 pts (10 pts each, max 3)
 //   photo      → 20 pts
-// ─────────────────────────────────────────────
 function updateQuality() {
     let score = 0;
 
@@ -198,11 +192,10 @@ function updateQuality() {
 // Update quality when photo is added/removed
 document.getElementById('file-upload').addEventListener('change', updateQuality);
 
-// ─────────────────────────────────────────────
+
 // COMPILE HIDDEN FIELD BEFORE SUBMIT
 // Produces a clean structured string for the DB:
 // "Colors: Black, Blue | Traits: cracked screen, sticker on back | Keywords: samsung, juan, s24"
-// ─────────────────────────────────────────────
 document.getElementById('lostItemForm').addEventListener('submit', function (e) {
     // Validation
     let valid = true;
@@ -241,9 +234,8 @@ document.getElementById('lostItemForm').addEventListener('submit', function (e) 
     document.getElementById('compiledMarks').value = parts.join(' | ');
 });
 
-// ─────────────────────────────────────────────
+
 // PHOTO UPLOAD PREVIEW (mirrors item_image_upload.js)
-// ─────────────────────────────────────────────
 function clearPreview() {
     document.getElementById('file-upload').value = '';
     document.getElementById('attachedStatus').classList.add('hidden');
