@@ -343,7 +343,7 @@ $stmt->execute([$user_id]);
             // Show "analyzing..." after a short delay
             aiDebounceTimer = setTimeout(() => {
                 triggerAISuggestions(title, cat);
-            }, 700); // 700ms debounce — fires after user pauses typing
+            }, 2000); // 700ms debounce — fires after user pauses typing
         });
     });
 
@@ -365,11 +365,20 @@ $stmt->execute([$user_id]);
             });
             const data = await res.json();
 
-            if (data.source === 'ai' && (data.traits.length > 0 || data.keywords.length > 0)) {
+            if (data.traits.length > 0 || data.keywords.length > 0) {
                 mergeAITraits(data.traits);
                 mergeAIKeywords(data.keywords);
-                statusText.textContent = `✓ ${data.traits.length + data.keywords.length} smart suggestions added`;
-                setTimeout(() => statusEl.classList.add('hidden'), 3000);
+
+                if (data.source === 'ai') {
+                    statusText.textContent = `✨ Gemini: ${data.traits.length + data.keywords.length} AI suggestions added`;
+                } else if (data.source === 'vocabulary') {
+                    statusText.textContent = `📖 Fallback: loaded ${data.traits.length + data.keywords.length} standard suggestions from vocabulary`;
+                } else if (data.source === 'rate_limited') {
+                    statusText.textContent = `⏳ Rate limited — showing vocabulary suggestions instead`;
+                }
+
+                statusEl.classList.remove('hidden');
+                setTimeout(() => statusEl.classList.add('hidden'), 4000);
             } else {
                 statusEl.classList.add('hidden');
             }

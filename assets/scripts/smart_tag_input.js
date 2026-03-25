@@ -1,38 +1,34 @@
 /**
- * CMU Lost & Found — Smart Keyword Tag Input  v2.0
- * Option D: JSON vocabulary + AI fallback
+ * CMU Lost & Found — Smart Keyword Tag Input  v3.0
+ * Gemini-first, vocabulary.json fallback
  *
  * Drop in: assets/scripts/smart_tag_input.js
  *
- * Vocabulary is loaded from: assets/data/vocabulary.json
- * AI suggestions fetched from: core/get_suggestions.php
+ * Strategy:
+ *   PRIMARY   → Gemini AI via core/get_suggestions.php
+ *   FALLBACK  → vocabulary.json (used when AI fails, is unavailable, or returns empty)
  *
  * Usage:
- *   const tagInput = await SmartTagInput.init({ ... });
+ *   const tagInput = await SmartTagInput.init({ ... });
  *
  * Because vocabulary loading is async, init() returns a Promise.
- * Use it inside an async IIFE or with .then().
  */
 
 const SmartTagInput = (() => {
 
     // ── Loaded from vocabulary.json at init time ───────────────
-    let VOCAB = {};   // full parsed JSON
-    let ALL_TERMS = [];   // flat array of all canonical trait + keyword strings
-    let SYNONYMS = {};   // synonym map
+    let VOCAB = {};   // full parsed JSON
+    let ALL_TERMS = [];   // flat array of all canonical trait + keyword strings
+    let SYNONYMS = {};   // synonym map
 
     // ── Vocabulary loader ──────────────────────────────────────
     async function loadVocabulary() {
         if (ALL_TERMS.length > 0) return; // already loaded
         try {
-            // Path is relative to the page calling this script
-            // Both report_lost.php and report_found.php are in /public/
-            // so vocabulary.json sits at ../assets/data/vocabulary.json
             const res = await fetch('../assets/data/vocabulary.json');
             VOCAB = await res.json();
             SYNONYMS = VOCAB.synonyms || {};
 
-            // Flatten all traits + keywords from all categories into one searchable list
             ALL_TERMS = Object.values(VOCAB.categories || {}).flatMap(cat =>
                 [...(cat.traits || []), ...(cat.keywords || [])]
             );
@@ -68,7 +64,7 @@ const SmartTagInput = (() => {
         return ratio > 0.45 ? ratio * 0.55 : 0;
     }
 
-    // ── Normalize via synonym map → { canonical, wasNormalized, isCustom } ──
+    // ── Normalize via synonym map ──────────────────────────────
     function normalize(raw) {
         const lower = raw.toLowerCase().trim();
         if (SYNONYMS[lower])
@@ -85,7 +81,7 @@ const SmartTagInput = (() => {
         return { canonical: lower, wasNormalized: false, isCustom: true };
     }
 
-    // ── Get top autocomplete suggestions ──────────────────────
+    // ── Autocomplete suggestions from vocabulary ───────────────
     function getSuggestions(query, limit = 7) {
         if (!query || query.length < 2) return [];
         return ALL_TERMS
@@ -103,7 +99,7 @@ const SmartTagInput = (() => {
     }
 
     // ─────────────────────────────────────────────────────────────
-    // MAIN INIT — returns a Promise resolving to the public API
+    // MAIN INIT
     // ─────────────────────────────────────────────────────────────
     async function init({ inputId, containerId, errorId, accentColor = 'indigo' }) {
 
@@ -144,7 +140,7 @@ const SmartTagInput = (() => {
         container.classList.add(...A.ring);
 
         // ── Instance state ───────────────────────────────────────
-        let tags = [];  // { raw, canonical, isCustom, wasNormalized, isAI }
+        let tags = [];
         let dropdownEl = null;
         let activeIdx = -1;
 
@@ -169,8 +165,8 @@ const SmartTagInput = (() => {
                 item.dataset.idx = i;
                 const isStd = ALL_TERMS.map(t => t.toLowerCase()).includes(s.toLowerCase());
                 item.innerHTML = `
-                    <span class="font-medium">${highlightQuery(s, input.value.trim())}</span>
-                    ${isStd ? `<span class="text-[9px] font-black uppercase tracking-wide text-slate-400">✓ standard</span>` : ''}`;
+                    <span class="font-medium">${highlightQuery(s, input.value.trim())}</span>
+                    ${isStd ? `<span class="text-[9px] font-black uppercase tracking-wide text-slate-400">✓ standard</span>` : ''}`;
                 item.addEventListener('mousedown', e => { e.preventDefault(); commitTag(s); });
                 dropdownEl.appendChild(item);
             });
@@ -233,17 +229,16 @@ const SmartTagInput = (() => {
                     ? `<i class="fas fa-tag text-[9px] opacity-40" title="Custom tag"></i>`
                     : `<i class="fas fa-check text-[9px] opacity-50"></i>`;
 
-                // Badge: AI-sourced takes priority over AUTO-normalized
                 let badge = '';
                 if (tag.isAI)
-                    badge = `<span class="text-[8px] px-1 rounded font-black ${A.aiBadge}" title="AI-suggested trait">AI</span>`;
+                    badge = `<span class="text-[8px] px-1 rounded font-black ${A.aiBadge}" title="AI-suggested">AI</span>`;
                 else if (tag.wasNormalized)
                     badge = `<span class="text-[8px] px-1 rounded font-black ${A.normBadge}" title="Auto-normalized from: ${esc(tag.raw)}">AUTO</span>`;
 
                 pill.innerHTML = `${icon}${esc(tag.canonical)}${badge}
-                    <button type="button" class="transition ${A.pillBtn} text-[10px] leading-none" title="Remove">
-                        <i class="fas fa-times"></i>
-                    </button>`;
+                    <button type="button" class="transition ${A.pillBtn} text-[10px] leading-none" title="Remove">
+                        <i class="fas fa-times"></i>
+                    </button>`;
                 container.insertBefore(pill, input);
                 pill.querySelector('button').addEventListener('click', () => removeTag(tag.canonical));
             });
@@ -311,10 +306,8 @@ const SmartTagInput = (() => {
             hasCustomTags: () => tags.some(t => t.isCustom),
             hasAITags: () => tags.some(t => t.isAI),
 
-            /** Add a tag programmatically (quick-add buttons, AI suggestions) */
             addSuggested: (val, isAI = false) => commitTag(val, isAI),
 
-            /** Validation with shake animation */
             validate() {
                 if (tags.length === 0) {
                     errorEl?.classList.remove('hidden');
@@ -330,7 +323,7 @@ const SmartTagInput = (() => {
         };
     }
 
-    // Public surface
+    // ── Public surface ─────────────────────────────────────────
     return { init, getSuggestions, normalize, loadVocabulary, getStandardForCategory };
 
 })();
