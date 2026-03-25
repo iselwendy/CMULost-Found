@@ -1,5 +1,11 @@
 <?php
-putenv('GEMINI_API_KEY=AIzaSyClbH6gOimHliJnUILVCOV7i99q2-l5-0w');
+require __DIR__ . '/../vendor/autoload.php';
+
+use Dotenv\Dotenv;
+
+$dotenv = Dotenv::createImmutable(dirname(__DIR__));
+$dotenv->load();
+
 /**
  * CMU Lost & Found — AI Suggestion Endpoint (Gemini-first)
  * POST /core/get_suggestions.php
@@ -44,7 +50,7 @@ if (strlen($title) < 3 || empty($category)) {
 
 // ── Rate limiting (session-based, 20 calls per session) ────────
 $_SESSION['ai_suggestion_calls'] = ($_SESSION['ai_suggestion_calls'] ?? 0) + 1;
-if ($_SESSION['ai_suggestion_calls'] > 20) {
+if ($_SESSION['ai_suggestion_calls'] > 100) {
     echo json_encode(vocabFallback($category) + ['source' => 'rate_limited']);
     exit;
 }
@@ -76,7 +82,7 @@ function sanitize_suggestion(string $s): string {
 }
 
 // ── Check for Gemini API key ───────────────────────────────────
-$api_key = getenv('GEMINI_API_KEY');
+$api_key = $_ENV['GEMINI_API_KEY'];
 
 if (empty($api_key)) {
     error_log('GEMINI_API_KEY is not set');

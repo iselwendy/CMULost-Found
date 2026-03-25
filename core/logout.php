@@ -19,6 +19,8 @@ if (ini_get("session.use_cookies")) {
     );
 }
 
+unset($_SESSION['ai_suggestion_calls']);
+
 // Finally, destroy the session.
 session_destroy();
 

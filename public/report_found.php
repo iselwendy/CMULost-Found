@@ -381,6 +381,7 @@ $stmt->execute([$user_id]);
     // AI SUGGESTIONS
     // ─────────────────────────────────────────────────────────
     async function triggerAISuggestions(title, category) {
+        console.log('triggerAISuggestions called:', { title, category });
         const statusEl   = document.getElementById('aiStatus');
         const statusText = document.getElementById('aiStatusText');
         statusEl.classList.remove('hidden');

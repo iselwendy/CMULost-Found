@@ -352,6 +352,7 @@ $stmt->execute([$user_id]);
     // merge new traits/keywords without overwriting standard ones
     // ─────────────────────────────────────────────────────────
     async function triggerAISuggestions(title, category) {
+        console.log('triggerAISuggestions called:', { title, category });
         const statusEl   = document.getElementById('aiStatus');
         const statusText = document.getElementById('aiStatusText');
         statusEl.classList.remove('hidden');
