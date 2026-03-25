@@ -258,7 +258,7 @@ function statusBadgeClass(string $status): string {
                 <div class="flex-1 text-center md:text-left">
                     <div class="flex flex-col md:flex-row md:items-center gap-3 mb-2">
                         <h1 class="text-3xl font-bold text-gray-900"><?php echo htmlspecialchars($user['full_name']); ?></h1>
-                        <span class="self-start px-3 py-1 bg-blue-50 text-cmu-blue text-xs font-bold rounded-full border border-blue-100 uppercase tracking-wider">
+                        <span class="px-3 py-1 bg-blue-50 text-cmu-blue text-xs font-bold rounded-full border border-blue-100 uppercase tracking-wider">
                             <?php echo htmlspecialchars($user['role']); ?>
                         </span>
                     </div>
