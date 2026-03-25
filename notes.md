@@ -14,3 +14,5 @@ NEXT STEP:
 - Create the matching engine (matches table sa database)
 - Improve the search function to allow searching like this (cat sticker + 100 peso bill)
 - Improve the duplicateAlert function in report_lost/report_founds
+
+:: should the user be able to edit/delete their reports? for example, nag-report sila ng lost item tapos na-misplace lang pala nila ang nakita nila agad after ma-post nung report...?

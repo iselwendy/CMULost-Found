@@ -1,3 +1,143 @@
+
+<?php
+/**
+ * My Reports - CMU Lost & Found
+ * Fetches and displays user-specific lost and found reports.
+ */
+require_once '../core/db_config.php';
+// Assuming session starts in header or auth check
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+// Redirect if not logged in
+if (!isset($_SESSION['user_id'])) {
+    header("Location: ../core/auth.php");
+    exit();
+}
+
+$user_id = $_SESSION['user_id'];
+
+try {
+    // 1. Fetch Summary Stats
+    $stmt_stats = $pdo->prepare("
+        SELECT 
+            (SELECT COUNT(*) FROM lost_reports WHERE user_id = ? AND status != 'closed') +
+            (SELECT COUNT(*) FROM found_reports WHERE reported_by = ? AND status != 'claimed') as active_count,
+            (SELECT COUNT(*) FROM matches m 
+             JOIN lost_reports lr ON m.lost_id = lr.lost_id 
+             WHERE lr.user_id = ? AND m.status = 'pending') as match_count
+    ");
+    $stmt_stats->execute([$user_id, $user_id, $user_id]);
+    $stats = $stmt_stats->fetch();
+
+    // 2. Fetch "My Reports" (Combined Lost and Found)
+    // We use a UNION to show both types in one list
+    $stmt_reports = $pdo->prepare("
+        (SELECT 
+            lr.lost_id as id, 'lost' as type, lr.title, lr.private_description, 
+            l.location_name, lr.status, lr.date_lost as date, lr.created_at,
+            img.image_path
+        FROM lost_reports lr
+        JOIN locations l ON lr.location_id = l.location_id
+        LEFT JOIN (
+            SELECT report_id, image_path, report_type 
+            FROM item_images 
+            WHERE (report_id, image_id) IN (
+                SELECT report_id, MIN(image_id) 
+                FROM item_images WHERE report_type = 'lost' GROUP BY report_id
+            )
+        ) img ON lr.lost_id = img.report_id
+        WHERE lr.user_id = ?)
+
+        UNION ALL
+
+        (SELECT 
+            fr.found_id as id, 'found' as type, fr.title, fr.private_description,
+            l.location_name, fr.status, fr.date_found as date, fr.created_at,
+            img.image_path
+        FROM found_reports fr
+        JOIN locations l ON fr.location_id = l.location_id
+        LEFT JOIN (
+            SELECT report_id, image_path, report_type 
+            FROM item_images 
+            WHERE (report_id, image_id) IN (
+                SELECT report_id, MIN(image_id) 
+                FROM item_images WHERE report_type = 'found' GROUP BY report_id
+            )
+        ) img ON fr.found_id = img.report_id
+        WHERE fr.reported_by = ?)
+        
+        ORDER BY created_at DESC
+    ");
+    $stmt_reports->execute([$user_id, $user_id]);
+    $my_reports = $stmt_reports->fetchAll();
+
+    // 3. Fetch Potential Matches
+    $stmt_matches = $pdo->prepare("
+        SELECT 
+            m.match_id, fr.title as found_item, fr.date_found, loc.location_name, 
+            lr.title as my_item, m.status as match_status,
+            img.image_path
+        FROM matches m
+        JOIN lost_reports lr ON m.lost_id = lr.lost_id
+        JOIN found_reports fr ON m.found_id = fr.found_id
+        JOIN locations loc ON fr.location_id = loc.location_id
+        LEFT JOIN (
+            SELECT report_id, image_path 
+            FROM item_images 
+            WHERE report_type = 'found' 
+            AND image_id IN (SELECT MIN(image_id) FROM item_images WHERE report_type = 'found' GROUP BY report_id)
+        ) img ON fr.found_id = img.report_id
+        WHERE lr.user_id = ? AND m.status != 'rejected'
+    ");
+    $stmt_matches->execute([$user_id]);
+    $potential_matches = $stmt_matches->fetchAll();
+
+} catch (PDOException $e) {
+    die("Error fetching reports: " . $e->getMessage());
+}
+
+/**
+ * Helper to get progress percentage and step label
+ */
+function getProgress($status, $type) {
+    if ($type === 'found') {
+        switch ($status) {
+            case 'in custody': 
+                // Item is reported but still with the finder
+                return ['pct' => '50%', 'step' => 'Step 1 of 3', 'label' => 'In Finder\'s Possession'];
+            case 'surrendered': 
+                // Item has been turned over to OSA
+                return ['pct' => '75%', 'step' => 'Step 2 of 3', 'label' => 'Surrendered to OSA'];
+            case 'matched': 
+                // Potential owner identified
+                return ['pct' => '100%', 'step' => 'Step 3 of 3', 'label' => 'Match Identified'];
+            case 'claimed': 
+                // Successfully returned
+                return ['pct' => '100%', 'step' => 'Completed', 'label' => 'Claimed by Owner'];
+            case 'disposed': 
+                return ['pct' => '100%', 'step' => 'Archived', 'label' => 'Item Disposed'];
+            default: 
+                return ['pct' => '10%', 'step' => 'Processing', 'label' => $status];
+        }
+    } else { // type === 'lost'
+        switch ($status) {
+            case 'open': 
+                return ['pct' => '50%', 'step' => 'Step 1 of 3', 'label' => 'Active Search'];
+            case 'matched': 
+                return ['pct' => '75%', 'step' => 'Step 2 of 3', 'label' => 'Potential Match Found'];
+            case 'resolved': 
+                return ['pct' => '100%', 'step' => 'Step 3 of 3', 'label' => 'Item Recovered'];
+            case 'closed': 
+                return ['pct' => '100%', 'step' => 'Completed', 'label' => 'Case Closed'];
+            default: 
+                return ['pct' => '10%', 'step' => 'Reported', 'label' => $status];
+        }
+    }
+}
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -41,7 +181,7 @@
                 </div>
                 <div>
                     <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Active Reports</p>
-                    <h3 class="text-2xl font-black text-slate-800">02</h3>
+                    <h3 class="text-2xl font-black text-slate-800"><?php echo sprintf("%02d", $stats['active_count']); ?></h3>
                 </div>
             </div>
 
@@ -52,7 +192,7 @@
                 </div>
                 <div class="z-10">
                     <p class="text-xs font-bold text-indigo-200 uppercase tracking-widest">Potential Matches</p>
-                    <h3 class="text-2xl font-black">01 Found</h3>
+                    <h3 class="text-2xl font-black"><?php echo sprintf("%02d", $stats['match_count']); ?> Found</h3>
                 </div>
                 <i class="fas fa-magnifying-glass absolute -right-4 -bottom-4 text-white/10 text-8xl"></i>
             </div>
@@ -68,26 +208,84 @@
                         <h3 class="text-sm font-bold text-slate-800">Pending Surrender</h3>
                     </div>
                 </div>
-                <button onclick="openQRModal('TRK-88219-AM')" class="text-cmu-blue hover:text-blue-800 font-bold text-sm underline">View Code</button>
+                <button onclick="switchTab('my-reports')" class="text-cmu-blue hover:text-blue-800 font-bold text-sm underline">View Below</button>
+                <!-- <button onclick="openQRModal('TRK-88219-AM')" class="text-cmu-blue hover:text-blue-800 font-bold text-sm underline">View Code</button> -->
             </div>
         </div>
 
         <!-- Main Content Tabs -->
         <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
             <div class="flex border-b border-slate-100 bg-slate-50/50">
-                <button onclick="switchTab('my-reports')" id="tab-my-reports" class="px-8 py-5 text-sm font-bold transition-all tab-active">
-                    My Reports (2)
+                <button onclick="switchTab('my-reports')" id="tab-my-reports" class="px-8 py-5 text-sm font-bold transition-all border-b-2 border-cmu-blue text-cmu-blue bg-white">
+                    My Reports (<?php echo count($my_reports); ?>)
                 </button>
-                <button onclick="switchTab('potential-matches')" id="tab-potential-matches" class="px-8 py-5 text-sm font-bold text-slate-400 hover:text-slate-600 transition-all border-b-3 border-transparent">
-                    Potential Matches <span class="ml-2 bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full">1</span>
+                <button onclick="switchTab('potential-matches')" id="tab-potential-matches" class="px-8 py-5 text-sm font-bold text-slate-400 hover:text-slate-600 transition-all border-b-2 border-transparent">
+                    Potential Matches <span class="ml-2 bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full"><?php echo count($potential_matches); ?></span>
                 </button>
             </div>
 
             <div class="p-6">
                 <!-- My Reports List -->
                 <div id="content-my-reports" class="space-y-4">
-                    <!-- Item 1: Found but Pending -->
-                    <div class="group flex flex-col md:flex-row items-center gap-6 p-4 rounded-2xl border border-slate-100 hover:border-cmu-blue/30 hover:bg-slate-50 transition-all">
+                    <?php if (empty($my_reports)): ?>
+                        <div class="py-20 text-center">
+                            <div class="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <i class="fas fa-folder-open text-slate-300 text-3xl"></i>
+                            </div>
+                            <h3 class="font-bold text-slate-800">No reports found</h3>
+                            <p class="text-slate-500 text-sm">You haven't reported any lost or found items yet.</p>
+                        </div>
+                    <?php else: ?>
+                        <?php foreach ($my_reports as $report): 
+                            $prog = getProgress($report['status'], $report['type']);
+                            $tracking_id = ($report['type'] === 'found') ? 'FND-'.str_pad($report['id'], 5, '0', STR_PAD_LEFT) : 'LST-'.str_pad($report['id'], 5, '0', STR_PAD_LEFT);
+                        ?>
+                        <div class="group flex flex-col md:flex-row items-center gap-6 p-4 rounded-2xl border border-slate-100 hover:border-cmu-blue/30 hover:bg-slate-50 transition-all">
+                            <?php
+                                $image_path = !empty($report['image_path']) 
+                                    ? '../' . htmlspecialchars($report['image_path']) 
+                                    : 'https://placehold.co/600x400/e2e8f0/64748b?text=No+Photo';
+                            ?>
+                            <div class="w-full md:w-32 h-32 rounded-xl bg-slate-200 overflow-hidden flex-shrink-0 relative">
+                                <img src="<?php echo $image_path; ?>" alt="Item" class="w-full h-full object-cover">
+                                <span class="absolute top-2 left-2 px-2 py-0.5 rounded text-[10px] font-bold uppercase <?php echo $report['type'] === 'found' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'; ?>">
+                                    <?php echo $report['type']; ?>
+                                </span>
+                            </div>
+                            <div class="flex-grow space-y-1">
+                                <div class="flex justify-between items-start">
+                                    <h4 class="text-lg font-bold text-slate-800"><?php echo htmlspecialchars($report['title']); ?></h4>
+                                    <span class="px-3 py-1 rounded-full text-[10px] font-bold border <?php echo $report['status'] === 'claimed' ? 'bg-green-100 text-green-700 border-green-200' : 'bg-amber-100 text-amber-700 border-amber-200'; ?>">
+                                        <?php echo strtoupper($prog['label']); ?>
+                                    </span>
+                                </div>
+                                <p class="text-xs text-slate-500 flex items-center gap-2">
+                                    <i class="fas fa-calendar"></i> <?php echo date('M d, Y', strtotime($report['date'])); ?> 
+                                    <span class="mx-2">•</span>
+                                    <i class="fas fa-map-marker-alt"></i> <?php echo htmlspecialchars($report['location_name']); ?>
+                                </p>
+                                <p class="text-sm text-slate-600 mt-2 line-clamp-1 italic">"<?php echo htmlspecialchars($report['private_description']); ?>..."</p>
+                                
+                                <!-- Progress Tracker -->
+                                <div class="mt-4 flex items-center gap-2">
+                                    <div class="flex-grow h-1.5 bg-slate-200 rounded-full overflow-hidden flex">
+                                        <div class="bg-cmu-gold h-full transition-all duration-500" style="width: <?php echo $prog['pct']; ?>"></div>
+                                    </div>
+                                    <span class="text-[10px] font-bold text-slate-400 uppercase"><?php echo $prog['step']; ?></span>
+                                </div>
+                            </div>
+                            <div class="flex md:flex-col gap-2 w-full md:w-auto">
+                                <?php if ($report['type'] === 'found' && $report['status'] === 'matched'): ?>
+                                    <button onclick="openQRModal('<?php echo $tracking_id; ?>')" class="flex-1 px-4 py-2 bg-cmu-blue text-white rounded-lg text-xs font-bold hover:bg-slate-800 transition">Get QR Code</button>
+                                <?php elseif ($report['type'] === 'lost' && $report['status'] === 'matched'): ?>
+                                    <button onclick="switchTab('potential-matches')" class="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 transition">View Matches</button>
+                                <?php endif; ?>
+                                <button class="flex-1 px-4 py-2 border border-slate-200 text-slate-600 rounded-lg text-xs font-bold hover:bg-white transition">Details</button>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                    <!-- <div class="group flex flex-col md:flex-row items-center gap-6 p-4 rounded-2xl border border-slate-100 hover:border-cmu-blue/30 hover:bg-slate-50 transition-all">
                         <div class="w-full md:w-32 h-32 rounded-xl bg-slate-200 overflow-hidden flex-shrink-0 relative">
                             <img src="https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&w=300&q=80" alt="Item" class="w-full h-full object-cover">
                             <span class="absolute top-2 left-2 status-badge bg-green-500 text-white">Found</span>
@@ -104,7 +302,6 @@
                             </p>
                             <p class="text-sm text-slate-600 mt-2 line-clamp-1 italic">"Contains a bookmark on page 42..."</p>
                             
-                            <!-- Progress Tracker -->
                             <div class="mt-4 flex items-center gap-2">
                                 <div class="flex-grow h-1.5 bg-slate-200 rounded-full overflow-hidden flex">
                                     <div class="w-1/3 bg-cmu-gold h-full"></div>
@@ -117,33 +314,7 @@
                             <button onclick="openQRModal('TRK-88219-AM')" class="flex-1 px-4 py-2 bg-cmu-blue text-white rounded-lg text-xs font-bold hover:bg-slate-800 transition">Get QR Code</button>
                             <button class="flex-1 px-4 py-2 border border-slate-200 text-slate-600 rounded-lg text-xs font-bold hover:bg-white transition">Edit</button>
                         </div>
-                    </div>
-
-                    <!-- Item 2: Lost Report -->
-                    <div class="group flex flex-col md:flex-row items-center gap-6 p-4 rounded-2xl border border-slate-100 hover:border-cmu-blue/30 hover:bg-slate-50 transition-all">
-                        <div class="w-full md:w-32 h-32 rounded-xl bg-slate-200 overflow-hidden flex-shrink-0 relative">
-                            <img src="https://images.unsplash.com/photo-1631201553014-776760c89381?auto=format&fit=crop&w=300&q=80" alt="Item" class="w-full h-full object-cover">
-                            <span class="absolute top-2 left-2 status-badge bg-red-500 text-white">Lost</span>
-                        </div>
-                        <div class="flex-grow space-y-1">
-                            <div class="flex justify-between items-start">
-                                <h4 class="text-lg font-bold text-slate-800">Blue AquaFlask Water Bottle</h4>
-                                <span class="status-badge bg-blue-100 text-blue-700 border border-blue-200">Active Search</span>
-                            </div>
-                            <p class="text-xs text-slate-500 flex items-center gap-2">
-                                <i class="fas fa-calendar"></i> Lost on Oct 22, 2023 
-                                <span class="mx-2">•</span>
-                                <i class="fas fa-map-marker-alt"></i> University Canteen
-                            </p>
-                            <div class="inline-flex items-center gap-1.5 mt-2 bg-indigo-50 text-indigo-600 px-3 py-1 rounded-lg text-xs font-bold">
-                                <i class="fas fa-magnifying-glass text-[10px]"></i> 1 Potential Matches Found
-                            </div>
-                        </div>
-                        <div class="flex md:flex-col gap-2 w-full md:w-auto">
-                            <button onclick="switchTab('potential-matches')" class="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 transition">View Matches</button>
-                            <button class="flex-1 px-4 py-2 border border-slate-200 text-slate-600 rounded-lg text-xs font-bold hover:bg-white transition">Delete</button>
-                        </div>
-                    </div>
+                    </div> -->
                 </div>
 
                 <!-- Potential Matches (Hidden by default) -->
@@ -154,18 +325,25 @@
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <!-- Match Card -->
-                        <div class="bg-white border-2 border-indigo-100 rounded-2xl p-4 flex flex-col gap-4 relative">
-                            <span class="absolute -top-3 left-4 bg-indigo-600 text-white text-[10px] px-3 py-1 rounded-full font-bold">85% MATCH</span>
-                            <div class="flex gap-4">
-                                <img src="https://images.unsplash.com/photo-1631201553014-776760c89381?auto=format&fit=crop&w=300&q=80" class="w-20 h-20 rounded-xl object-cover">
-                                <div>
-                                    <h5 class="font-bold text-slate-800">Navy Blue Water Bottle</h5>
-                                    <p class="text-xs text-slate-500 mb-2">Turned in: Oct 24 (Canteen)</p>
-                                    <button class="text-indigo-600 font-bold text-xs hover:underline">Verify at OSA &rarr;</button>
+                        <?php if (empty($potential_matches)): ?>
+                             <div class="col-span-full py-10 text-center text-slate-400 text-sm">No matches found yet. We'll notify you via SMS once someone reports a similar item.</div>
+                        <?php else: ?>
+                            <?php foreach ($potential_matches as $match): ?>
+                            <div class="bg-white border-2 border-indigo-100 rounded-2xl p-4 flex flex-col gap-4 relative">
+                                <span class="absolute -top-3 left-4 bg-indigo-600 text-white text-[10px] px-3 py-1 rounded-full font-bold uppercase">MATCH FOR: <?php echo htmlspecialchars($match['my_item']); ?></span>
+                                <div class="flex gap-4">
+                                    <div class="w-20 h-20 rounded-xl bg-slate-100 overflow-hidden flex-shrink-0">
+                                        <img src="https://via.placeholder.com/150?text=Match" class="w-full h-full object-cover">
+                                    </div>
+                                    <div>
+                                        <h5 class="font-bold text-slate-800"><?php echo htmlspecialchars($match['found_item']); ?></h5>
+                                        <p class="text-xs text-slate-500 mb-2">Turned in: <?php echo date('M d', strtotime($match['found_date'])); ?> (<?php echo htmlspecialchars($match['location_name']); ?>)</p>
+                                        <button class="text-indigo-600 font-bold text-xs hover:underline">Verify at OSA &rarr;</button>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
@@ -209,7 +387,46 @@
     <!-- Footer -->
     <?php require_once '../includes/footer.php'; ?>
 
-    <script src="../assets/scripts/qr_generator.js"></script>
+    <!-- <script src="../assets/scripts/qr_generator.js"></script> -->
     <script src="../assets/scripts/profile-dropdown.js"></script>
+    <script>
+        // Tab Switching Logic
+        function switchTab(tabId) {
+            const tabs = ['my-reports', 'potential-matches'];
+            tabs.forEach(t => {
+                const content = document.getElementById(`content-${t}`);
+                const tabBtn = document.getElementById(`tab-${t}`);
+                
+                if (t === tabId) {
+                    content.classList.remove('hidden');
+                    tabBtn.classList.add('border-b-2', 'border-cmu-blue', 'text-cmu-blue', 'bg-white');
+                    tabBtn.classList.remove('text-slate-400', 'border-transparent');
+                } else {
+                    content.classList.add('hidden');
+                    tabBtn.classList.remove('border-b-2', 'border-cmu-blue', 'text-cmu-blue', 'bg-white');
+                    tabBtn.classList.add('text-slate-400', 'border-transparent');
+                }
+            });
+        }
+
+        // Modal Logic
+        function openQRModal(trackingId) {
+            const modal = document.getElementById('qrModal');
+            const qrImg = document.getElementById('qrImage');
+            const trackingText = document.getElementById('qrTrackingId');
+            
+            // Generate QR using a free API (goqr.me)
+            qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${trackingId}`;
+            trackingText.innerText = trackingId;
+            
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeQRModal() {
+            document.getElementById('qrModal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+    </script>
 </body>
 </html>
