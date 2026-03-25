@@ -1,0 +1,159 @@
+<!--DETAIL MODAL-->
+<div id="detailModal"
+    class="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm opacity-0 pointer-events-none">
+    <div id="detailModalCard"
+        class="bg-white rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden scale-95 opacity-0 flex flex-col max-h-[92vh]">
+
+        <!-- Modal Header -->
+        <div class="flex items-start justify-between p-6 pb-4 border-b border-slate-100 flex-shrink-0">
+            <div>
+                <div class="flex items-center gap-2 mb-1">
+                    <span id="dm-type-badge" class="text-[10px] font-black uppercase px-2 py-0.5 rounded-full"></span>
+                    <span id="dm-tracking" class="font-mono text-[10px] text-slate-400"></span>
+                </div>
+                <h2 id="dm-title" class="text-xl font-black text-slate-900 leading-tight"></h2>
+            </div>
+            <button onclick="closeDetailModal()"
+                class="ml-4 flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-red-100 hover:text-red-500 transition">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <!-- Modal Body -->
+        <div class="overflow-y-auto flex-1">
+            <div class="flex flex-col md:flex-row">
+
+                <!-- Left: Image -->
+                <div id="dm-image-container" class="md:w-56 flex-shrink-0">
+                    <img id="dm-image" src="" alt="Item photo" class="w-full h-56 md:h-full object-cover">
+                </div>
+                <div id="dm-no-image"
+                    class="hidden md:w-56 flex-shrink-0 h-56 bg-slate-100 flex items-center justify-center text-slate-300 flex-col gap-2">
+                    <i class="fas fa-image text-4xl"></i>
+                    <p class="text-xs font-bold">No Photo</p>
+                </div>
+
+                <!-- Right: Details -->
+                <div class="flex-1 p-6 space-y-5">
+
+                    <!-- Status pill + progress -->
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <span id="dm-status-badge"
+                                class="px-3 py-1 rounded-full text-[10px] font-bold border"></span>
+                            <span id="dm-step" class="text-[10px] font-bold text-slate-400 uppercase"></span>
+                        </div>
+                        <div class="h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                            <div id="dm-progress-bar" class="h-full rounded-full transition-all duration-700"></div>
+                        </div>
+                    </div>
+
+                    <!-- Info rows -->
+                    <div class="grid grid-cols-1 gap-3">
+                        <div class="flex items-start gap-3 p-3 bg-slate-50 rounded-xl">
+                            <div
+                                class="w-8 h-8 bg-white rounded-lg flex items-center justify-center border border-slate-100 flex-shrink-0">
+                                <i class="fas fa-tag text-cmu-blue text-xs"></i>
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Category</p>
+                                <p id="dm-category" class="text-sm font-semibold text-slate-800"></p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3 p-3 bg-slate-50 rounded-xl">
+                            <div
+                                class="w-8 h-8 bg-white rounded-lg flex items-center justify-center border border-slate-100 flex-shrink-0">
+                                <i class="fas fa-map-marker-alt text-cmu-blue text-xs"></i>
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Location</p>
+                                <p id="dm-location" class="text-sm font-semibold text-slate-800"></p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3 p-3 bg-slate-50 rounded-xl">
+                            <div
+                                class="w-8 h-8 bg-white rounded-lg flex items-center justify-center border border-slate-100 flex-shrink-0">
+                                <i class="fas fa-calendar-alt text-cmu-blue text-xs"></i>
+                            </div>
+                            <div>
+                                <p id="dm-date-label"
+                                    class="text-[10px] font-black text-slate-400 uppercase tracking-wider"></p>
+                                <p id="dm-date" class="text-sm font-semibold text-slate-800"></p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3 p-3 bg-slate-50 rounded-xl">
+                            <div
+                                class="w-8 h-8 bg-white rounded-lg flex items-center justify-center border border-slate-100 flex-shrink-0">
+                                <i class="fas fa-calendar-plus text-cmu-blue text-xs"></i>
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Date Reported
+                                </p>
+                                <p id="dm-created" class="text-sm font-semibold text-slate-800"></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Private description -->
+                    <div>
+                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">
+                            <i class="fas fa-user-shield mr-1 text-amber-500"></i> Private Details (only visible to you
+                            & SAO)
+                        </p>
+                        <p id="dm-description"
+                            class="text-sm text-slate-700 bg-amber-50 border border-amber-100 p-3 rounded-xl leading-relaxed italic">
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Timeline section -->
+            <div class="px-6 pb-2">
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Status Timeline</p>
+                <div id="dm-timeline" class="space-y-3 pl-2"></div>
+            </div>
+        </div>
+
+        <!-- Modal Footer Actions -->
+        <div id="dm-footer" class="p-6 border-t border-slate-100 flex gap-3 flex-shrink-0"></div>
+    </div>
+</div>
+
+<!--QR MODAL-->
+<div id="qrModal" class="fixed inset-0 z-[80] hidden items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm">
+    <div id="qrModalContent" class="bg-white rounded-3xl max-w-sm w-full p-8 shadow-2xl text-center">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="font-bold text-slate-800">Turnover QR Code</h3>
+            <button id="closeQrBtn" onclick="closeQRModal()"
+                class="text-slate-400 hover:text-slate-600 w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 transition">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <div class="bg-slate-50 p-6 rounded-2xl mb-6">
+            <div
+                class="w-48 h-48 bg-white border-8 border-white shadow-sm mx-auto flex items-center justify-center p-2">
+                <img id="qrImage" src="" alt="QR Code" class="w-full h-full grayscale">
+            </div>
+            <p id="qrTrackingId" class="mt-4 font-mono text-sm text-slate-500 tracking-widest uppercase">---</p>
+        </div>
+
+        <div class="space-y-3 text-left mb-6">
+            <div class="flex gap-3 items-start">
+                <i class="fas fa-id-card text-cmu-blue mt-1 flex-shrink-0"></i>
+                <p class="text-xs text-slate-600">Present this code to the <strong>SAO Admin</strong> upon surrendering
+                    the physical item.</p>
+            </div>
+            <div class="flex gap-3 items-start">
+                <i class="fas fa-clock text-amber-500 mt-1 flex-shrink-0"></i>
+                <p class="text-xs text-slate-600 italic">This code expires in <strong>24 hours</strong>. Please turn
+                    over immediately.</p>
+            </div>
+        </div>
+
+        <button id="saveBtn" onclick="window.print()"
+            class="w-full py-3 bg-slate-100 text-slate-700 rounded-xl font-bold text-sm hover:bg-slate-200 transition">
+            <i class="fas fa-print mr-2"></i>Save / Print QR Code
+        </button>
+    </div>
+</div>

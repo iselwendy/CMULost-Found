@@ -9,8 +9,7 @@ pati yung "view details" sa gallery page, gawin ding modal na lang
 
 NEXT STEP:
 - Maybe in report_lost.php, add an optional "exact spot left"? Optional there may be times where users remember where they left it or not.
-- Improve the keywords system
-- Fix user dashboard
+- Fix the profile picture upload in account settings.
 - Create the matching engine (matches table sa database)
 - Improve the search function to allow searching like this (cat sticker + 100 peso bill)
 - Improve the duplicateAlert function in report_lost/report_founds

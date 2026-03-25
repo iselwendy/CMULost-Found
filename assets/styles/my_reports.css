@@ -78,3 +78,87 @@
         margin: 0;
     }
 }
+
+/* Detail Modal Transitions */
+#detailModal {
+    transition: opacity 0.25s ease;
+}
+
+#detailModalCard {
+    transition: transform 0.25s ease, opacity 0.25s ease;
+}
+
+/* QR Modal */
+#qrModal {
+    transition: opacity 0.2s ease;
+}
+
+/* Timeline steps */
+.timeline-step {
+    position: relative;
+}
+
+.timeline-step:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    left: 15px;
+    top: 30px;
+    bottom: -8px;
+    width: 2px;
+    background: #e2e8f0;
+}
+
+.timeline-step.done::after {
+    background: #6366f1;
+}
+
+/* Tab active border */
+.tab-btn.active {
+    border-bottom: 3px solid var(--cmu-blue);
+    color: var(--cmu-blue);
+    background: white;
+    font-weight: 700;
+}
+
+@media print {
+    body>*:not(#qrModal) {
+        display: none !important;
+    }
+
+    html,
+    body {
+        height: 100% !important;
+        overflow: hidden !important;
+        margin: 0 !important;
+        background: white !important;
+    }
+
+    #qrModal {
+        display: flex !important;
+        position: absolute !important;
+        inset: 0 !important;
+        background: white !important;
+        align-items: center;
+        justify-content: center;
+    }
+
+    #qrModalContent {
+        position: relative !important;
+        transform: none !important;
+        width: 350px !important;
+        margin: 0 auto;
+        padding: 2rem;
+        border: 1px solid #e2e8f0;
+        box-shadow: none !important;
+    }
+
+    #closeQrBtn,
+    #saveBtn {
+        display: none !important;
+    }
+
+    @page {
+        size: auto;
+        margin: 0;
+    }
+}
