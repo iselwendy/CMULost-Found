@@ -5,7 +5,6 @@ $stmt = $pdo->prepare("SELECT * FROM users WHERE user_id = ?");
 $user_id = $_SESSION['user_id'] ?? null;
 $stmt->execute([$user_id]);
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -48,8 +47,12 @@ $stmt->execute([$user_id]);
                     <div>
                         <label class="block text-sm font-semibold mb-1.5 text-slate-700">Item Name / Title</label>
                         <input type="text" name="title" id="itemTitle" required
-                               placeholder="e.g. Black Leather Wallet"
+                               placeholder="e.g. Ray-Ban sunglasses, Samsung Galaxy S24, Casio watch..."
                                class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-green-400 focus:border-green-400 outline-none transition-all">
+                        <p id="aiStatus" class="text-[10px] text-slate-400 mt-1 hidden">
+                            <i class="fas fa-wand-magic-sparkles text-teal-400 mr-1"></i>
+                            <span id="aiStatusText">Analyzing item for smart suggestions...</span>
+                        </p>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -57,7 +60,7 @@ $stmt->execute([$user_id]);
                             <label class="block text-sm font-semibold mb-1.5 text-slate-700">Category</label>
                             <select name="category" id="itemCategory" required
                                     class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white outline-none"
-                                    onchange="updateTraitSuggestions()">
+                                    onchange="onCategoryChange()">
                                 <option value="">Select category</option>
                                 <option value="Electronics">Electronics</option>
                                 <option value="Valuables">Valuables</option>
@@ -65,6 +68,7 @@ $stmt->execute([$user_id]);
                                 <option value="Books">Books/Stationery</option>
                                 <option value="Clothing">Clothing</option>
                                 <option value="Personal">Personal Items</option>
+                                <option value="Other">Other</option>
                             </select>
                         </div>
                         <div>
@@ -88,7 +92,7 @@ $stmt->execute([$user_id]);
                     </div>
                 </section>
 
-                <!-- ── IDENTIFYING DETAILS (PRIVATE / GUARDIAN PROTOCOL) ── -->
+                <!-- ── GUARDIAN PROTOCOL ── -->
                 <section class="space-y-5 pt-4" id="identifyingSection">
                     <div class="flex items-center gap-2 border-b pb-2">
                         <h3 class="text-sm font-bold uppercase tracking-wider text-slate-400">Guardian Protocol</h3>
@@ -100,7 +104,6 @@ $stmt->execute([$user_id]);
                         <strong>Guardian Protocol:</strong> Describe what you observed about the item.
                         These details are <u>NOT</u> shown publicly — only OSA admins can see them.
                         They are used to <strong>verify the true owner</strong> and to power the <strong>matching engine</strong>.
-                        The more specific you are, the faster the owner is found.
                     </p>
 
                     <!-- ❶ COLOR -->
@@ -110,13 +113,7 @@ $stmt->execute([$user_id]);
                             <span class="text-red-400 ml-1">*</span>
                         </label>
                         <div class="flex flex-wrap gap-2" id="colorChips">
-                            <?php
-                            $colors = ['Black','White','Gray','Brown','Red','Orange','Yellow','Green','Blue','Purple','Pink','Gold','Silver'];
-                            foreach ($colors as $c): ?>
-                                <button type="button" class="trait-chip" data-group="color" data-value="<?php echo $c; ?>" onclick="toggleChip(this)">
-                                    <?php echo $c; ?>
-                                </button>
-                            <?php endforeach; ?>
+                            <!-- Populated from vocabulary.json -->
                         </div>
                         <p id="colorError" class="text-xs text-red-500 mt-1 hidden">Please select at least one color.</p>
                     </div>
@@ -127,8 +124,12 @@ $stmt->execute([$user_id]);
                             <i class="fas fa-fingerprint mr-1 text-green-500"></i> Observed Traits
                             <span class="text-slate-400 text-[10px] normal-case font-normal ml-1">(select all that you noticed)</span>
                         </label>
+                        <div id="aiTraitBadge" class="hidden mb-2 inline-flex items-center gap-1.5 px-2 py-0.5 bg-teal-50 border border-teal-100 rounded-full">
+                            <i class="fas fa-wand-magic-sparkles text-teal-400 text-[9px]"></i>
+                            <span class="text-[10px] font-bold text-teal-600">AI-suggested traits added below</span>
+                        </div>
                         <div class="flex flex-wrap gap-2" id="traitChips">
-                            <span class="text-xs text-slate-400 italic">Select a category above to see suggestions.</span>
+                            <span class="text-xs text-slate-400 italic">Select a category and enter a title to see suggestions.</span>
                         </div>
                     </div>
 
@@ -144,7 +145,6 @@ $stmt->execute([$user_id]);
                             <kbd class="bg-slate-100 border border-slate-200 rounded px-1 text-[10px]">,</kbd>
                             to add it. Autocomplete suggests standard terms as you type.
                         </p>
-
                         <div id="tagContainer"
                              class="min-h-[44px] w-full px-3 py-2 rounded-xl border border-slate-200 bg-white flex flex-wrap gap-1.5 items-center cursor-text transition-all">
                             <input type="text" id="keywordInput"
@@ -160,7 +160,7 @@ $stmt->execute([$user_id]);
                         </div>
                     </div>
 
-                    <!-- ❹ EXACT SPOT (finder-specific) -->
+                    <!-- ❹ EXACT SPOT -->
                     <div>
                         <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1">
                             <i class="fas fa-map-pin mr-1 text-green-500"></i> Exact Spot Found
@@ -181,13 +181,13 @@ $stmt->execute([$user_id]);
                         <div class="h-1.5 bg-slate-200 rounded-full overflow-hidden">
                             <div id="qualityBar" class="h-full rounded-full bg-slate-300" style="width: 0%"></div>
                         </div>
-                        <p id="qualityHint" class="text-[11px] text-slate-400 mt-1.5 italic">Fill in colors, traits, and observations to help the matching engine find the owner faster.</p>
+                        <p id="qualityHint" class="text-[11px] text-slate-400 mt-1.5 italic">Fill in colors, traits, and observations to help find the owner faster.</p>
                     </div>
 
-                    <!-- ❻ PHOTO (required for found items) -->
+                    <!-- ❻ PHOTO -->
                     <div>
                         <label class="block text-sm font-semibold mb-1.5 text-slate-700">
-                            Reference Photo <span class="text-xs font-normal text-slate-400">(Required — photo of the actual item)</span>
+                            Reference Photo <span class="text-xs font-normal text-slate-400">(Required)</span>
                         </label>
                         <div id="dropZone" class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-slate-200 border-dashed rounded-xl hover:border-green-400 transition-all cursor-pointer group relative overflow-hidden">
                             <div class="space-y-1 text-center" id="uploadPlaceholder">
@@ -257,55 +257,59 @@ $stmt->execute([$user_id]);
     <script src="../assets/scripts/item_image_upload.js"></script>
     <script src="../assets/scripts/smart_tag_input.js"></script>
     <script>
-    // ─────────────────────────────────────────────
-    // CATEGORY TRAIT + KEYWORD SUGGESTIONS
-    // Must match report_lost.php exactly
-    // ─────────────────────────────────────────────
-    const CATEGORY_TRAITS = {
-        'Electronics': [
-            'cracked screen','scratched','sticker on back','case/cover','no case',
-            'charger included','dead battery','brand label visible','screen protector'
-        ],
-        'Valuables': [
-            'bi-fold','tri-fold','zipper closure','cards inside','no cash','has coins',
-            'keychain attached','lanyard attached','name engraved','monogram'
-        ],
-        'Documents': [
-            'laminated','torn corner','punched hole','clipped together',
-            'name visible','expired','school id','government issued'
-        ],
-        'Books': [
-            'highlighted pages','annotations','name written inside','dog-eared',
-            'torn cover','bookmarked','loose pages','stamp/seal'
-        ],
-        'Clothing': [
-            'name tag inside','embroidered','ironed-on patch','torn/ripped',
-            'stained','logo visible','hooded','sleeveless'
-        ],
-        'Personal': [
-            'dent/scratch','sticker on back','name engraved','custom design',
-            'broken strap','missing cap','initials marked','worn/faded'
-        ]
-    };
-
-    const CATEGORY_KEYWORDS = {
-        'Electronics': ['Samsung','Apple','Xiaomi','OPPO','Realme','JBL','Anker','serial number'],
-        'Valuables':   ['leather','canvas','metal','name inside','peso bills','cards inside'],
-        'Documents':   ['CMU ID','PhilSys',"Driver's License",'SSS','UMID','birth certificate'],
-        'Books':       ['Calculus','Physics','Chemistry','Engineering','Accounting','Filipino','History'],
-        'Clothing':    ['uniform','PE shirt','jacket','hoodie','jersey'],
-        'Personal':    ['AquaFlask','Hydroflask','umbrella','tote bag','drawstring','lunchbox']
-    };
-
-    // ─────────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────
     // STATE
-    // ─────────────────────────────────────────────
-    let selectedColors = new Set();
-    let selectedTraits = new Set();
+    // ─────────────────────────────────────────────────────────
+    let selectedColors  = new Set();
+    let selectedTraits  = new Set();
+    let tagInput        = null;
+    let aiDebounceTimer = null;
 
-    // ─────────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────
+    // BOOT
+    // ─────────────────────────────────────────────────────────
+    (async () => {
+        tagInput = await SmartTagInput.init({
+            inputId:     'keywordInput',
+            containerId: 'tagContainer',
+            errorId:     'tagError',
+            accentColor: 'green',
+        });
+
+        renderColorChips();
+
+        new MutationObserver(updateQuality)
+            .observe(document.getElementById('tagContainer'), { childList: true });
+    })();
+
+    // ─────────────────────────────────────────────────────────
+    // COLOR CHIPS
+    // ─────────────────────────────────────────────────────────
+    function renderColorChips() {
+        fetch('../assets/data/vocabulary.json')
+            .then(r => r.json())
+            .then(vocab => {
+                const colors    = vocab.colors || getFallbackColors();
+                const container = document.getElementById('colorChips');
+                container.innerHTML = colors.map(c =>
+                    `<button type="button" class="trait-chip" data-group="color" data-value="${c}" onclick="toggleChip(this)">${c}</button>`
+                ).join('');
+            })
+            .catch(() => {
+                const container = document.getElementById('colorChips');
+                container.innerHTML = getFallbackColors().map(c =>
+                    `<button type="button" class="trait-chip" data-group="color" data-value="${c}" onclick="toggleChip(this)">${c}</button>`
+                ).join('');
+            });
+    }
+
+    function getFallbackColors() {
+        return ['Black','White','Gray','Brown','Red','Orange','Yellow','Green','Blue','Purple','Pink','Gold','Silver'];
+    }
+
+    // ─────────────────────────────────────────────────────────
     // CHIP TOGGLE
-    // ─────────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────
     function toggleChip(el) {
         el.classList.toggle('selected');
         const val   = el.dataset.value;
@@ -318,66 +322,169 @@ $stmt->execute([$user_id]);
         updateQuality();
     }
 
-    // ─────────────────────────────────────────────
-    // CATEGORY-AWARE TRAIT CHIPS + QUICK-ADD KEYWORDS
-    // ─────────────────────────────────────────────
-    function updateTraitSuggestions() {
-        const cat    = document.getElementById('itemCategory').value;
-        const chips  = document.getElementById('traitChips');
-        const kwList = document.getElementById('suggestedKeywordList');
-        const kwBox  = document.getElementById('suggestedKeywords');
-
+    // ─────────────────────────────────────────────────────────
+    // ON CATEGORY CHANGE
+    // ─────────────────────────────────────────────────────────
+    function onCategoryChange() {
+        const cat = document.getElementById('itemCategory').value;
         selectedTraits.clear();
 
-        if (!cat || !CATEGORY_TRAITS[cat]) {
-            chips.innerHTML = '<span class="text-xs text-slate-400 italic">Select a category above to see suggestions.</span>';
-            kwBox.classList.add('hidden');
+        if (!cat) {
+            document.getElementById('traitChips').innerHTML =
+                '<span class="text-xs text-slate-400 italic">Select a category and enter a title to see suggestions.</span>';
+            document.getElementById('suggestedKeywords').classList.add('hidden');
+            document.getElementById('aiTraitBadge').classList.add('hidden');
             updateQuality();
             return;
         }
 
-        chips.innerHTML = CATEGORY_TRAITS[cat].map(t =>
-            `<button type="button" class="trait-chip" data-group="trait" data-value="${t}" onclick="toggleChip(this)">${t}</button>`
-        ).join('');
+        fetch('../assets/data/vocabulary.json')
+            .then(r => r.json())
+            .then(vocab => {
+                const catData  = vocab.categories[cat] || {};
+                const traits   = catData.traits   || [];
+                const keywords = catData.keywords  || [];
+                renderStandardTraits(traits);
+                renderQuickAddKeywords(keywords, false);
+                updateQuality();
 
-        kwList.innerHTML = (CATEGORY_KEYWORDS[cat] || []).map(k =>
-            `<button type="button" onclick="addKeyword('${k}')"
-                class="text-[11px] px-2.5 py-1 bg-green-50 text-green-700 border border-green-100
-                       rounded-full font-semibold hover:bg-green-100 transition">
-                + ${k}
-            </button>`
-        ).join('');
-        kwBox.classList.remove('hidden');
-        updateQuality();
+                const title = document.getElementById('itemTitle').value.trim();
+                if (title.length >= 3) triggerAISuggestions(title, cat);
+            });
     }
 
-    // ─────────────────────────────────────────────
-    // SMART TAG INPUT
-    // ─────────────────────────────────────────────
-    const tagInput = SmartTagInput.init({
-        inputId:     'keywordInput',
-        containerId: 'tagContainer',
-        errorId:     'tagError',
-        accentColor: 'green',
+    // ─────────────────────────────────────────────────────────
+    // TITLE INPUT — debounced AI trigger
+    // ─────────────────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('itemTitle').addEventListener('input', function () {
+            clearTimeout(aiDebounceTimer);
+            const title = this.value.trim();
+            const cat   = document.getElementById('itemCategory').value;
+            if (title.length < 3 || !cat) return;
+            aiDebounceTimer = setTimeout(() => triggerAISuggestions(title, cat), 700);
+        });
+
+        document.getElementById('exactSpot').addEventListener('input', updateQuality);
+
+        document.getElementById('file-upload').addEventListener('change', function () {
+            if (this.files && this.files[0]) {
+                document.getElementById('fileNameDisplay').textContent = this.files[0].name;
+                document.getElementById('attachedStatus').classList.remove('hidden');
+                document.getElementById('uploadPlaceholder').classList.add('hidden');
+                updateQuality();
+            }
+        });
     });
 
-    function addKeyword(val) {
-        tagInput.addSuggested(val);
-        updateQuality();
+    // ─────────────────────────────────────────────────────────
+    // AI SUGGESTIONS
+    // ─────────────────────────────────────────────────────────
+    async function triggerAISuggestions(title, category) {
+        const statusEl   = document.getElementById('aiStatus');
+        const statusText = document.getElementById('aiStatusText');
+        statusEl.classList.remove('hidden');
+        statusText.textContent = 'Analyzing item for smart suggestions...';
+
+        try {
+            const res  = await fetch('../core/get_suggestions.php', {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body:    JSON.stringify({ title, category, report_type: 'found' }),
+            });
+            const data = await res.json();
+
+            if (data.source === 'ai' && (data.traits.length > 0 || data.keywords.length > 0)) {
+                mergeAITraits(data.traits);
+                mergeAIKeywords(data.keywords);
+                statusText.textContent = `✓ ${data.traits.length + data.keywords.length} smart suggestions added`;
+                setTimeout(() => statusEl.classList.add('hidden'), 3000);
+            } else {
+                statusEl.classList.add('hidden');
+            }
+        } catch {
+            statusEl.classList.add('hidden');
+        }
     }
 
-    new MutationObserver(updateQuality)
-        .observe(document.getElementById('tagContainer'), { childList: true });
+    // ─────────────────────────────────────────────────────────
+    // RENDER HELPERS
+    // ─────────────────────────────────────────────────────────
+    function renderStandardTraits(traits) {
+        const chips = document.getElementById('traitChips');
+        document.getElementById('aiTraitBadge').classList.add('hidden');
+        chips.innerHTML = traits.length
+            ? traits.map(t => `<button type="button" class="trait-chip" data-group="trait" data-value="${t}" onclick="toggleChip(this)">${t}</button>`).join('')
+            : '<span class="text-xs text-slate-400 italic">No standard traits for this category.</span>';
+    }
 
-    // ─────────────────────────────────────────────
+    function mergeAITraits(aiTraits) {
+        if (!aiTraits.length) return;
+        const chips   = document.getElementById('traitChips');
+        chips.querySelectorAll('span.text-slate-400').forEach(el => el.remove());
+        const existing = new Set(Array.from(chips.querySelectorAll('.trait-chip')).map(el => el.dataset.value.toLowerCase()));
+
+        aiTraits.forEach(t => {
+            if (!existing.has(t.toLowerCase())) {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'trait-chip ai-chip';
+                btn.dataset.group = 'trait';
+                btn.dataset.value = t;
+                btn.onclick = function() { toggleChip(this); };
+                btn.textContent = t;
+                chips.appendChild(btn);
+            }
+        });
+
+        document.getElementById('aiTraitBadge').classList.remove('hidden');
+    }
+
+    function renderQuickAddKeywords(keywords, isAI = false) {
+        const kwBox  = document.getElementById('suggestedKeywords');
+        const kwList = document.getElementById('suggestedKeywordList');
+        if (!keywords.length) { kwBox.classList.add('hidden'); return; }
+
+        const btnClass = isAI
+            ? 'text-[11px] px-2.5 py-1 bg-teal-50 text-teal-700 border border-teal-100 rounded-full font-semibold hover:bg-teal-100 transition'
+            : 'text-[11px] px-2.5 py-1 bg-green-50 text-green-700 border border-green-100 rounded-full font-semibold hover:bg-green-100 transition';
+
+        const existingTexts = new Set(
+            Array.from(kwList.querySelectorAll('button')).map(el => el.textContent.replace('+ ','').toLowerCase())
+        );
+
+        keywords.forEach(k => {
+            if (!existingTexts.has(k.toLowerCase())) {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = btnClass;
+                btn.textContent = '+ ' + k;
+                btn.addEventListener('click', () => addKeyword(k, isAI));
+                kwList.appendChild(btn);
+            }
+        });
+
+        kwBox.classList.remove('hidden');
+    }
+
+    function mergeAIKeywords(aiKeywords) {
+        renderQuickAddKeywords(aiKeywords, true);
+    }
+
+    function addKeyword(val, isAI = false) {
+        if (tagInput) { tagInput.addSuggested(val, isAI); updateQuality(); }
+    }
+
+    // ─────────────────────────────────────────────────────────
     // QUALITY METER
     // color 20 | traits 20 | keywords 30 | exact spot 15 | photo 15
-    // ─────────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────
     function updateQuality() {
+        if (!tagInput) return;
         let score = 0;
-        if (selectedColors.size > 0)                      score += 20;
-        score += Math.min(selectedTraits.size * 4,        20);
-        score += Math.min(tagInput.getTags().length * 10, 30);
+        if (selectedColors.size > 0)                          score += 20;
+        score += Math.min(selectedTraits.size * 4,            20);
+        score += Math.min(tagInput.getTags().length * 10,     30);
         if (document.getElementById('exactSpot').value.trim().length > 5) score += 15;
         if (document.getElementById('file-upload').files.length > 0)      score += 15;
 
@@ -387,25 +494,22 @@ $stmt->execute([$user_id]);
         bar.style.width = score + '%';
 
         const levels = [
-            { max: 0,  color: '#cbd5e1', text: 'Not started',                cls: 'text-slate-400',  msg: 'Fill in colors, traits, and observations to help find the owner faster.' },
-            { max: 40, color: '#f97316', text: 'Weak — low match chance',    cls: 'text-orange-500', msg: 'Add more traits or observations. Vague reports are harder to match.' },
-            { max: 70, color: '#eab308', text: 'Fair — can be improved',     cls: 'text-yellow-500', msg: 'Good start! Add specific observations (name on item, brand) for better accuracy.' },
-            { max: 90, color: '#22c55e', text: 'Good — solid match profile', cls: 'text-green-500',  msg: 'Nice! The exact spot and a photo will push this to excellent.' },
-            { max: 101,color: '#16a34a', text: 'Excellent — high match chance', cls: 'text-green-700', msg: 'Great detail! This report will have the highest match probability.' },
+            { max: 0,   color: '#cbd5e1', text: 'Not started',                cls: 'text-slate-400',  msg: 'Fill in colors, traits, and observations to help find the owner faster.' },
+            { max: 40,  color: '#f97316', text: 'Weak — low match chance',    cls: 'text-orange-500', msg: 'Add more traits or observations. Vague reports are harder to match.' },
+            { max: 70,  color: '#eab308', text: 'Fair — can be improved',     cls: 'text-yellow-500', msg: 'Good start! Add specific observations (name on item, brand) for better accuracy.' },
+            { max: 90,  color: '#22c55e', text: 'Good — solid match profile', cls: 'text-green-500',  msg: 'Nice! The exact spot and a photo will push this to excellent.' },
+            { max: 101, color: '#16a34a', text: 'Excellent — high match chance', cls: 'text-green-700', msg: 'Great detail! This report will have the highest match probability.' },
         ];
-
         const lvl = levels.find(l => score <= l.max) || levels[levels.length - 1];
         bar.style.backgroundColor = lvl.color;
         label.textContent = lvl.text;
-        label.className = `text-[10px] font-black uppercase ${lvl.cls}`;
-        hint.textContent = lvl.msg;
+        label.className   = `text-[10px] font-black uppercase ${lvl.cls}`;
+        hint.textContent  = lvl.msg;
     }
 
-    document.getElementById('exactSpot').addEventListener('input', updateQuality);
-
-    // ─────────────────────────────────────────────
-    // PHOTO UPLOAD PREVIEW
-    // ─────────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────
+    // PHOTO PREVIEW
+    // ─────────────────────────────────────────────────────────
     function clearPreview() {
         document.getElementById('file-upload').value = '';
         document.getElementById('attachedStatus').classList.add('hidden');
@@ -413,18 +517,9 @@ $stmt->execute([$user_id]);
         updateQuality();
     }
 
-    document.getElementById('file-upload').addEventListener('change', function () {
-        if (this.files && this.files[0]) {
-            document.getElementById('fileNameDisplay').textContent = this.files[0].name;
-            document.getElementById('attachedStatus').classList.remove('hidden');
-            document.getElementById('uploadPlaceholder').classList.add('hidden');
-            updateQuality();
-        }
-    });
-
-    // ─────────────────────────────────────────────
-    // FORM SUBMIT — validate + compile hidden_marks
-    // ─────────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────
+    // FORM SUBMIT
+    // ─────────────────────────────────────────────────────────
     document.getElementById('foundItemForm').addEventListener('submit', function (e) {
         let valid = true;
 
@@ -437,7 +532,7 @@ $stmt->execute([$user_id]);
             document.getElementById('colorError').classList.add('hidden');
         }
 
-        if (!tagInput.validate()) valid = false;
+        if (tagInput && !tagInput.validate()) valid = false;
 
         if (!valid) {
             e.preventDefault();
@@ -445,11 +540,10 @@ $stmt->execute([$user_id]);
             return;
         }
 
-        // Compile: "Colors: Black | Traits: cracked screen | Keywords: samsung | Exact Spot: stairs near entrance"
         const parts = [];
         if (selectedColors.size > 0) parts.push('Colors: ' + [...selectedColors].join(', '));
         if (selectedTraits.size > 0) parts.push('Traits: ' + [...selectedTraits].join(', '));
-        parts.push(tagInput.getCompiledKeywords());
+        if (tagInput)                parts.push(tagInput.getCompiledKeywords());
 
         const spot = document.getElementById('exactSpot').value.trim();
         if (spot) parts.push('Exact Spot: ' + spot);
