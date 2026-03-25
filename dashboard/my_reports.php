@@ -406,7 +406,7 @@ function getStatusBadgeClass($status) {
                                 <?php endif; ?>
                                 
                                 <button onclick="openDetailModal(<?php echo htmlspecialchars($modal_data, ENT_QUOTES); ?>)"
-                                        class="flex-1 px-4 py-2 border border-slate-200 text-slate-600 rounded-lg text-xs font-bold hover:bg-white hover:border-cmu-blue hover:text-cmu-blue transition">
+                                        class="flex-1 px-8 py-2 border border-slate-200 text-slate-600 rounded-lg text-xs font-bold hover:bg-white hover:border-cmu-blue hover:text-cmu-blue transition">
                                     <i class="fas fa-eye mr-1"></i>Details
                                 </button>
                             </div>
