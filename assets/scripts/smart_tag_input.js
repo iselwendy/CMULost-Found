@@ -1,27 +1,17 @@
 /**
- * CMU Lost & Found — Smart Keyword Tag Input  v3.0
- * Gemini-first, vocabulary.json fallback
- *
- * Drop in: assets/scripts/smart_tag_input.js
- *
  * Strategy:
  *   PRIMARY   → Gemini AI via core/get_suggestions.php
  *   FALLBACK  → vocabulary.json (used when AI fails, is unavailable, or returns empty)
- *
- * Usage:
- *   const tagInput = await SmartTagInput.init({ ... });
- *
- * Because vocabulary loading is async, init() returns a Promise.
  */
 
 const SmartTagInput = (() => {
 
-    // ── Loaded from vocabulary.json at init time ───────────────
+    // Loaded from vocabulary.json at init time
     let VOCAB = {};   // full parsed JSON
     let ALL_TERMS = [];   // flat array of all canonical trait + keyword strings
     let SYNONYMS = {};   // synonym map
 
-    // ── Vocabulary loader ──────────────────────────────────────
+    // Vocabulary loader
     async function loadVocabulary() {
         if (ALL_TERMS.length > 0) return; // already loaded
         try {
@@ -37,7 +27,7 @@ const SmartTagInput = (() => {
         }
     }
 
-    // ── Get standard traits + keywords for a category ──────────
+    // Get standard traits + keywords for a category 
     function getStandardForCategory(category) {
         const cat = (VOCAB.categories || {})[category];
         if (!cat) return { traits: [], keywords: [] };
@@ -47,7 +37,7 @@ const SmartTagInput = (() => {
         };
     }
 
-    // ── Fuzzy score (0–1) ──────────────────────────────────────
+    // Fuzzy score (0–1) 
     function fuzzyScore(query, candidate) {
         const q = query.toLowerCase().trim();
         const c = candidate.toLowerCase();
@@ -64,7 +54,7 @@ const SmartTagInput = (() => {
         return ratio > 0.45 ? ratio * 0.55 : 0;
     }
 
-    // ── Normalize via synonym map ──────────────────────────────
+    // Normalize via synonym map 
     function normalize(raw) {
         const lower = raw.toLowerCase().trim();
         if (SYNONYMS[lower])
@@ -81,7 +71,7 @@ const SmartTagInput = (() => {
         return { canonical: lower, wasNormalized: false, isCustom: true };
     }
 
-    // ── Autocomplete suggestions from vocabulary ───────────────
+    // Autocomplete suggestions from vocabulary 
     function getSuggestions(query, limit = 7) {
         if (!query || query.length < 2) return [];
         return ALL_TERMS
@@ -92,15 +82,13 @@ const SmartTagInput = (() => {
             .map(r => r.term);
     }
 
-    // ── HTML escape ────────────────────────────────────────────
+    // HTML escape
     function esc(str) {
         return String(str).replace(/[&<>"']/g,
             m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
     }
 
-    // ─────────────────────────────────────────────────────────────
     // MAIN INIT
-    // ─────────────────────────────────────────────────────────────
     async function init({ inputId, containerId, errorId, accentColor = 'indigo' }) {
 
         await loadVocabulary();
@@ -114,7 +102,7 @@ const SmartTagInput = (() => {
             return null;
         }
 
-        // ── Accent theme ─────────────────────────────────────────
+        // Accent theme 
         const A = accentColor === 'green' ? {
             ring: ['focus-within:ring-2', 'focus-within:ring-green-400', 'focus-within:border-green-400'],
             dropBorder: 'border-green-100',
@@ -139,12 +127,12 @@ const SmartTagInput = (() => {
 
         container.classList.add(...A.ring);
 
-        // ── Instance state ───────────────────────────────────────
+        // Instance state 
         let tags = [];
         let dropdownEl = null;
         let activeIdx = -1;
 
-        // ── DROPDOWN ─────────────────────────────────────────────
+        // DROPDOWN 
         function buildDropdown(suggestions) {
             clearDropdown();
             if (!suggestions.length) return;
@@ -190,7 +178,7 @@ const SmartTagInput = (() => {
                 + esc(term.slice(idx + query.length));
         }
 
-        // ── TAG MANAGEMENT ────────────────────────────────────────
+        // TAG MANAGEMENT 
         function commitTag(raw, isAI = false) {
             const trimmed = raw.trim();
             if (!trimmed || trimmed.length < 2) return;
@@ -244,7 +232,7 @@ const SmartTagInput = (() => {
             });
         }
 
-        // ── KEYBOARD NAVIGATION ───────────────────────────────────
+        // KEYBOARD NAVIGATION
         input.addEventListener('keydown', e => {
             const items = dropdownEl
                 ? Array.from(dropdownEl.querySelectorAll('[data-idx]'))
@@ -275,7 +263,7 @@ const SmartTagInput = (() => {
             });
         }
 
-        // ── INPUT → AUTOCOMPLETE ──────────────────────────────────
+        // INPUT → AUTOCOMPLETE
         input.addEventListener('input', function () {
             const val = this.value.trim();
             if (val.length < 2) { clearDropdown(); return; }
@@ -285,7 +273,7 @@ const SmartTagInput = (() => {
         document.addEventListener('click', e => { if (!container.contains(e.target)) clearDropdown(); });
         container.addEventListener('click', () => input.focus());
 
-        // ── TOAST ─────────────────────────────────────────────────
+        // TOAST 
         function showToast(msg) {
             document.getElementById('smartTagToast')?.remove();
             const toast = document.createElement('div');
@@ -296,7 +284,7 @@ const SmartTagInput = (() => {
             setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 2500);
         }
 
-        // ── PUBLIC API ────────────────────────────────────────────
+        // PUBLIC API 
         return {
             getTags: () => [...tags],
             getCanonicalList: () => tags.map(t => t.canonical),
@@ -323,7 +311,7 @@ const SmartTagInput = (() => {
         };
     }
 
-    // ── Public surface ─────────────────────────────────────────
+    // Public surface
     return { init, getSuggestions, normalize, loadVocabulary, getStandardForCategory };
 
 })();

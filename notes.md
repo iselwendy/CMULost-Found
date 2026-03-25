@@ -8,6 +8,7 @@ pati yung "view details" sa gallery page, gawin ding modal na lang
 
 
 NEXT STEP:
+- Maybe in report_lost.php, add an optional "exact spot left"? Optional there may be times where users remember where they left it or not.
 - Improve the keywords system
 - Fix user dashboard
 - Create the matching engine (matches table sa database)

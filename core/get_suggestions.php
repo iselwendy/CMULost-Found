@@ -19,7 +19,7 @@ $dotenv->load();
  *      to returning standard traits + keywords from vocabulary.json.
  */
 
-// ── Security ───────────────────────────────────────────────────
+// Security 
 session_start();
 if (!isset($_SESSION['user_id'])) {
     http_response_code(401);
@@ -27,7 +27,7 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
-// ── Request validation ─────────────────────────────────────────
+// Request validation 
 header('Content-Type: application/json');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -48,14 +48,14 @@ if (strlen($title) < 3 || empty($category)) {
     exit;
 }
 
-// ── Rate limiting (session-based, 20 calls per session) ────────
+// Rate limiting (session-based, 100 calls per session)
 $_SESSION['ai_suggestion_calls'] = ($_SESSION['ai_suggestion_calls'] ?? 0) + 1;
 if ($_SESSION['ai_suggestion_calls'] > 100) {
     echo json_encode(vocabFallback($category) + ['source' => 'rate_limited']);
     exit;
 }
 
-// ── Load vocabulary.json (needed for context + fallback) ───────
+// Load vocabulary.json (needed for context + fallback) 
 $vocab_path = __DIR__ . '/../assets/data/vocabulary.json';
 $vocab      = [];
 if (file_exists($vocab_path)) {
@@ -65,7 +65,7 @@ if (file_exists($vocab_path)) {
 $standard_traits   = $vocab['categories'][$category]['traits']   ?? [];
 $standard_keywords = $vocab['categories'][$category]['keywords'] ?? [];
 
-// ── Helper: return vocabulary fallback payload ─────────────────
+// Helper: return vocabulary fallback payload 
 function vocabFallback(string $category): array {
     global $vocab;
     $traits   = $vocab['categories'][$category]['traits']   ?? [];
@@ -76,12 +76,12 @@ function vocabFallback(string $category): array {
     ];
 }
 
-// ── Helper: sanitize a single suggestion string ────────────────
+// Helper: sanitize a single suggestion string 
 function sanitize_suggestion(string $s): string {
     return substr(strip_tags(trim($s)), 0, 60);
 }
 
-// ── Check for Gemini API key ───────────────────────────────────
+// Check for Gemini API key 
 $api_key = $_ENV['GEMINI_API_KEY'];
 
 if (empty($api_key)) {
@@ -95,7 +95,7 @@ if (empty($api_key)) {
     exit;
 }
 
-// ── Build Gemini prompt ────────────────────────────────────────
+// Build Gemini prompt ─
 $role_context = $report_type === 'found'
     ? "A university student FOUND this item and is describing what they observed."
     : "A university student LOST this item and is describing it from memory.";
@@ -121,8 +121,8 @@ Rules:
 - Traits = observable physical characteristics (e.g. "scratch on left lens", "UV400 tint", "nose pad missing").
 - Keywords = specific identifiable words (brand, model, material, name, distinctive feature).
 - Be SPECIFIC to the item title given. "Ray-Ban sunglasses" should produce different results than "cheap plastic sunglasses".
-- Keep each trait/keyword SHORT (2–5 words max).
-- Return between 3 and 8 traits, and 3 and 8 keywords.
+- Keep each trait/keyword SHORT (5–10 words max).
+- Return between 5 and 10 traits, and 5 and 10 keywords.
 - If the title is too generic (e.g. just "phone") return empty arrays.
 - Respond ONLY with valid JSON. No explanation. No markdown fences. No extra text.
 
@@ -130,7 +130,7 @@ Required JSON format:
 {"traits": ["trait one", "trait two"], "keywords": ["keyword one", "keyword two"]}
 PROMPT;
 
-// ── Call Gemini API ────────────────────────────────────────────
+// Call Gemini API 
 // Using the generateContent REST endpoint for gemini-2.5-flash
 $gemini_url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' . urlencode($api_key);
 
@@ -168,13 +168,8 @@ $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 $curl_err  = curl_error($ch);
 curl_close($ch);
 
-// TEMPORARY DEBUG — remove after fixing
-error_log('Gemini HTTP code: ' . $http_code);
-error_log('Gemini curl error: ' . $curl_err);
-error_log('Gemini raw response: ' . $response);
 
-
-// ── Parse Gemini response ──────────────────────────────────────
+// Parse Gemini response 
 if ($http_code !== 200 || !$response || $curl_err) {
     // Network/API failure → fall back to vocabulary
     $fallback = vocabFallback($category);
@@ -211,7 +206,7 @@ if (
     exit;
 }
 
-// ── Sanitize and limit output ──────────────────────────────────
+// Sanitize and limit output 
 $traits   = array_map('sanitize_suggestion', array_slice((array)$suggestions['traits'],   0, 8));
 $keywords = array_map('sanitize_suggestion', array_slice((array)$suggestions['keywords'], 0, 8));
 
