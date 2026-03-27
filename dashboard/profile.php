@@ -31,8 +31,8 @@ $user = [
     "phone_number"    => $freshUser['phone_number'] ?? '',
     "created_at"      => date('M Y', strtotime($freshUser['created_at'])),
     "profile_picture" => !empty($freshUser['profile_picture'])
-                            ? '../' . htmlspecialchars($freshUser['profile_picture'])
-                            : 'https://ui-avatars.com/api/?name=' . urlencode($freshUser['full_name']) . '&background=FFCC00&color=003366',
+        ? '../' . htmlspecialchars($freshUser['profile_picture'])
+        : 'https://ui-avatars.com/api/?name=' . urlencode($freshUser['full_name']) . '&background=FFCC00&color=003366',
 ];
 
 // ── Aggregate stats ───────────────────────────────────────────
@@ -148,8 +148,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['profile_picture'])) 
                 $db_path = 'uploads/profiles/' . $new_filename;
 
                 try {
+                    // Grab the old path BEFORE overwriting it
+                    $old_path = $freshUser['profile_picture'] ?? null;
+
                     $update = $pdo->prepare("UPDATE users SET profile_picture = ? WHERE user_id = ?");
                     $update->execute([$db_path, $user_id]);
+
+                    // Delete old file only after DB update succeeds
+                    if ($old_path && strpos($old_path, 'uploads/profiles/') === 0) {
+                        $old_file = dirname(__FILE__) . '/../' . $old_path;
+                        if (file_exists($old_file)) {
+                            unlink($old_file);
+                        }
+                    }
+
                     $_SESSION['profile_picture'] = '../' . $db_path;
                     $user['profile_picture']     = '../' . $db_path;
                     $upload_message = 'Profile picture updated successfully!';

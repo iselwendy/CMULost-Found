@@ -1,10 +1,23 @@
 <?php
 require_once '../core/auth_functions.php';
 
-// Fetch FRESH data from DB using the ID in the session
+if (!isset($_SESSION['user_id'])) {
+    header("Location: ../core/auth.php");
+    exit();
+}
+
+$user_id = $_SESSION['user_id'];
+
+// ── Fetch fresh user data ─────────────────────────────────────
 $stmt = $pdo->prepare("SELECT * FROM users WHERE user_id = ?");
-$stmt->execute([$_SESSION['user_id']]);
+$stmt->execute([$user_id]);
 $freshUser = $stmt->fetch();
+
+if (!$freshUser) {
+    session_destroy();
+    header("Location: ../core/auth.php");
+    exit();
+}
 
 $user = [
     "user_id"         => $freshUser['user_id'],
@@ -17,8 +30,66 @@ $user = [
     "phone_number"    => $freshUser['phone_number'],
     "recovery_email"  => $freshUser['recovery_email'],
     "created_at"      => date('M Y', strtotime($freshUser['created_at'])),
-    "profile_picture" => 'https://ui-avatars.com/api/?name=' . urlencode($freshUser['full_name']) . '&background=FFCC00&color=003366'
+    "profile_picture" => !empty($freshUser['profile_picture'])
+        ? '../' . htmlspecialchars($freshUser['profile_picture'])
+        : 'https://ui-avatars.com/api/?name=' . urlencode($freshUser['full_name']) . '&background=FFCC00&color=003366',
 ];
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['profile_picture'])) {
+    $file = $_FILES['profile_picture'];
+
+    if ($file['error'] === UPLOAD_ERR_OK) {
+        $allowed_types = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mime  = finfo_file($finfo, $file['tmp_name']);
+        finfo_close($finfo);
+
+        if (!in_array($mime, $allowed_types)) {
+            $upload_error = 'Invalid file type. Please upload a JPG, PNG, GIF, or WebP image.';
+        } elseif ($file['size'] > 2 * 1024 * 1024) {
+            $upload_error = 'File is too large. Maximum size is 2MB.';
+        } else {
+            $upload_dir = dirname(__FILE__) . '/../uploads/profiles/';
+            if (!is_dir($upload_dir)) {
+                mkdir($upload_dir, 0755, true);
+            }
+
+            $ext          = pathinfo($file['name'], PATHINFO_EXTENSION);
+            $new_filename = 'profile_' . $user_id . '_' . time() . '.' . $ext;
+            $target_path  = $upload_dir . $new_filename;
+
+            if (move_uploaded_file($file['tmp_name'], $target_path)) {
+                $db_path = 'uploads/profiles/' . $new_filename;
+
+                try {
+                    // Grab the old path BEFORE overwriting it
+                    $old_path = $freshUser['profile_picture'] ?? null;
+
+                    $update = $pdo->prepare("UPDATE users SET profile_picture = ? WHERE user_id = ?");
+                    $update->execute([$db_path, $user_id]);
+
+                    // Delete old file only after DB update succeeds
+                    if ($old_path && strpos($old_path, 'uploads/profiles/') === 0) {
+                        $old_file = dirname(__FILE__) . '/../' . $old_path;
+                        if (file_exists($old_file)) {
+                            unlink($old_file);
+                        }
+                    }
+
+                    $_SESSION['profile_picture'] = '../' . $db_path;
+                    $user['profile_picture']     = '../' . $db_path;
+                    $upload_message = 'Profile picture updated successfully!';
+                } catch (PDOException $e) {
+                    $upload_error = 'Failed to save profile picture. Please try again.';
+                }
+            } else {
+                $upload_error = 'Failed to upload file. Please try again.';
+            }
+        }
+    } elseif ($file['error'] !== UPLOAD_ERR_NO_FILE) {
+        $upload_error = 'Upload error. Please try again.';
+    }
+}
 ?>
 
 <!DOCTYPE html>
@@ -31,6 +102,17 @@ $user = [
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="../assets/styles/header.css"></link>
     <link rel="stylesheet" href="../assets/styles/root.css"></link>
+    <style>
+        /* Profile picture hover overlay */
+        .avatar-wrapper:hover .avatar-overlay { opacity: 1; }
+        .avatar-overlay { transition: opacity 0.2s; }
+
+        /* Shimmer loading for stats */
+        @keyframes shimmer {
+            0%   { background-position: -200% 0; }
+            100% { background-position:  200% 0; }
+        }
+    </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
 
@@ -82,14 +164,15 @@ $user = [
                         <p class="text-sm text-gray-500">Update your public profile and university details.</p>
                     </div>
                     <div class="p-8">
-                        <form action="update_profile.php" method="POST" class="space-y-6">
+                        <form method="POST" enctype="multipart/form-data" id="avatarForm" class="space-y-6">
                             <!-- Avatar Upload -->
                             <div class="flex items-center gap-6 pb-6 border-b border-gray-50">
                                 <div class="relative">
-                                    <img src="<?php echo htmlspecialchars($user['profile_picture']); ?>" alt="Avatar" class="w-20 h-20 rounded-2xl object-cover border-2 border-gray-100">
+                                    <img id="profilePreview" src="<?php echo htmlspecialchars($user['profile_picture']); ?>" alt="Profile Picture" class="w-20 h-20 rounded-2xl object-cover border-2 border-gray-100">
                                     <label class="absolute -bottom-2 -right-2 bg-cmu-blue text-white p-1.5 rounded-lg cursor-pointer shadow-md hover:scale-110 transition">
                                         <i class="fas fa-camera text-xs"></i>
-                                        <input type="file" class="hidden">
+                                        <input type="file" id="profile_upload" name="profile_picture" class="hidden" accept="image/jpeg,image/png,image/gif,image/webp"
+                           onchange="previewAndSubmit(this)">
                                     </label>
                                 </div>
                                 <div>
@@ -287,6 +370,7 @@ $user = [
     <?php require_once '../includes/footer.php'; ?>
 
     <script src="../assets/scripts/profile-dropdown.js"></script>
+    <script src="../assets/scripts/profile.js"></script>
     <script>
         // Auto-hide success alert after 3 seconds
         const successAlert = document.getElementById('success-alert');
