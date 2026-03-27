@@ -287,7 +287,7 @@ $admin_name = htmlspecialchars($_SESSION['full_name'] ?? 'Admin');
                                     'Personal'    => 'fa-bag-shopping',
                                 ];
                                 $icon = $icon_map[$item['category']] ?? 'fa-box';
-                                $days_ago = max(0, (int) floor((time() - strtotime($item['date_found'])) / 86400));
+                                $days_ago = max(0, (int) floor((time() - strtotime($item['created_at'])) / 86400));
                             ?>
                             <div class="p-4 flex items-center gap-4 hover:bg-slate-50 transition">
                                 <div class="w-14 h-14 rounded-xl bg-slate-100 flex-shrink-0 flex items-center justify-center text-slate-400">
