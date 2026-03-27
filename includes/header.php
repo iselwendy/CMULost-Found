@@ -5,13 +5,16 @@ $current_page = basename($_SERVER['PHP_SELF']);
 
 if (isset($_SESSION['user_id'])) {
     try {
-        $stmt = $pdo->prepare("SELECT full_name, role FROM users WHERE user_id = ? LIMIT 1");
+        $stmt = $pdo->prepare("SELECT full_name, role, profile_picture FROM users WHERE user_id = ? LIMIT 1");
         $stmt->execute([$_SESSION['user_id']]);
         $freshUser = $stmt->fetch();
 
         if ($freshUser) {
             $user_display_name = $freshUser['full_name'];
             $user_role = $freshUser['role'];
+            $profile_picture = !empty($freshUser['profile_picture'])
+                ? '../' . htmlspecialchars($freshUser['profile_picture'])
+                : 'https://ui-avatars.com/api/?name=' . urlencode($freshUser['full_name']) . '&background=FFCC00&color=003366';
             
             $_SESSION['full_name'] = $freshUser['full_name'];
             $_SESSION['role'] = $freshUser['role'];
@@ -64,7 +67,7 @@ if (isset($_SESSION['user_id'])) {
                     </div>
                     <div class="relative">
                         <button id="userMenuBtn" class="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center hover:bg-white/20 transition focus:outline-none">
-                        <img src="<?php echo isset($_SESSION['profile_picture']) ? htmlspecialchars($_SESSION['profile_picture']) : 'https://ui-avatars.com/api/?name=' . (isset($user_display_name) ? urlencode($user_display_name) : 'Guest') . '&background=FFCC00&color=003366'; ?>" alt="Profile" class="w-8 h-8 rounded-full object-cover">
+                        <img src="<?php echo isset($_SESSION['profile_picture']) ? htmlspecialchars($_SESSION['profile_picture']) : $profile_picture; ?>" alt="Profile" class="w-8 h-8 rounded-full object-cover">
                         </button>
                         <!-- Dropdown Menu -->
                         <div id="userDropdown" class="absolute right-0 mt-3 w-56 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-50">

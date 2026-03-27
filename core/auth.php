@@ -1,12 +1,6 @@
 <?php
 require_once __DIR__ . '/auth_functions.php';
 
-// Redirect if already logged in
-if (isset($_SESSION['user_id'])) {
-    header("Location: ../public/index.php");
-    exit();
-}
-
 $authResult = handleLogin($pdo);
 $message = $authResult['text'] ?? "";
 ?>
