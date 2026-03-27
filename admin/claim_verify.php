@@ -1,12 +1,6 @@
 <?php
-/**
- * CMU Lost & Found - Claim Verification
- * Handles both the search for a claim and the final verification checklist.
- */
-
 session_start();
 
-// Admin Access Control
 if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'admin') {
     header("Location: ../core/auth.php");
     exit();
@@ -14,22 +8,110 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'admin') {
 
 require_once '../core/db_config.php';
 
-// Check if we are in "Active Verification" mode or "Search" mode
 $item_id = $_GET['item_id'] ?? null;
-
-// Mock data logic for when an item IS selected
+$search  = trim($_GET['search'] ?? '');
 $item_data = null;
+
+// ── VERIFICATION MODE: fetch real item + claimant data ─────────
 if ($item_id) {
-    // In production, you would: SELECT * FROM items JOIN users ON items.potential_owner = users.id WHERE item_id = $item_id
-    $item_data = [
-        'id' => $item_id,
-        'name' => 'Calculus 1 Textbook',
-        'location' => 'B4-S02',
-        'claimant' => 'Mark Spencer',
-        'student_no' => '2021-10452',
-        'dept' => 'BS Computer Science',
-        'private_note' => "Name 'Mark S.' written on page 45."
-    ];
+    try {
+        $stmt = $pdo->prepare("
+            SELECT
+                f.found_id,
+                f.title             AS name,
+                f.private_description AS private_note,
+                CONCAT('TRK-', LPAD(f.found_id, 4, '0'), '-LF') AS tracking_id,
+                COALESCE(inv.shelf_label, 'Unassigned') AS location,
+                u.full_name         AS claimant,
+                u.school_number     AS student_no,
+                u.department        AS dept,
+                m.match_id
+            FROM matches m
+            JOIN found_reports f  ON m.found_id = f.found_id
+            JOIN lost_reports  lr ON m.lost_id  = lr.lost_id
+            JOIN users         u  ON lr.user_id = u.user_id
+            LEFT JOIN (
+                SELECT found_id, CONCAT(shelf, row_bin) AS shelf_label
+                FROM inventory
+            ) inv ON inv.found_id = f.found_id
+            WHERE m.match_id = ?
+              AND m.status   = 'confirmed'
+        ");
+        $stmt->execute([$item_id]);
+        $item_data = $stmt->fetch();
+    } catch (PDOException $e) {
+        $item_data = null;
+    }
+}
+
+// ── SELECTION MODE: fetch confirmed matches ready for release ──
+$pending_claims = [];
+try {
+    $where  = "WHERE m.status = 'confirmed'";
+    $params = [];
+
+    if (!empty($search)) {
+        $where  .= " AND (u.full_name LIKE ? OR u.school_number LIKE ? OR f.title LIKE ?)";
+        $params  = array_fill(0, 3, '%' . $search . '%');
+    }
+
+    $stmt = $pdo->prepare("
+        SELECT
+            m.match_id,
+            f.title             AS item_name,
+            f.category_id,
+            c.name              AS category,
+            u.full_name         AS claimant,
+            u.school_number     AS student_no,
+            CONCAT('TRK-', LPAD(f.found_id, 4, '0'), '-LF') AS tracking_id
+        FROM matches m
+        JOIN found_reports f ON m.found_id  = f.found_id
+        JOIN lost_reports lr ON m.lost_id   = lr.lost_id
+        JOIN users         u ON lr.user_id  = u.user_id
+        JOIN categories    c ON f.category_id = c.category_id
+        $where
+        ORDER BY m.updated_at DESC
+        LIMIT 20
+    ");
+    $stmt->execute($params);
+    $pending_claims = $stmt->fetchAll();
+} catch (PDOException $e) {
+    $pending_claims = [];
+}
+
+// ── HANDLE FORM SUBMISSION: complete handover ──────────────────
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['match_id'])) {
+    try {
+        $pdo->beginTransaction();
+
+        $match_id = (int) $_POST['match_id'];
+
+        // 1. Get the found_id and lost_id from the match
+        $stmt = $pdo->prepare("SELECT found_id, lost_id FROM matches WHERE match_id = ?");
+        $stmt->execute([$match_id]);
+        $match = $stmt->fetch();
+
+        // 2. Mark the found item as returned
+        $pdo->prepare("UPDATE found_reports SET status = 'returned' WHERE found_id = ?")
+            ->execute([$match['found_id']]);
+
+        // 3. Mark the lost report as resolved
+        $pdo->prepare("UPDATE lost_reports SET status = 'resolved' WHERE lost_id = ?")
+            ->execute([$match['lost_id']]);
+
+        // 4. Mark the match as released
+        $pdo->prepare("UPDATE matches SET status = 'released', updated_at = NOW() WHERE match_id = ?")
+            ->execute([$match_id]);
+
+        $pdo->commit();
+        echo json_encode(['success' => true]);
+        exit;
+
+    } catch (PDOException $e) {
+        $pdo->rollBack();
+        echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+        exit;
+    }
 }
 ?>
 
@@ -126,47 +208,54 @@ if ($item_id) {
                 <div class="max-w-4xl mx-auto">
                     <div class="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm mb-8">
                         <h3 class="text-lg font-black text-slate-800 mb-4">Search Pending Claims</h3>
-                        <div class="flex gap-4">
+                        <form method="GET" action="claim_verify.php" class="flex gap-4">
                             <div class="relative flex-grow">
                                 <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                                <input type="text" placeholder="Search by Student Name, ID, or Item Code..." 
-                                       class="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-[#003366] outline-none transition">
+                                <input type="text" name="search" value="<?php echo htmlspecialchars($search); ?>"
+                                    placeholder="Search by Student Name, ID, or Item Code..."
+                                    class="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-[#003366] outline-none transition">
                             </div>
-                            <button class="bg-[#003366] text-white px-8 rounded-2xl font-bold">Search</button>
-                        </div>
+                            <button type="submit" class="bg-[#003366] text-white px-8 rounded-2xl font-bold">Search</button>
+                        </form>
                     </div>
 
                     <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Ready for Release (Matched Items)</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <!-- Example Queue Item -->
-                        <div class="bg-white p-5 rounded-2xl border border-slate-200 flex items-center justify-between hover:border-[#003366] transition cursor-pointer group"
-                             onclick="window.location.href='?item_id=TRK-88219-AM'">
-                            <div class="flex items-center gap-4">
-                                <div class="w-12 h-12 bg-blue-50 text-[#003366] rounded-xl flex items-center justify-center font-bold">
-                                    <i class="fas fa-book"></i>
-                                </div>
-                                <div>
-                                    <p class="font-black text-slate-800 text-sm">Calculus 1 Textbook</p>
-                                    <p class="text-xs text-slate-500">Claimant: Mark Spencer</p>
-                                </div>
-                            </div>
-                            <i class="fas fa-chevron-right text-slate-300 group-hover:text-[#003366]"></i>
+                    <?php if (empty($pending_claims)): ?>
+                        <div class="text-center py-12 bg-white rounded-3xl border border-slate-200">
+                            <i class="fas fa-check-circle text-green-200 text-4xl mb-3"></i>
+                            <p class="text-sm font-bold text-slate-400">No confirmed matches awaiting release.</p>
                         </div>
-                        
-                        <!-- Another Example -->
-                        <div class="bg-white p-5 rounded-2xl border border-slate-200 flex items-center justify-between opacity-60">
-                            <div class="flex items-center gap-4">
-                                <div class="w-12 h-12 bg-slate-100 text-slate-400 rounded-xl flex items-center justify-center font-bold">
-                                    <i class="fas fa-wallet"></i>
+                    <?php else: ?>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <?php
+                            $icon_map = [
+                                'Electronics' => 'fa-mobile-screen',
+                                'Valuables'   => 'fa-wallet',
+                                'Documents'   => 'fa-id-card',
+                                'Books'       => 'fa-book',
+                                'Clothing'    => 'fa-shirt',
+                                'Personal'    => 'fa-bag-shopping',
+                            ];
+                            foreach ($pending_claims as $claim):
+                                $icon = $icon_map[$claim['category']] ?? 'fa-box';
+                            ?>
+                            <div class="bg-white p-5 rounded-2xl border border-slate-200 flex items-center justify-between hover:border-[#003366] transition cursor-pointer group"
+                                onclick="window.location.href='?item_id=<?php echo $claim['match_id']; ?>'">
+                                <div class="flex items-center gap-4">
+                                    <div class="w-12 h-12 bg-blue-50 text-[#003366] rounded-xl flex items-center justify-center">
+                                        <i class="fas <?php echo $icon; ?>"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-black text-slate-800 text-sm"><?php echo htmlspecialchars($claim['item_name']); ?></p>
+                                        <p class="text-xs text-slate-500">Claimant: <?php echo htmlspecialchars($claim['claimant']); ?></p>
+                                        <p class="text-[10px] font-mono text-slate-400"><?php echo $claim['tracking_id']; ?></p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <p class="font-black text-slate-800 text-sm">Black Leather Wallet</p>
-                                    <p class="text-xs text-slate-500">Waiting for Student...</p>
-                                </div>
+                                <i class="fas fa-chevron-right text-slate-300 group-hover:text-[#003366]"></i>
                             </div>
-                            <span class="text-[8px] font-black uppercase bg-slate-100 px-2 py-1 rounded">Pending SMS</span>
+                            <?php endforeach; ?>
                         </div>
-                    </div>
+                    <?php endif; ?>
                 </div>
 
             <?php else: ?>
@@ -198,6 +287,8 @@ if ($item_id) {
                     <!-- Right: Checklist -->
                     <div class="lg:col-span-2">
                         <form id="claimForm" class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+                            <input type="hidden" name="match_id" value="<?php echo htmlspecialchars($item_data['match_id']); ?>">
+
                             <div class="p-8">
                                 <div class="space-y-4">
                                     <label class="checklist-item flex items-start gap-4 p-5 border border-slate-100 rounded-2xl cursor-pointer transition border-l-4">
@@ -252,10 +343,21 @@ if ($item_id) {
     </div>
 
     <script>
-        if(document.getElementById('claimForm')) {
+        if (document.getElementById('claimForm')) {
             document.getElementById('claimForm').addEventListener('submit', function(e) {
                 e.preventDefault();
-                document.getElementById('successModal').classList.remove('hidden');
+                const formData = new FormData(this);
+
+                fetch('claim_verify.php', { method: 'POST', body: formData })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.success) {
+                            document.getElementById('successModal').classList.remove('hidden');
+                        } else {
+                            alert('Error completing handover: ' + (data.error ?? 'Unknown error'));
+                        }
+                    })
+                    .catch(() => alert('Network error. Please try again.'));
             });
         }
     </script>
