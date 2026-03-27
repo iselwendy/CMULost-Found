@@ -59,6 +59,7 @@ try {
             f.found_id,
             f.title,
             f.date_found,
+            f.created_at,
             c.name        AS category,
             loc.location_name AS found_location,
             u.full_name   AS finder_name,
@@ -68,8 +69,8 @@ try {
         LEFT JOIN users      u   ON f.reported_by  = u.user_id
         LEFT JOIN categories c   ON f.category_id  = c.category_id
         LEFT JOIN locations  loc ON f.location_id  = loc.location_id
-        WHERE f.status = 'pending'
-        ORDER BY f.date_found DESC
+        WHERE f.status = 'in custody'
+        ORDER BY f.created_at DESC
         LIMIT 5
     ");
     $stmt->execute();
@@ -303,10 +304,10 @@ $admin_name = htmlspecialchars($_SESSION['full_name'] ?? 'Admin');
                                         <?php endif; ?>
                                     </p>
                                     <?php if ($days_ago > 0): ?>
-                                    <p class="text-[10px] text-amber-500 font-bold mt-0.5">
-                                        <i class="fas fa-clock mr-1"></i>
-                                        Pending for <?php echo $days_ago; ?> day<?php echo $days_ago !== 1 ? 's' : ''; ?>
-                                    </p>
+                                        <p class="text-[10px] text-amber-500 font-bold mt-0.5">
+                                            <i class="fas fa-clock mr-1"></i>
+                                            Pending for <?php echo $days_ago; ?> day<?php echo $days_ago !== 1 ? 's' : ''; ?>
+                                        </p>
                                     <?php endif; ?>
                                 </div>
                                 <div class="text-right flex-shrink-0">
