@@ -480,7 +480,7 @@ function getStatusBadgeClass($status) {
 
     <?php require_once '../includes/footer.php'; ?>
     <script src="../assets/scripts/profile-dropdown.js"></script>
-    <script src="../assets/scripts/qr_scanner.js"></script>
+    <script src="../assets/scripts/qr_generator.js"></script>
     <script src="../assets/scripts/my_reports.js"></script>
 </body>
 </html>
