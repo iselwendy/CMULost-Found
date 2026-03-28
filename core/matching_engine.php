@@ -9,8 +9,8 @@
  *   Date proximity         15 pts
  *
  * Confidence → action:
- *   ≥ 90  →  auto-notify via SMS, status = 'confirmed'
- *   < 90  →  queued for admin review, status = 'pending'
+ *   ≥ 80  →  auto-notify via SMS, status = 'confirmed'
+ *   < 80  →  queued for admin review, status = 'pending'
  *
  * private_description format:
  *   "Colors: Red | Traits: faded, oversized | Keywords: jacket, paint | Exact Spot: Main library, table 3"
@@ -22,7 +22,7 @@ require_once __DIR__ . '/db_config.php';
 // Public API
 // ---------------------------------------------------------------------------
 
-function runMatchingEngine(int $found_id, int $admin_id = 1): array
+function runMatchingEngine(int $found_id, int $admin_id = 0): array
 {
     $pdo     = getDB();
     $matches = [];
@@ -43,14 +43,15 @@ function runMatchingEngine(int $found_id, int $admin_id = 1): array
             continue;
         }
 
-        $matchType = ($admin_id === 1) ? 'auto' : 'manual';
-        $status    = ($score >= 90)    ? 'confirmed' : 'pending';
+        // admin_id = 0 means system-triggered; store as NULL in DB
+        $matchType = ($admin_id > 0) ? 'manual' : 'auto';
+        $status    = ($score >= 80)  ? 'confirmed' : 'pending';
 
         $match_id = upsertMatch(
             $pdo,
             (int)$lost['lost_id'],
             $found_id,
-            $admin_id,
+            $admin_id,   // 0 → NULL inside upsertMatch
             $matchType,
             $status,
             $score,
@@ -61,7 +62,7 @@ function runMatchingEngine(int $found_id, int $admin_id = 1): array
             continue;
         }
 
-        if ($score >= 90) {
+        if ($score >= 80) {
             sendMatchSms($pdo, (int)$lost['user_id'], $found, $lost, $score);
         }
 
@@ -124,10 +125,6 @@ function realtimeDuplicateCheck(
 // private_description parser
 // ---------------------------------------------------------------------------
 
-/**
- * Parses: "Colors: Red | Traits: faded, oversized | Keywords: jacket | Exact Spot: Library"
- * Returns: ['colors'=>'Red', 'traits'=>'faded, oversized', 'keywords'=>'jacket', 'exact_spot'=>'Library']
- */
 function parsePrivateDescription(string $text): array
 {
     $result   = ['colors' => '', 'traits' => '', 'keywords' => '', 'exact_spot' => ''];
@@ -140,19 +137,15 @@ function parsePrivateDescription(string $text): array
         [$label, $value] = array_map('trim', explode(':', $segment, 2));
         $key = strtolower($label);
 
-        if (str_contains($key, 'color'))                            $result['colors']    = $value;
-        elseif (str_contains($key, 'trait'))                        $result['traits']    = $value;
-        elseif (str_contains($key, 'key'))                          $result['keywords']  = $value;
-        elseif (str_contains($key, 'spot') || str_contains($key, 'exact')) $result['exact_spot'] = $value;
+        if (str_contains($key, 'color'))                                     $result['colors']    = $value;
+        elseif (str_contains($key, 'trait'))                                 $result['traits']    = $value;
+        elseif (str_contains($key, 'key'))                                   $result['keywords']  = $value;
+        elseif (str_contains($key, 'spot') || str_contains($key, 'exact'))   $result['exact_spot']= $value;
     }
 
     return $result;
 }
 
-/**
- * Builds the scoring text blob for a report row.
- * Keywords: and Traits: are included twice to boost their weight in Jaccard scoring.
- */
 function buildScoringText(array $row): string
 {
     $parts = parsePrivateDescription($row['private_description'] ?? '');
@@ -203,16 +196,15 @@ function scoreLocation(array $found, array $lost): int
     if ($foundLoc > 0 && $foundLoc === $lostLoc) {
         $pts += 20;
     } elseif ($foundLoc === 1 || $lostLoc === 1) {
-        $pts += 5; // "Other" partial credit
+        $pts += 5;
     }
 
-    // Exact Spot text bonus (up to 5 pts)
     $foundSpot = parsePrivateDescription($found['private_description'] ?? '')['exact_spot'];
     $lostSpot  = parsePrivateDescription($lost['private_description']  ?? '')['exact_spot'];
 
     if ($foundSpot !== '' && $lostSpot !== '') {
         $spotScore = scoreKeywords($foundSpot, $lostSpot);
-        $pts += (int)round($spotScore / 6); // scale 0-30 → 0-5
+        $pts += (int)round($spotScore / 6);
     }
 
     return min(25, $pts);
@@ -265,14 +257,11 @@ function tokenize(string $text): array
         'ang','mga','ng','sa','na','ay','ko','mo','ito','ako',
         'siya','niya','namin','natin','nila','kami','kayo','sila',
         'aking','inyong','kanyang','yung','nung','pero','kasi','lang',
-        // strip private_description label words
         'colors','color','traits','trait','keywords','keyword',
         'exact','spot','description',
     ];
 
-    // Replace pipe, colon, comma separators with spaces first
     $clean = preg_replace('/[|:,\/\\\\]+/', ' ', mb_strtolower($text));
-    // Remove all remaining non-alphanumeric chars except spaces and hyphens
     $clean = preg_replace('/[^a-z0-9\s\-]/', ' ', $clean);
     $words = preg_split('/\s+/', trim($clean), -1, PREG_SPLIT_NO_EMPTY);
 
@@ -348,7 +337,6 @@ function fetchFoundReport(PDO $pdo, int $found_id): ?array
         return null;
     }
 
-    // Fetch image separately — avoids the correlated-subquery LIMIT bug
     $img = $pdo->prepare(
         "SELECT image_path FROM item_images
          WHERE  report_type = 'found' AND report_id = ?
@@ -384,6 +372,7 @@ function upsertMatch(
     string $notes
 ): int {
     try {
+        // Check for an existing match (any status) so we can update it
         $check = $pdo->prepare(
             "SELECT match_id FROM matches WHERE lost_id = ? AND found_id = ? LIMIT 1"
         );
@@ -399,8 +388,9 @@ function upsertMatch(
             return (int)$existing;
         }
 
-        // Use NULL for system-triggered matches (admin_id = 0)
-        $matched_by = ($admin_id > 1) ? $admin_id : null;
+        // FIX: admin_id = 0 means system-triggered — store as NULL.
+        // The matches.matched_by column must allow NULL (ALTER TABLE matches MODIFY COLUMN matched_by INT NULL).
+        $matched_by = ($admin_id > 0) ? $admin_id : null;
 
         $pdo->prepare(
             "INSERT INTO matches (lost_id, found_id, matched_by, match_type, status, confidence_score, notes)

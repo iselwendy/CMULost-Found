@@ -5,6 +5,11 @@
  * Two-tier matching workflow:
  *   ≥ 90% confidence  →  auto-notified via SMS (no admin action needed)
  *   < 90% confidence  →  queued here for manual admin review
+ *
+ * FIXES:
+ *   - Changed INNER JOIN → LEFT JOIN on categories & locations so matches
+ *     with NULL category_id / location_id are no longer silently dropped.
+ *   - Added "Re-run Matching Engine" button + AJAX handler.
  */
 
 session_start();
@@ -22,31 +27,33 @@ $active_tab  = $_GET['tab']      ?? 'review';
 $selected_id = $_GET['match_id'] ?? null;
 
 // ── Review queue: pending matches with confidence < 90 ───────────────────
+// FIX: Use LEFT JOIN on categories & locations — INNER JOIN silently drops
+//      rows when category_id or location_id is NULL, emptying the queue.
 $stmt_review = $pdo->prepare("
     SELECT
         m.match_id,
         CONCAT('TRK-', LPAD(f.found_id, 5, '0')) AS found_tracking,
-        c.name              AS category,
-        m.confidence_score  AS confidence,
-        f.title             AS found_title,
-        loc_f.location_name AS found_location,
+        COALESCE(c.name, 'Uncategorized')  AS category,
+        m.confidence_score                 AS confidence,
+        f.title                            AS found_title,
+        COALESCE(loc_f.location_name, 'Unknown') AS found_location,
         f.date_found,
-        f.private_description AS found_notes,
-        l.title             AS lost_title,
-        loc_l.location_name AS lost_location,
+        f.private_description              AS found_notes,
+        l.title                            AS lost_title,
+        COALESCE(loc_l.location_name, 'Unknown') AS lost_location,
         l.date_lost,
-        l.private_description AS lost_description,
-        u.full_name         AS reporter_name,
-        u.department        AS reporter_dept,
-        u.phone_number      AS phone,
+        l.private_description              AS lost_description,
+        u.full_name                        AS reporter_name,
+        u.department                       AS reporter_dept,
+        u.phone_number                     AS phone,
         img.image_path
     FROM      matches      m
     JOIN      found_reports f    ON m.found_id    = f.found_id
     JOIN      lost_reports  l    ON m.lost_id     = l.lost_id
-    JOIN      categories    c    ON f.category_id = c.category_id
+    LEFT JOIN categories    c    ON f.category_id = c.category_id
     JOIN      users         u    ON l.user_id     = u.user_id
-    JOIN      locations     loc_f ON f.location_id = loc_f.location_id
-    JOIN      locations     loc_l ON l.location_id = loc_l.location_id
+    LEFT JOIN locations     loc_f ON f.location_id = loc_f.location_id
+    LEFT JOIN locations     loc_l ON l.location_id = loc_l.location_id
     LEFT JOIN (
         SELECT   report_id, image_path
         FROM     item_images
@@ -66,16 +73,16 @@ $stmt_auto = $pdo->prepare("
     SELECT
         m.match_id,
         CONCAT('TRK-', LPAD(f.found_id, 5, '0')) AS found_tracking,
-        c.name              AS category,
-        m.confidence_score  AS confidence,
-        f.title             AS found_title,
-        l.title             AS lost_title,
-        u.full_name         AS reporter_name,
+        COALESCE(c.name, 'Uncategorized')  AS category,
+        m.confidence_score                 AS confidence,
+        f.title                            AS found_title,
+        l.title                            AS lost_title,
+        u.full_name                        AS reporter_name,
         DATE_FORMAT(m.matched_at, '%b %d · %h:%i %p') AS notified_at
     FROM  matches      m
     JOIN  found_reports f ON m.found_id    = f.found_id
     JOIN  lost_reports  l ON m.lost_id     = l.lost_id
-    JOIN  categories    c ON f.category_id = c.category_id
+    LEFT JOIN categories c ON f.category_id = c.category_id
     JOIN  users         u ON l.user_id     = u.user_id
     WHERE (m.confidence_score >= 90 OR m.status = 'confirmed')
       AND  m.status != 'rejected'
@@ -102,7 +109,6 @@ $stats = [
 ];
 
 // ── Build signals array for each review item ──────────────────────────────
-// The DB stores the notes string; we rebuild the signal chips from the raw data.
 function buildSignalsFromRow(array $row): array
 {
     $keywordMatch = scoreKeywords(
@@ -111,14 +117,13 @@ function buildSignalsFromRow(array $row): array
     ) > 0;
 
     return [
-        'Category match' => true,                          // already filtered by category join
+        'Category match' => true,
         'Location match' => ($row['found_location'] === $row['lost_location']),
         'Keyword match'  => $keywordMatch,
         'Photo provided' => !empty($row['image_path']),
     ];
 }
 
-// Attach signals to every review queue item
 $review_queue = array_map(function (array $row): array {
     $row['signals'] = buildSignalsFromRow($row);
     return $row;
@@ -133,7 +138,6 @@ if ($active_tab === 'review') {
             break;
         }
     }
-    // Default to first item if nothing is explicitly selected
     if (!$selected && !empty($review_queue)) {
         $selected = $review_queue[0];
     }
@@ -211,7 +215,7 @@ function confidenceTextColor(int $score): string {
     </aside>
 
     <!-- ── Main ─────────────────────────────────────────────────────────── -->
-    <main class="flex-grow flex flex-col min-w-0 overflow-hidden relative" style="height:100vh;">
+    <main class="flex-grow flex flex-col min-w-0 overflow-hidden relative" style="height:200vh;">
 
         <!-- Page header -->
         <header class="bg-white border-b border-slate-200 px-8 py-4 flex items-center justify-between flex-shrink-0">
@@ -221,7 +225,14 @@ function confidenceTextColor(int $score): string {
                     Matches ≥90% are auto-notified via SMS &nbsp;·&nbsp; Below 90% requires your review
                 </p>
             </div>
-            <div class="flex items-center gap-4">
+            <div class="flex items-center gap-3">
+                <!-- ── Re-run Matching Engine button ── -->
+                <button id="rerunBtn"
+                        onclick="rerunMatchingEngine()"
+                        class="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-xs font-bold rounded-xl hover:bg-indigo-700 transition shadow-sm">
+                    <i class="fas fa-rotate" id="rerunIcon"></i>
+                    Re-run Matching Engine
+                </button>
                 <div class="hidden md:flex flex-col text-right">
                     <span class="text-xs font-bold text-slate-400"><?php echo date('l, F j, Y'); ?></span>
                     <span class="text-[10px] text-green-500 font-black uppercase">
@@ -234,11 +245,14 @@ function confidenceTextColor(int $score): string {
             </div>
         </header>
 
+        <!-- Re-run result banner (hidden by default) -->
+        <div id="rerunBanner" class="hidden px-8 py-3 text-sm font-semibold flex items-center gap-3"></div>
+
         <!-- Summary stat cards -->
         <div class="px-8 pt-6 pb-2 grid grid-cols-2 md:grid-cols-4 gap-4 flex-shrink-0">
             <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
                 <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Needs Review</p>
-                <p class="text-2xl font-black text-slate-800"><?php echo $stats['review']; ?></p>
+                <p class="text-2xl font-black text-slate-800" id="stat-review"><?php echo $stats['review']; ?></p>
             </div>
             <div class="bg-blue-50 rounded-2xl border border-blue-100 p-4">
                 <p class="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1">Auto-Notified</p>
@@ -283,6 +297,7 @@ function confidenceTextColor(int $score): string {
                                 <i class="fas fa-check-circle" style="font-size:28px;margin-bottom:8px;display:block;color:#97C459;"></i>
                                 <p style="font-size:12px;font-weight:700;">All caught up!</p>
                                 <p style="font-size:11px;margin-top:4px;">No matches awaiting review.</p>
+                                <p style="font-size:10px;margin-top:8px;color:#cbd5e1;">Try clicking "Re-run Matching Engine" above to check for new matches.</p>
                             </div>
                         <?php else: ?>
                             <?php foreach ($review_queue as $qi): ?>
@@ -414,7 +429,7 @@ function confidenceTextColor(int $score): string {
 
                             <div class="field-group">
                                 <p class="field-label">Finder's notes (confidential)</p>
-                                <p class="field-val"><?php echo htmlspecialchars($selected['found_notes']); ?></p>
+                                <p class="field-val"><?php echo htmlspecialchars($selected['found_notes'] ?: '—'); ?></p>
                             </div>
 
                             <div class="field-group">
@@ -452,7 +467,7 @@ function confidenceTextColor(int $score): string {
 
                             <div class="field-group">
                                 <p class="field-label">Claimant's description</p>
-                                <p class="field-val"><?php echo htmlspecialchars($selected['lost_description']); ?></p>
+                                <p class="field-val"><?php echo htmlspecialchars($selected['lost_description'] ?: '—'); ?></p>
                             </div>
 
                             <div class="field-group">
@@ -484,7 +499,7 @@ function confidenceTextColor(int $score): string {
                                             <?php echo htmlspecialchars($selected['reporter_name']); ?>
                                         </p>
                                         <p style="font-size:11px;color:#64748b;margin:0;">
-                                            <?php echo htmlspecialchars($selected['reporter_dept']); ?>
+                                            <?php echo htmlspecialchars($selected['reporter_dept'] ?? '—'); ?>
                                         </p>
                                     </div>
                                 </div>
@@ -626,6 +641,7 @@ function confidenceTextColor(int $score): string {
     <script>
         let pendingMatchId = null;
 
+        // ── Confirm / Reject / Override ───────────────────────────────────
         function openConfirmModal(name, phone, item, matchId) {
             pendingMatchId = matchId;
             document.getElementById('modal-name').textContent     = name;
@@ -689,7 +705,6 @@ function confidenceTextColor(int $score): string {
         }
 
         function skipMatch() {
-            // Move to the next item in the review queue without taking action
             const items = document.querySelectorAll('.qitem.active');
             if (items.length) {
                 const next = items[0].closest('a')?.nextElementSibling;
@@ -704,6 +719,60 @@ function confidenceTextColor(int $score): string {
         document.getElementById('confirmModal').addEventListener('click', function (e) {
             if (e.target === this) closeConfirmModal();
         });
+
+        // ── Re-run Matching Engine ────────────────────────────────────────
+        async function rerunMatchingEngine() {
+            const btn    = document.getElementById('rerunBtn');
+            const icon   = document.getElementById('rerunIcon');
+            const banner = document.getElementById('rerunBanner');
+
+            // Loading state
+            btn.disabled = true;
+            btn.classList.add('opacity-70', 'cursor-not-allowed');
+            icon.classList.add('fa-spin');
+            btn.querySelector('span') && (btn.querySelector('span').textContent = 'Running...');
+
+            // Replace button text inline
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-rotate fa-spin mr-2"></i> Running engine…';
+
+            try {
+                const res  = await fetch('../core/rerun_matching.php', { method: 'POST' });
+                const data = await res.json();
+
+                if (data.success) {
+                    banner.className = 'px-8 py-3 text-sm font-semibold flex items-center gap-3 bg-green-50 border-b border-green-100 text-green-800';
+                    banner.innerHTML = `
+                        <i class="fas fa-check-circle text-green-500"></i>
+                        Matching engine completed —
+                        <strong>${data.found_scanned}</strong> reports scanned,
+                        <strong>${data.total_matches}</strong> matches in DB,
+                        <strong>${data.confirmed}</strong> auto-confirmed (SMS sent).
+                        ${data.new_matches > 0
+                            ? `<a href="?tab=review" class="ml-2 underline font-bold text-green-700">View new matches →</a>`
+                            : ''}
+                    `;
+                    banner.classList.remove('hidden');
+
+                    // Reload queue after short pause so new matches appear
+                    setTimeout(() => window.location.href = 'matching_portal.php?tab=review', 2200);
+                } else {
+                    banner.className = 'px-8 py-3 text-sm font-semibold flex items-center gap-3 bg-red-50 border-b border-red-100 text-red-700';
+                    banner.innerHTML = `<i class="fas fa-exclamation-circle text-red-500"></i> ${data.message || 'An error occurred.'}`;
+                    banner.classList.remove('hidden');
+                    btn.disabled = false;
+                    btn.innerHTML = originalHTML;
+                    btn.classList.remove('opacity-70', 'cursor-not-allowed');
+                }
+            } catch (err) {
+                banner.className = 'px-8 py-3 text-sm font-semibold flex items-center gap-3 bg-red-50 border-b border-red-100 text-red-700';
+                banner.innerHTML = '<i class="fas fa-wifi text-red-400"></i> Network error — could not reach the server.';
+                banner.classList.remove('hidden');
+                btn.disabled = false;
+                btn.innerHTML = originalHTML;
+                btn.classList.remove('opacity-70', 'cursor-not-allowed');
+            }
+        }
     </script>
 
 </body>
