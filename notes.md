@@ -13,3 +13,6 @@ NEXT STEP:
 - Fix merging tool
 
 :: should the user be able to edit/delete their reports? for example, nag-report sila ng lost item tapos na-misplace lang pala nila ang nakita nila agad after ma-post nung report...?
+
+
+!!! MATCHING PORTAL's css styling is too overcrowded, IMPROVE IT

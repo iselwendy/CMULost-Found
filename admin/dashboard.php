@@ -64,7 +64,7 @@ try {
             loc.location_name AS found_location,
             u.full_name   AS finder_name,
             u.department  AS finder_dept,
-            CONCAT('TRK-', LPAD(f.found_id, 4, '0'), '-LF') AS tracking_id
+            CONCAT('FND-', LPAD(f.found_id, 5, '0')) AS tracking_id
         FROM found_reports f
         LEFT JOIN users      u   ON f.reported_by  = u.user_id
         LEFT JOIN categories c   ON f.category_id  = c.category_id

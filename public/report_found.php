@@ -83,11 +83,11 @@ $stmt->execute([$user_id]);
                         <select name="location" id="itemLocation" required
                                 class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white outline-none">
                             <option value="">Select location</option>
-                            <option value="Other">Other</option>
                             <option value="Main Library">Main Library</option>
                             <option value="Innovation Bldg">Innovation Bldg</option>
                             <option value="ERC Bldg">ERC Bldg</option>
                             <option value="University Canteen">University Canteen</option>
+                            <option value="Other">Other</option>
                         </select>
                     </div>
                 </section>

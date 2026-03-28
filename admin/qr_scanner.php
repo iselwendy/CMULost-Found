@@ -314,14 +314,14 @@ require_once '../core/db_config.php';
             confirmBtn.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i> Updating...`;
 
             try {
-                const response = await fetch('../core/api/update_inventory_status.php', {
+                const response = await fetch('../core/update_inventory_status.php', {
                     method:  'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body:    JSON.stringify({
                         tracking_id:    tid,
                         shelf_location: shelf,
                         bin_number:     bin,
-                        status:         'in custody'
+                        status:         'surrendered'
                     })
                 });
 

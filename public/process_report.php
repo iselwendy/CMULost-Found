@@ -1,16 +1,25 @@
 <?php
 /**
- * process_report.php
- * Handles the submission for both Lost and Found Item Reports.
- * Maps data to lost_reports, found_reports, and item_images tables.
- * Hierarchy: CMULandF/public/process_report.php -> CMULandF/core/db_config.php
+ * CMU Lost & Found - Unified Report Processor
+ * Handles submission for both Lost and Found Item Reports.
+ *
+ * Found items:
+ *   - Inserts into found_reports
+ *   - Uploads photo → item_images
+ *   - Generates unique turnover QR tracking code
+ *   - Calls runMatchingEngine() → populates matches table
+ *
+ * Lost items:
+ *   - Inserts into lost_reports
+ *   - Uploads photo → item_images (optional)
  */
 
-// 1. Database Connection & Session
+// ── Bootstrap ─────────────────────────────────────────────────────────────
+
 $paths = [
-    dirname(__FILE__) . '/../core/db_config.php', 
-    dirname(__FILE__) . '/db_config.php',         
-    $_SERVER['DOCUMENT_ROOT'] . '/CMULandF/core/db_config.php' 
+    dirname(__FILE__) . '/../core/db_config.php',
+    dirname(__FILE__) . '/db_config.php',
+    $_SERVER['DOCUMENT_ROOT'] . '/CMULandF/core/db_config.php'
 ];
 
 $loaded = false;
@@ -32,33 +41,47 @@ if (!isset($pdo)) {
     die("Fatal Error: Database connection variable (\$pdo) is not defined.");
 }
 
-// 2. Basic Security & Data Extraction
+// ── Gate: POST only ───────────────────────────────────────────────────────
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     die("Invalid request method.");
 }
 
-if (!isset($_POST['reporter_id']) || empty($_POST['reporter_id'])) {
-    die("Unauthorized access: Reporter ID is missing or empty.");
+if (!isset($_SESSION['user_id'])) {
+    header("Location: ../core/auth.php");
+    exit();
 }
 
-$user_id     = $_POST['reporter_id'];
-$report_type = $_POST['report_type'] ?? 'lost'; 
-$title       = $_POST['title'] ?? 'Untitled Item';
-$category_n  = $_POST['category'] ?? 'Other';
-$location_n   = $_POST['location'] ?? 'Other';
-$description = $_POST['hidden_marks'] ?? '';
+// ── Helpers ───────────────────────────────────────────────────────────────
 
-/**
- * Handle Date: 
- * Updated to support DATETIME format in the database.
- * Convert datetime-local (e.g., 2023-10-25T14:30) to MySQL DATETIME (2023-10-25 14:30:00)
- */
-$raw_date    = $_POST['date_lost'] ?? $_POST['date_found'] ?? date('Y-m-d H:i:s');
-$date_event  = date('Y-m-d H:i:s', strtotime($raw_date));
+function respondJson(bool $success, string $message, array $data = []): void
+{
+    header('Content-Type: application/json');
+    echo json_encode(array_merge(['success' => $success, 'message' => $message], $data));
+    exit();
+}
 
-/**
- * 3. Category and Location Mapping
- */
+function generateTrackingId(): string
+{
+    $num     = str_pad(random_int(10000, 99999), 5, '0', STR_PAD_LEFT);
+    $letters = strtoupper(substr(bin2hex(random_bytes(2)), 0, 2));
+    return "TRK-{$num}-{$letters}";
+}
+
+// ── 1. Extract & Sanitize Input ───────────────────────────────────────────
+
+$user_id     = (int) $_SESSION['user_id'];
+$report_type = $_POST['report_type'] ?? 'lost'; // 'lost' | 'found'
+$title       = trim($_POST['title'] ?? 'Untitled Item');
+$category_n  = trim($_POST['category'] ?? 'Other');
+$location_n  = trim($_POST['location'] ?? 'Other');
+$description = trim($_POST['hidden_marks'] ?? ''); // compiled private marks from JS
+
+$raw_date   = $_POST['date_lost'] ?? $_POST['date_found'] ?? date('Y-m-d H:i:s');
+$date_event = date('Y-m-d H:i:s', strtotime($raw_date));
+
+// ── 2. Category & Location Mapping ───────────────────────────────────────
+
 $category_map = [
     'Electronics' => 1,
     'Valuables'   => 2,
@@ -66,80 +89,194 @@ $category_map = [
     'Books'       => 4,
     'Clothing'    => 5,
     'Personal'    => 6,
-    'Other'       => 7
+    'Other'       => 7,
 ];
 $category_id = $category_map[$category_n] ?? 7;
 
 $location_map = [
-    'Main Library' => 1,
-    'Innovation Bldg' => 2,
-    'ERC Bldg' => 3,
-    'University Canteen' => 4,
-    'Other' => 5
+    'Main Library'      => 1,
+    'Innovation Bldg'   => 2,
+    'ERC Bldg'          => 3,
+    'University Canteen'=> 4,
+    'Other'             => 5,
 ];
 $location_id = $location_map[$location_n] ?? 5;
 
+// ── 3. Photo Upload Helper ────────────────────────────────────────────────
 
-// 4. Prepare Database Insertion
+/**
+ * Validates and moves the uploaded photo.
+ * Returns the relative DB path on success, or null if no file was uploaded.
+ * Throws RuntimeException on invalid file.
+ */
+function handlePhotoUpload(array $file, string $report_type, int $report_id): ?string
+{
+    if ($file['error'] === UPLOAD_ERR_NO_FILE) {
+        return null;
+    }
+
+    if ($file['error'] !== UPLOAD_ERR_OK) {
+        throw new RuntimeException('Photo upload failed (error code ' . $file['error'] . ').');
+    }
+
+    $allowed_types = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    $finfo         = new finfo(FILEINFO_MIME_TYPE);
+    $mime          = $finfo->file($file['tmp_name']);
+
+    if (!in_array($mime, $allowed_types, true)) {
+        throw new RuntimeException('Invalid file type. Only JPEG, PNG, WEBP, and GIF are allowed.');
+    }
+
+    if ($file['size'] > 5 * 1024 * 1024) {
+        throw new RuntimeException('Photo must be under 5 MB.');
+    }
+
+    $upload_dir = dirname(__FILE__) . '/../uploads/';
+    if (!is_dir($upload_dir)) {
+        mkdir($upload_dir, 0755, true);
+    }
+
+    $ext          = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+    $new_filename = $report_type . '_' . $report_id . '_' . time() . '.' . $ext;
+    $dest         = $upload_dir . $new_filename;
+
+    if (!move_uploaded_file($file['tmp_name'], $dest)) {
+        throw new RuntimeException('Failed to save uploaded photo.');
+    }
+
+    return 'uploads/' . $new_filename;
+}
+
+// ── 4. Database Insertion ─────────────────────────────────────────────────
+
+$tracking_id = null;
+$report_id   = null;
+
 try {
-    // Start Transaction
     $pdo->beginTransaction();
 
     if ($report_type === 'found') {
-        $sql = "INSERT INTO found_reports (reported_by, category_id, title, private_description, location_id, date_found, status) 
-                VALUES (?, ?, ?, ?, ?, ?, 'in custody')";
+        // Found items get a tracking code for the turnover QR workflow
+        $tracking_id = generateTrackingId();
+
+        $stmt = $pdo->prepare("
+            INSERT INTO found_reports
+                   (reported_by, category_id, location_id,
+                    title, private_description,
+                    date_found, status, tracking_code, created_at)
+            VALUES (?, ?, ?,
+                    ?, ?,
+                    ?, 'in custody', ?, NOW())
+        ");
+        $stmt->execute([
+            $user_id,
+            $category_id,
+            $location_id,
+            $title,
+            $description,
+            $date_event,
+            $tracking_id,
+        ]);
+
     } else {
-        $sql = "INSERT INTO lost_reports (user_id, category_id, title, private_description, location_id, date_lost, status) 
-                VALUES (?, ?, ?, ?, ?, ?, 'open')";
+        // Lost item — simpler insert, no tracking code needed at this stage
+        $stmt = $pdo->prepare("
+            INSERT INTO lost_reports
+                   (user_id, category_id, location_id,
+                    title, private_description,
+                    date_lost, status)
+            VALUES (?, ?, ?,
+                    ?, ?,
+                    ?, 'open')
+        ");
+        $stmt->execute([
+            $user_id,
+            $category_id,
+            $location_id,
+            $title,
+            $description,
+            $date_event,
+        ]);
     }
 
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute([
-        $user_id, 
-        $category_id, 
-        $title, 
-        $description, 
-        $location_id, 
-        $date_event
-    ]);
+    $report_id = (int) $pdo->lastInsertId();
 
-    $report_id = $pdo->lastInsertId();
+    // ── 5. Photo Upload ───────────────────────────────────────────────────
 
-    // 5. Handle Image Upload & item_images Table
-    if (isset($_FILES['photo']) && $_FILES['photo']['error'] === UPLOAD_ERR_OK) {
-        $upload_dir = dirname(__FILE__) . '/../uploads/';
-        
-        if (!is_dir($upload_dir)) {
-            mkdir($upload_dir, 0777, true);
-        }
+    if (!empty($_FILES['photo']['name'])) {
+        $image_path = handlePhotoUpload($_FILES['photo'], $report_type, $report_id);
 
-        $ext = pathinfo($_FILES['photo']['name'], PATHINFO_EXTENSION);
-        $new_filename = $report_type . "_" . $report_id . "_" . time() . "." . $ext;
-        $target_file = $upload_dir . $new_filename;
-
-        if (move_uploaded_file($_FILES['photo']['tmp_name'], $target_file)) {
-            $db_image_path = 'uploads/' . $new_filename;
-            
-            $img_sql = "INSERT INTO item_images (report_type, report_id, image_path) VALUES (?, ?, ?)";
-            $img_stmt = $pdo->prepare($img_sql);
-            $img_stmt->execute([$report_type, $report_id, $db_image_path]);
+        if ($image_path !== null) {
+            $img_stmt = $pdo->prepare("
+                INSERT INTO item_images (report_type, report_id, image_path)
+                VALUES (?, ?, ?)
+            ");
+            $img_stmt->execute([$report_type, $report_id, $image_path]);
         }
     }
 
-    // Commit Transaction
     $pdo->commit();
 
-    $_SESSION['msg'] = ucfirst($report_type) . " report submitted successfully!";
-    header("Location: ../public/index.php?status=success&type=$report_type");
-    exit();
-
-} catch (PDOException $e) {
+} catch (Throwable $e) {
     if ($pdo->inTransaction()) {
         $pdo->rollBack();
     }
-    error_log("Database Error: " . $e->getMessage());
-    $_SESSION['error'] = "Failed to save report: " . $e->getMessage();
-    header("Location: ../public/report_" . $report_type . ".php?status=error");
+
+    error_log('[process_report] DB Error: ' . $e->getMessage());
+
+    if (!empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
+        respondJson(false, 'An error occurred while saving your report. Please try again.');
+    }
+
+    $_SESSION['error'] = 'Failed to save report. Please try again.';
+    header("Location: report_{$report_type}.php?status=error");
     exit();
 }
-?>
+
+// ── 6. Post-Insert: Run Matching Engine (Found Items Only) ────────────────
+
+$match_count = 0;
+
+if ($report_type === 'found') {
+    // Only load the matching engine if it exists (graceful degradation)
+    $engine_path = dirname(__FILE__) . '/../core/matching_engine.php';
+
+    if (file_exists($engine_path)) {
+        require_once $engine_path;
+        try {
+            $matches     = runMatchingEngine($report_id, 0); // 0 = system-triggered
+            $match_count = count($matches);
+        } catch (Throwable $e) {
+            // Non-fatal: matching engine failure must not block the user
+            error_log('[MatchingEngine] Error for found_id=' . $report_id . ': ' . $e->getMessage());
+        }
+    }
+}
+
+// ── 7. Respond ────────────────────────────────────────────────────────────
+
+$success_message = ucfirst($report_type) . ' report submitted successfully!';
+$_SESSION['msg'] = $success_message;
+
+// AJAX response
+if (!empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
+    respondJson(true, $success_message, [
+        'report_id'   => $report_id,
+        'tracking_id' => $tracking_id,
+        'match_count' => $match_count,
+    ]);
+}
+
+// Standard POST redirect
+if ($report_type === 'found') {
+    $_SESSION['report_success'] = [
+        'found_id'    => $report_id,
+        'tracking_id' => $tracking_id,
+        'match_count' => $match_count,
+    ];
+    header("Location: ../dashboard/my_reports.php?new_report=1");
+} else {
+    header("Location: ../public/index.php?status=success&type=lost");
+}
+
+exit();
