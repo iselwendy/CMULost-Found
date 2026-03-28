@@ -6,7 +6,6 @@
  * Found items:
  *   - Inserts into found_reports
  *   - Uploads photo → item_images
- *   - Generates unique turnover QR tracking code
  *   - Calls runMatchingEngine() → populates matches table
  *
  * Lost items:
@@ -61,13 +60,6 @@ function respondJson(bool $success, string $message, array $data = []): void
     exit();
 }
 
-function generateTrackingId(): string
-{
-    $num     = str_pad(random_int(10000, 99999), 5, '0', STR_PAD_LEFT);
-    $letters = strtoupper(substr(bin2hex(random_bytes(2)), 0, 2));
-    return "TRK-{$num}-{$letters}";
-}
-
 // ── 1. Extract & Sanitize Input ───────────────────────────────────────────
 
 $user_id     = (int) $_SESSION['user_id'];
@@ -77,8 +69,8 @@ $category_n  = trim($_POST['category'] ?? 'Other');
 $location_n  = trim($_POST['location'] ?? 'Other');
 $description = trim($_POST['hidden_marks'] ?? ''); // compiled private marks from JS
 
-$raw_date   = $_POST['date_lost'] ?? $_POST['date_found'] ?? date('Y-m-d H:i:s');
-$date_event = date('Y-m-d H:i:s', strtotime($raw_date));
+$raw_date   = $_POST['date_lost'] ?? $_POST['date_found'] ?? date('Y-m-d');
+$date_event = date('Y-m-d', strtotime($raw_date));
 
 // ── 2. Category & Location Mapping ───────────────────────────────────────
 
@@ -94,21 +86,16 @@ $category_map = [
 $category_id = $category_map[$category_n] ?? 7;
 
 $location_map = [
-    'Main Library'      => 1,
-    'Innovation Bldg'   => 2,
-    'ERC Bldg'          => 3,
-    'University Canteen'=> 4,
-    'Other'             => 5,
+    'Main Library'       => 1,
+    'Innovation Bldg'    => 2,
+    'ERC Bldg'           => 3,
+    'University Canteen' => 4,
+    'Other'              => 5,
 ];
 $location_id = $location_map[$location_n] ?? 5;
 
 // ── 3. Photo Upload Helper ────────────────────────────────────────────────
 
-/**
- * Validates and moves the uploaded photo.
- * Returns the relative DB path on success, or null if no file was uploaded.
- * Throws RuntimeException on invalid file.
- */
 function handlePhotoUpload(array $file, string $report_type, int $report_id): ?string
 {
     if ($file['error'] === UPLOAD_ERR_NO_FILE) {
@@ -149,24 +136,20 @@ function handlePhotoUpload(array $file, string $report_type, int $report_id): ?s
 
 // ── 4. Database Insertion ─────────────────────────────────────────────────
 
-$tracking_id = null;
-$report_id   = null;
+$report_id = null;
 
 try {
     $pdo->beginTransaction();
 
     if ($report_type === 'found') {
-        // Found items get a tracking code for the turnover QR workflow
-        $tracking_id = generateTrackingId();
-
         $stmt = $pdo->prepare("
             INSERT INTO found_reports
                    (reported_by, category_id, location_id,
                     title, private_description,
-                    date_found, status, tracking_code, created_at)
+                    date_found, status, created_at)
             VALUES (?, ?, ?,
                     ?, ?,
-                    ?, 'in custody', ?, NOW())
+                    ?, 'surrendered', NOW())
         ");
         $stmt->execute([
             $user_id,
@@ -175,11 +158,9 @@ try {
             $title,
             $description,
             $date_event,
-            $tracking_id,
         ]);
 
     } else {
-        // Lost item — simpler insert, no tracking code needed at this stage
         $stmt = $pdo->prepare("
             INSERT INTO lost_reports
                    (user_id, category_id, location_id,
@@ -207,11 +188,10 @@ try {
         $image_path = handlePhotoUpload($_FILES['photo'], $report_type, $report_id);
 
         if ($image_path !== null) {
-            $img_stmt = $pdo->prepare("
+            $pdo->prepare("
                 INSERT INTO item_images (report_type, report_id, image_path)
                 VALUES (?, ?, ?)
-            ");
-            $img_stmt->execute([$report_type, $report_id, $image_path]);
+            ")->execute([$report_type, $report_id, $image_path]);
         }
     }
 
@@ -238,7 +218,7 @@ try {
 $match_count = 0;
 
 if ($report_type === 'found') {
-    // Only load the matching engine if it exists (graceful degradation)
+    // FIX: was missing the leading slash — dirname() . '../core/...' never resolves
     $engine_path = dirname(__FILE__) . '/../core/matching_engine.php';
 
     if (file_exists($engine_path)) {
@@ -247,9 +227,11 @@ if ($report_type === 'found') {
             $matches     = runMatchingEngine($report_id, 0); // 0 = system-triggered
             $match_count = count($matches);
         } catch (Throwable $e) {
-            // Non-fatal: matching engine failure must not block the user
+            // Non-fatal: matching engine failure must never block the user's success flow
             error_log('[MatchingEngine] Error for found_id=' . $report_id . ': ' . $e->getMessage());
         }
+    } else {
+        error_log('[process_report] matching_engine.php not found at: ' . $engine_path);
     }
 }
 
@@ -262,7 +244,6 @@ $_SESSION['msg'] = $success_message;
 if (!empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
     respondJson(true, $success_message, [
         'report_id'   => $report_id,
-        'tracking_id' => $tracking_id,
         'match_count' => $match_count,
     ]);
 }
@@ -271,7 +252,6 @@ if (!empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
 if ($report_type === 'found') {
     $_SESSION['report_success'] = [
         'found_id'    => $report_id,
-        'tracking_id' => $tracking_id,
         'match_count' => $match_count,
     ];
     header("Location: ../dashboard/my_reports.php?new_report=1");
