@@ -32,7 +32,7 @@ $selected_id = $_GET['match_id'] ?? null;
 $stmt_review = $pdo->prepare("
     SELECT
         m.match_id,
-        CONCAT('TRK-', LPAD(f.found_id, 5, '0')) AS found_tracking,
+        CONCAT('FND-', LPAD(f.found_id, 5, '0')) AS found_tracking,
         COALESCE(c.name, 'Uncategorized')  AS category,
         m.confidence_score                 AS confidence,
         f.title                            AS found_title,
@@ -145,22 +145,22 @@ if ($active_tab === 'review') {
 
 // ── Colour helpers ────────────────────────────────────────────────────────
 function confidenceClass(int $score): string {
-    if ($score >= 90) return 'score-high';
+    if ($score >= 80) return 'score-high';
     if ($score >= 65) return 'score-mid';
     return 'score-low';
 }
 function confidenceColor(int $score): string {
-    if ($score >= 90) return '#639922';
+    if ($score >= 80) return '#639922';
     if ($score >= 65) return '#EF9F27';
     return '#888780';
 }
 function confidenceBarColor(int $score): string {
-    if ($score >= 90) return '#639922';
+    if ($score >= 80) return '#639922';
     if ($score >= 65) return '#EF9F27';
     return '#B4B2A9';
 }
 function confidenceTextColor(int $score): string {
-    if ($score >= 90) return '#3B6D11';
+    if ($score >= 80) return '#3B6D11';
     if ($score >= 65) return '#854F0B';
     return '#5F5E5A';
 }
@@ -405,7 +405,7 @@ function confidenceTextColor(int $score): string {
 
                         <!-- Pane A: Found item -->
                         <div class="pane">
-                            <span class="pane-label label-inventory">Physical Inventory</span>
+                            <span class="pane-label label-inventory">Active Found Items</span>
 
                             <div>
                                 <p class="pane-title"><?php echo htmlspecialchars($selected['found_title']); ?></p>
@@ -460,10 +460,15 @@ function confidenceTextColor(int $score): string {
                                 </p>
                             </div>
 
-                            <div class="item-placeholder">
-                                <i class="fas fa-camera" style="font-size:22px;"></i>
-                                <span>No photo from reporter</span>
-                            </div>
+                            <?php if (!empty($selected['image_path'])): ?>
+                                <img src="<?php echo htmlspecialchars('../' . $selected['image_path']); ?>"
+                                     alt="Item photo" class="item-photo">
+                            <?php else: ?>
+                                <div class="item-placeholder">
+                                    <i class="fas fa-image" style="font-size:22px;"></i>
+                                    <span>No photo provided</span>
+                                </div>
+                            <?php endif; ?>
 
                             <div class="field-group">
                                 <p class="field-label">Claimant's description</p>

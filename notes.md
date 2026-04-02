@@ -16,3 +16,7 @@ NEXT STEP:
 
 
 !!! MATCHING PORTAL's css styling is too overcrowded, IMPROVE IT
+CURRENT issues in matching portaL:
+- images of items are not displaying
+- only shows items in the review score with confidence score greater than 30%. Therefore, remove the others in the matches table with confidence score less than 30%.
+- auto when confidence score is greater than 80%

@@ -149,7 +149,7 @@ try {
                     date_found, status, created_at)
             VALUES (?, ?, ?,
                     ?, ?,
-                    ?, 'surrendered', NOW())
+                    ?, 'in custody', NOW())
         ");
         $stmt->execute([
             $user_id,

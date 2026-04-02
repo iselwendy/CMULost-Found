@@ -279,19 +279,19 @@ $admin_name = htmlspecialchars($_SESSION['full_name'] ?? 'Admin');
                         <div class="divide-y divide-slate-50">
                             <?php foreach ($turnovers as $item):
                                 $icon_map = [
-                                    'Electronics' => 'fa-mobile-screen',
-                                    'Valuables'   => 'fa-wallet',
-                                    'Documents'   => 'fa-id-card',
-                                    'Books'       => 'fa-book',
-                                    'Clothing'    => 'fa-shirt',
-                                    'Personal'    => 'fa-bag-shopping',
+                                    'Electronics' => 'fa-solid fa-display',
+                                    'Valuables'   => 'fa-solid fa-wallet',
+                                    'Documents'   => 'fa-solid fa-id-card',
+                                    'Books'       => 'fa-solid fa-book',
+                                    'Clothing'    => 'fa-solid fa-shirt',
+                                    'Personal'    => 'fa-solid fa-bag-shopping',
                                 ];
-                                $icon = $icon_map[$item['category']] ?? 'fa-box';
+                                $icon = $icon_map[$item['category']] ?? 'fa-solid fa-box';
                                 $days_ago = max(0, (int) floor((time() - strtotime($item['created_at'])) / 86400));
                             ?>
                             <div class="p-4 flex items-center gap-4 hover:bg-slate-50 transition">
                                 <div class="w-14 h-14 rounded-xl bg-slate-100 flex-shrink-0 flex items-center justify-center text-slate-400">
-                                    <i class="fas <?php echo $icon; ?> text-xl"></i>
+                                    <i class="<?php echo $icon; ?> text-xl"></i>
                                 </div>
                                 <div class="flex-grow min-w-0">
                                     <p class="text-sm font-bold text-slate-800 leading-none truncate">
