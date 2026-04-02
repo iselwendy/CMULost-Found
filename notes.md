@@ -25,9 +25,10 @@ CURRENT issues in matching portaL:
 
 TODAY
 - update inventory.php (physical inventory) - ✅
-- create inventory table in the DB
-- connect qr_scanner.php (qr intake scanner) to the physical inventory
-- other functionalities in the inventory.php
+- create inventory table in the DB - ✅
+- connect qr_scanner.php (qr intake scanner) to the physical inventory - ✅
+- updated archive.php
+- create archive table in the DB
 
 
 dashboard overview, replace the icons with actual images of the items
