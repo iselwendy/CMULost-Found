@@ -20,3 +20,14 @@ CURRENT issues in matching portaL:
 - images of items are not displaying
 - only shows items in the review score with confidence score greater than 30%. Therefore, remove the others in the matches table with confidence score less than 30%.
 - auto when confidence score is greater than 80%
+
+-------------------------
+
+TODAY
+- update inventory.php (physical inventory) - ✅
+- create inventory table in the DB
+- connect qr_scanner.php (qr intake scanner) to the physical inventory
+- other functionalities in the inventory.php
+
+
+dashboard overview, replace the icons with actual images of the items
