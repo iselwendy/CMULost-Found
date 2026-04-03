@@ -279,12 +279,12 @@ $admin_name = htmlspecialchars($_SESSION['full_name'] ?? 'Admin');
                         <div class="divide-y divide-slate-50">
                             <?php foreach ($turnovers as $item):
                                 $icon_map = [
-                                    'Electronics' => 'fa-solid fa-display',
-                                    'Valuables'   => 'fa-solid fa-wallet',
-                                    'Documents'   => 'fa-solid fa-id-card',
-                                    'Books'       => 'fa-solid fa-book',
-                                    'Clothing'    => 'fa-solid fa-shirt',
-                                    'Personal'    => 'fa-solid fa-bag-shopping',
+                                    'Electronics' => 'fas fa-laptop',
+                                    'Valuables'   => 'fas fa-wallet',
+                                    'Documents'   => 'fas fa-id-card',
+                                    'Books'       => 'fas fa-book',
+                                    'Clothing'    => 'fas fa-shirt',
+                                    'Personal'    => 'fas fa-bag-shopping',
                                 ];
                                 $icon = $icon_map[$item['category']] ?? 'fa-solid fa-box';
                                 $days_ago = max(0, (int) floor((time() - strtotime($item['created_at'])) / 86400));
@@ -347,7 +347,8 @@ $admin_name = htmlspecialchars($_SESSION['full_name'] ?? 'Admin');
                                 <i class="fas fa-print"></i>
                                 <span class="text-[10px] font-bold uppercase">Shelf Labels</span>
                             </button>
-                            <button class="p-4 bg-slate-50 rounded-2xl flex flex-col items-center gap-2 hover:bg-blue-50 hover:text-cmu-blue transition">
+                            <button onclick="openAddAdminModal()"
+                                    class="p-4 bg-slate-50 rounded-2xl flex flex-col items-center gap-2 hover:bg-blue-50 hover:text-cmu-blue transition">
                                 <i class="fas fa-user-plus"></i>
                                 <span class="text-[10px] font-bold uppercase">Add Admin</span>
                             </button>
@@ -386,6 +387,10 @@ $admin_name = htmlspecialchars($_SESSION['full_name'] ?? 'Admin');
             </div>
         </div>
     </main>
+
+
+    <?php include 'add_admin_modal.html'; ?>
+
 
 </body>
 </html>

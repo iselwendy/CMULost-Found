@@ -114,5 +114,5 @@ if ($action === 'archive_aging') {
 }
 
 // Fallback
-header("Location: archive.php");
+header("Location: ../admin/archive.php");
 exit(); 

@@ -29,6 +29,3 @@ TODAY
 - connect qr_scanner.php (qr intake scanner) to the physical inventory - ✅
 - updated archive.php
 - create archive table in the DB
-
-
-dashboard overview, replace the icons with actual images of the items
