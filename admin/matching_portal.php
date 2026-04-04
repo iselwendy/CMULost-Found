@@ -62,13 +62,14 @@ $stmt_review = $pdo->prepare("
         LIMIT    1
     ) img ON img.report_id = f.found_id
     WHERE  m.status = 'pending'
-      AND  m.confidence_score < 90
+      AND  m.confidence_score > 30
+      AND  m.confidence_score < 80
     ORDER  BY m.confidence_score DESC
 ");
 $stmt_review->execute();
 $review_queue_raw = $stmt_review->fetchAll();
 
-// ── Auto-notified queue: confirmed matches ≥ 90 ──────────────────────────
+// ── Auto-notified queue: confirmed matches ≥ 80 ──────────────────────────
 $stmt_auto = $pdo->prepare("
     SELECT
         m.match_id,
@@ -84,7 +85,7 @@ $stmt_auto = $pdo->prepare("
     JOIN  lost_reports  l ON m.lost_id     = l.lost_id
     LEFT JOIN categories c ON f.category_id = c.category_id
     JOIN  users         u ON l.user_id     = u.user_id
-    WHERE (m.confidence_score >= 90 OR m.status = 'confirmed')
+    WHERE (m.confidence_score >= 80 OR m.status = 'confirmed')
       AND  m.status != 'rejected'
     ORDER  BY m.matched_at DESC
     LIMIT  20
@@ -222,7 +223,7 @@ function confidenceTextColor(int $score): string {
             <div>
                 <h2 class="text-xl font-black text-slate-800 tracking-tight uppercase">AI Matching Portal</h2>
                 <p class="text-xs text-slate-500 mt-0.5">
-                    Matches ≥90% are auto-notified via SMS &nbsp;·&nbsp; Below 90% requires your review
+                    Matches ≥80% are auto-notified via SMS &nbsp;·&nbsp; Below 80% requires your review
                 </p>
             </div>
             <div class="flex items-center gap-3">
@@ -394,7 +395,7 @@ function confidenceTextColor(int $score): string {
                                     </div>
                                 </div>
                                 <p style="font-size:10px;color:#94a3b8;margin-top:4px;text-align:center;">
-                                    Below 90% — review required
+                                    Below 80% — review required
                                 </p>
                             </div>
                         </div>
@@ -514,25 +515,30 @@ function confidenceTextColor(int $score): string {
                     </div><!-- end split-view -->
 
                     <!-- Action bar -->
+                    <?php
+                    $modal_payload = json_encode([
+                        'name'    => $selected['reporter_name'] ?? '',
+                        'phone'   => $selected['phone'] ?? 'N/A',
+                        'item'    => $selected['found_title'] ?? '',
+                        'matchId' => (string)$selected['match_id'],
+                    ], JSON_HEX_QUOT | JSON_HEX_APOS | JSON_HEX_TAG);
+                    ?>
                     <div class="action-bar">
                         <button class="btn-reject"
-                                onclick="rejectMatch(<?php echo json_encode((string)$selected['match_id']); ?>)">
+                                id="rejectBtn"
+                                data-match-id="<?php echo htmlspecialchars((string)$selected['match_id']); ?>">
                             <i class="fas fa-times" style="margin-right:6px;"></i>Reject Match
                         </button>
                         <button class="btn-skip" onclick="skipMatch()">Skip for Now</button>
                         <button class="btn-confirm"
-                                onclick="openConfirmModal(
-                                    <?php echo json_encode($selected['reporter_name']); ?>,
-                                    <?php echo json_encode($selected['phone']); ?>,
-                                    <?php echo json_encode($selected['found_title']); ?>,
-                                    <?php echo json_encode((string)$selected['match_id']); ?>
-                                )">
+                                id="confirmBtn"
+                                data-modal='<?php echo htmlspecialchars($modal_payload, ENT_QUOTES, 'UTF-8'); ?>'>
                             <i class="fas fa-comment-sms"></i>
                             Confirm &amp; Send SMS to Owner
                         </button>
                         <div class="auto-note">
                             <span style="width:8px;height:8px;border-radius:50%;background:#639922;display:inline-block;"></span>
-                            Matches ≥90% skip this step and notify automatically
+                            Matches ≥80% skip this step and notify automatically
                         </div>
                     </div>
 
@@ -647,11 +653,29 @@ function confidenceTextColor(int $score): string {
         let pendingMatchId = null;
 
         // ── Confirm / Reject / Override ───────────────────────────────────
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const rejectBtn = document.getElementById('rejectBtn');
+            if (rejectBtn) {
+                rejectBtn.addEventListener('click', function () {
+                    rejectMatch(this.dataset.matchId);
+                });
+            }
+
+            const confirmBtn = document.getElementById('confirmBtn');
+            if (confirmBtn) {
+                confirmBtn.addEventListener('click', function () {
+                    const payload = JSON.parse(this.dataset.modal);
+                    openConfirmModal(payload.name, payload.phone, payload.item, payload.matchId);
+                });
+            }
+        });
+
         function openConfirmModal(name, phone, item, matchId) {
             pendingMatchId = matchId;
             document.getElementById('modal-name').textContent     = name;
             document.getElementById('modal-name-sms').textContent = name;
-            document.getElementById('modal-phone').textContent    = phone;
+            document.getElementById('modal-phone').textContent    = phone || 'N/A';
             document.getElementById('modal-item').textContent     = item;
             document.getElementById('confirmModal').style.display = 'flex';
         }
@@ -668,7 +692,18 @@ function confidenceTextColor(int $score): string {
                 headers: { 'Content-Type': 'application/json' },
                 body:    JSON.stringify({ match_id: pendingMatchId, action: 'confirm' })
             })
-            .then(r => r.json())
+            .then(r => {
+                // Read as text first so we can see non-JSON responses
+                return r.text().then(text => {
+                    console.log('Raw response:', text);
+                    console.log('Status:', r.status);
+                    try {
+                        return JSON.parse(text);
+                    } catch (e) {
+                        throw new Error('Non-JSON response: ' + text);
+                    }
+                });
+            })
             .then(data => {
                 if (data.success) {
                     window.location.href = 'matching_portal.php?tab=review';
@@ -676,7 +711,10 @@ function confidenceTextColor(int $score): string {
                     alert('Error: ' + data.message);
                 }
             })
-            .catch(() => alert('Network error. Please try again.'));
+            .catch(err => {
+                console.error('Fetch error:', err);
+                alert('Error: ' + err.message);
+            });
         }
 
         function rejectMatch(matchId) {
