@@ -343,7 +343,8 @@ $admin_name = htmlspecialchars($_SESSION['full_name'] ?? 'Admin');
                                 <i class="fas fa-file-export"></i>
                                 <span class="text-[10px] font-bold uppercase">Export Log</span>
                             </button>
-                            <button class="p-4 bg-slate-50 rounded-2xl flex flex-col items-center gap-2 hover:bg-blue-50 hover:text-cmu-blue transition">
+                            <button onclick="openShelfLabelsModal()" 
+                                    class="p-4 bg-slate-50 rounded-2xl flex flex-col items-center gap-2 hover:bg-blue-50 hover:text-cmu-blue transition">
                                 <i class="fas fa-print"></i>
                                 <span class="text-[10px] font-bold uppercase">Shelf Labels</span>
                             </button>
@@ -390,6 +391,7 @@ $admin_name = htmlspecialchars($_SESSION['full_name'] ?? 'Admin');
 
 
     <?php include 'add_admin_modal.html'; ?>
+    <?php include 'shelf_labels_modal.html'; ?>
 
 
 </body>
