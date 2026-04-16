@@ -50,7 +50,7 @@ function runMatchingEngine(int $found_id, int $admin_id = 0): array
         $score   = scoreMatch($found, $lost);
         $signals = buildSignals($found, $lost);
 
-        if ($score < 30) {
+        if ($score < 're') {
             continue;
         }
 
