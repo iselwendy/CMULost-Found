@@ -20,10 +20,29 @@ require_once __DIR__ . '/mailer.php';
 // Public API
 // ---------------------------------------------------------------------------
 
+function fetchSystemSettings(PDO $pdo): array
+{
+    try {
+        $stmt = $pdo->prepare("SELECT setting_key, setting_value FROM system_settings");
+        $stmt->execute();
+        
+        // Fetch all as [key => value]
+        return $stmt->fetchAll(PDO::FETCH_KEY_PAIR) ?: [];
+    } catch (Throwable $e) {
+        error_log("[MatchingEngine] Failed to fetch system_settings: " . $e->getMessage());
+        return [];
+    }
+}
+
 function runMatchingEngine(int $found_id, int $admin_id = 0): array
 {
     $pdo     = getDB();
     $matches = [];
+
+    $settings = fetchSystemSettings($pdo);
+    
+    $threshold = (int)($settings['matching_auto_threshold'] ?? 80);
+    $minScore  = (int)($settings['matching_min_score'] ?? 30);
 
     // CLEANUP: remove matches for resolved/claimed items
     $pdo->prepare("
@@ -50,12 +69,12 @@ function runMatchingEngine(int $found_id, int $admin_id = 0): array
         $score   = scoreMatch($found, $lost);
         $signals = buildSignals($found, $lost);
 
-        if ($score < 're') {
+        if ($score < $minScore) {
             continue;
         }
 
         $matchType = ($admin_id > 0) ? 'manual' : 'auto';
-        $status    = ($score >= 80)  ? 'confirmed' : 'pending';
+        $status    = ($score >= $threshold)  ? 'confirmed' : 'pending';
 
         $timelineFrag = 'UNKNOWN';
 

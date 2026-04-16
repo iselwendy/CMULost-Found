@@ -760,109 +760,99 @@ $icon_map = [
     </div><!-- end .p-8 -->
 </main>
 
-<div id="receiptPrintArea" style="position:absolute; left:-9999px;">
-    <div style="font-family:'Segoe UI',Arial,sans-serif;max-width:148mm;margin:0 auto;">
+<?php if ($receipt): ?>
+    <div id="receiptPrintArea" style="position:absolute; left:-9999px;">
+        <div style="font-family:'Segoe UI',Arial,sans-serif;max-width:148mm;margin:0 auto;">
+            <div style="background:#003366;color:white;padding:12mm 10mm 8mm;border-radius:4mm 4mm 0 0;">
+                <p style="margin:0 0 2mm;font-size:8pt;color:#93c5fd;text-transform:uppercase;letter-spacing:.08em;font-weight:900;">
+                    City of Malabon University · Student Affairs Office
+                </p>
+                <h1 style="margin:0 0 1mm;font-size:14pt;font-weight:900;">Proof of Item Collection</h1>
+                <p style="margin:0;font-size:8pt;color:#bfdbfe;">Retain this document as permanent proof of receipt.</p>
+            </div>
 
-        <!-- Print header -->
-        <div style="background:#003366;color:white;padding:12mm 10mm 8mm;border-radius:4mm 4mm 0 0;">
-                    <p style="margin:0 0 2mm;font-size:8pt;color:#93c5fd;text-transform:uppercase;letter-spacing:.08em;font-weight:900;">
-                        City of Malabon University · Student Affairs Office
+            <div style="background:#FFCC00;padding:5mm 10mm;display:flex;justify-content:space-between;align-items:center;">
+                <span style="font-size:8pt;font-weight:900;text-transform:uppercase;letter-spacing:.08em;color:#003366;">Claim Serial Number</span>
+                <span style="font-size:16pt;font-weight:900;font-family:monospace;color:#003366;letter-spacing:.05em;">
+                    <?php echo htmlspecialchars($receipt['claim_serial']); ?>
+                </span>
+            </div>
+
+            <div style="border:1px solid #e2e8f0;border-top:none;border-radius:0 0 4mm 4mm;padding:8mm 10mm;">
+                <table style="width:100%;border-collapse:collapse;margin-bottom:6mm;">
+                    <tr>
+                        <td colspan="2" style="padding-bottom:2mm;">
+                            <p style="margin:0;font-size:7pt;font-weight:900;text-transform:uppercase;letter-spacing:.07em;color:#94a3b8;">Item Released</p>
+                            <p style="margin:2mm 0 0;font-size:13pt;font-weight:900;color:#0f172a;"><?php echo htmlspecialchars($receipt['item_title']); ?></p>
+                            <p style="margin:1mm 0 0;font-size:8pt;color:#64748b;">
+                                <?php echo htmlspecialchars($receipt['category']); ?> &nbsp;·&nbsp;
+                                <?php echo htmlspecialchars($receipt['found_location']); ?> &nbsp;·&nbsp;
+                                <span style="font-family:monospace;font-weight:700;color:#4f46e5;"><?php echo htmlspecialchars($receipt['tracking_id']); ?></span>
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+
+                <hr style="border:none;border-top:1px dashed #e2e8f0;margin:0 0 6mm;">
+
+                <table style="width:100%;border-collapse:collapse;font-size:9pt;">
+                    <tr>
+                        <td style="padding:3mm 3mm 3mm 0;vertical-align:top;width:50%;">
+                            <p style="margin:0;font-size:7pt;font-weight:900;text-transform:uppercase;color:#94a3b8;">Claimed By</p>
+                            <p style="margin:1mm 0 0;font-weight:700;color:#0f172a;"><?php echo htmlspecialchars($receipt['claimant_name']); ?></p>
+                            <p style="margin:0;color:#64748b;font-size:8pt;"><?php echo htmlspecialchars($receipt['claimant_dept']); ?></p>
+                        </td>
+                        <td style="padding:3mm 0 3mm 3mm;vertical-align:top;width:50%;">
+                            <p style="margin:0;font-size:7pt;font-weight:900;text-transform:uppercase;color:#94a3b8;">School Number</p>
+                            <p style="margin:1mm 0 0;font-weight:700;font-family:monospace;color:#0f172a;"><?php echo htmlspecialchars($receipt['claimant_id_no']); ?></p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:3mm 3mm 3mm 0;vertical-align:top;">
+                            <p style="margin:0;font-size:7pt;font-weight:900;text-transform:uppercase;color:#94a3b8;">Date & Time Released</p>
+                            <p style="margin:1mm 0 0;font-weight:700;color:#0f172a;"><?php echo htmlspecialchars($receipt['release_ts']); ?></p>
+                        </td>
+                        <td style="padding:3mm 0 3mm 3mm;vertical-align:top;">
+                            <p style="margin:0;font-size:7pt;font-weight:900;text-transform:uppercase;color:#94a3b8;">Released By (OSA Officer)</p>
+                            <p style="margin:1mm 0 0;font-weight:700;color:#0f172a;"><?php echo htmlspecialchars($receipt['admin_name']); ?></p>
+                        </td>
+                    </tr>
+                </table>
+
+                <hr style="border:none;border-top:1px dashed #e2e8f0;margin:5mm 0;">
+
+                <table style="width:100%;border-collapse:collapse;margin-bottom:5mm;">
+                    <tr>
+                        <td style="width:45%;padding-right:5mm;text-align:center;">
+                            <div style="border-top:1px solid #334155;padding-top:2mm;">
+                                <p style="margin:0;font-size:7pt;font-weight:900;text-transform:uppercase;color:#64748b;">Claimant's Signature</p>
+                            </div>
+                        </td>
+                        <td style="width:10%;"></td>
+                        <td style="width:45%;padding-left:5mm;text-align:center;">
+                            <div style="border-top:1px solid #334155;padding-top:2mm;">
+                                <p style="margin:0;font-size:7pt;font-weight:900;text-transform:uppercase;color:#64748b;">OSA Officer's Signature</p>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+
+                <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:3mm;padding:4mm 5mm;">
+                    <p style="margin:0;font-size:7pt;color:#92400e;line-height:1.5;">
+                        <strong>Dispute Notice:</strong> The Claim Serial
+                        <strong style="font-family:monospace;"><?php echo htmlspecialchars($receipt['claim_serial']); ?></strong>
+                        is permanently recorded in the OSA archive. This document serves as proof that the item described
+                        above was released to the person named herein. No further claims for this item will be entertained.
                     </p>
-                    <h1 style="margin:0 0 1mm;font-size:14pt;font-weight:900;">Proof of Item Collection</h1>
-                    <p style="margin:0;font-size:8pt;color:#bfdbfe;">
-                        Retain this document as permanent proof of receipt.
-                    </p>
+                </div>
+            </div>
+
+            <p style="margin:4mm 0 0;text-align:center;font-size:7pt;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;">
+                CMU Lost &amp; Found System &nbsp;·&nbsp; Office of Student Affairs &nbsp;·&nbsp; <?php echo date('Y'); ?>
+            </p>
         </div>
-
-        <!-- Claim serial banner -->
-        <div style="background:#FFCC00;padding:5mm 10mm;display:flex;justify-content:space-between;align-items:center;">
-                    <span style="font-size:8pt;font-weight:900;text-transform:uppercase;letter-spacing:.08em;color:#003366;">Claim Serial Number</span>
-                    <span style="font-size:16pt;font-weight:900;font-family:monospace;color:#003366;letter-spacing:.05em;">
-                        <?php echo htmlspecialchars($receipt['claim_serial']); ?>
-                    </span>
-        </div>
-
-        <!-- Receipt body -->
-        <div style="border:1px solid #e2e8f0;border-top:none;border-radius:0 0 4mm 4mm;padding:8mm 10mm;">
-
-                    <!-- Item -->
-                    <table style="width:100%;border-collapse:collapse;margin-bottom:6mm;">
-                        <tr>
-                            <td colspan="2" style="padding-bottom:2mm;">
-                                <p style="margin:0;font-size:7pt;font-weight:900;text-transform:uppercase;letter-spacing:.07em;color:#94a3b8;">Item Released</p>
-                                <p style="margin:2mm 0 0;font-size:13pt;font-weight:900;color:#0f172a;"><?php echo htmlspecialchars($receipt['item_title']); ?></p>
-                                <p style="margin:1mm 0 0;font-size:8pt;color:#64748b;">
-                                    <?php echo htmlspecialchars($receipt['category']); ?> &nbsp;·&nbsp;
-                                    <?php echo htmlspecialchars($receipt['found_location']); ?> &nbsp;·&nbsp;
-                                    <span style="font-family:monospace;font-weight:700;color:#4f46e5;"><?php echo htmlspecialchars($receipt['tracking_id']); ?></span>
-                                </p>
-                            </td>
-                        </tr>
-                    </table>
-
-                    <hr style="border:none;border-top:1px dashed #e2e8f0;margin:0 0 6mm;">
-
-                    <!-- Claimant / release info grid -->
-                    <table style="width:100%;border-collapse:collapse;font-size:9pt;">
-                        <tr>
-                            <td style="padding:3mm 3mm 3mm 0;vertical-align:top;width:50%;">
-                                <p style="margin:0;font-size:7pt;font-weight:900;text-transform:uppercase;color:#94a3b8;">Claimed By</p>
-                                <p style="margin:1mm 0 0;font-weight:700;color:#0f172a;"><?php echo htmlspecialchars($receipt['claimant_name']); ?></p>
-                                <p style="margin:0;color:#64748b;font-size:8pt;"><?php echo htmlspecialchars($receipt['claimant_dept']); ?></p>
-                            </td>
-                            <td style="padding:3mm 0 3mm 3mm;vertical-align:top;width:50%;">
-                                <p style="margin:0;font-size:7pt;font-weight:900;text-transform:uppercase;color:#94a3b8;">School Number</p>
-                                <p style="margin:1mm 0 0;font-weight:700;font-family:monospace;color:#0f172a;"><?php echo htmlspecialchars($receipt['claimant_id_no']); ?></p>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td style="padding:3mm 3mm 3mm 0;vertical-align:top;">
-                                <p style="margin:0;font-size:7pt;font-weight:900;text-transform:uppercase;color:#94a3b8;">Date & Time Released</p>
-                                <p style="margin:1mm 0 0;font-weight:700;color:#0f172a;"><?php echo htmlspecialchars($receipt['release_ts']); ?></p>
-                            </td>
-                            <td style="padding:3mm 0 3mm 3mm;vertical-align:top;">
-                                <p style="margin:0;font-size:7pt;font-weight:900;text-transform:uppercase;color:#94a3b8;">Released By (OSA Officer)</p>
-                                <p style="margin:1mm 0 0;font-weight:700;color:#0f172a;"><?php echo htmlspecialchars($receipt['admin_name']); ?></p>
-                            </td>
-                        </tr>
-                    </table>
-
-                    <hr style="border:none;border-top:1px dashed #e2e8f0;margin:5mm 0;">
-
-                    <!-- Signature lines -->
-                    <table style="width:100%;border-collapse:collapse;margin-bottom:5mm;">
-                        <tr>
-                            <td style="width:45%;padding-right:5mm;text-align:center;">
-                                <div style="border-top:1px solid #334155;padding-top:2mm;">
-                                    <p style="margin:0;font-size:7pt;font-weight:900;text-transform:uppercase;color:#64748b;">Claimant's Signature</p>
-                                </div>
-                            </td>
-                            <td style="width:10%;"></td>
-                            <td style="width:45%;padding-left:5mm;text-align:center;">
-                                <div style="border-top:1px solid #334155;padding-top:2mm;">
-                                    <p style="margin:0;font-size:7pt;font-weight:900;text-transform:uppercase;color:#64748b;">OSA Officer's Signature</p>
-                                </div>
-                            </td>
-                        </tr>
-                    </table>
-
-                    <!-- Dispute notice -->
-                    <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:3mm;padding:4mm 5mm;">
-                        <p style="margin:0;font-size:7pt;color:#92400e;line-height:1.5;">
-                            <strong>Dispute Notice:</strong> The Claim Serial
-                            <strong style="font-family:monospace;"><?php echo htmlspecialchars($receipt['claim_serial']); ?></strong>
-                            is permanently recorded in the OSA archive. This document serves as proof that the item described
-                            above was released to the person named herein. No further claims for this item will be entertained.
-                        </p>
-                    </div>
-        </div>
-
-        <!-- Print footer -->
-        <p style="margin:4mm 0 0;text-align:center;font-size:7pt;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;">
-                    CMU Lost &amp; Found System &nbsp;·&nbsp; Office of Student Affairs &nbsp;·&nbsp; <?php echo date('Y'); ?>
-        </p>
     </div>
-</div>
+<?php endif; ?>
 
 <script>
 // ── Checklist progress tracker ────────────────────────────────────────────────

@@ -357,10 +357,10 @@ $admin_name = htmlspecialchars($_SESSION['full_name'] ?? 'Admin');
                                 <i class="fas fa-user-plus"></i>
                                 <span class="text-[10px] font-bold uppercase">Add Admin</span>
                             </button>
-                            <button class="p-4 bg-slate-50 rounded-2xl flex flex-col items-center gap-2 hover:bg-blue-50 hover:text-cmu-blue transition">
+                            <a href="settings.php" class="p-4 bg-slate-50 rounded-2xl flex flex-col items-center gap-2 hover:bg-blue-50 hover:text-cmu-blue transition">
                                 <i class="fas fa-cog"></i>
-                                <a href="settings.php" class="text-[10px] font-bold uppercase">Settings</a>
-                            </button>
+                                <span class="text-[10px] font-bold uppercase">Settings</span>
+                            </a>
                         </div>
                     </div>
 

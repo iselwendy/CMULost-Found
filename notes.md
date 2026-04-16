@@ -5,6 +5,7 @@
 
 ----------------
 TO FIX:
+* Fix matching_engine and others to fetch the system_settings table and all it's details
 * Fix the PRINT RECEIPT in claim_verify (it's not even showing anything)
 * Fix the shelves' bin to be a select-type not text-type.
 * Turn TERMS AND PRIVACY POLICY (legal.html) into a modal
