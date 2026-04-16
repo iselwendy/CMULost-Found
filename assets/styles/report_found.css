@@ -1,0 +1,94 @@
+/* ── report_found.css ── */
+
+.glass-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(229, 231, 235, 0.5);
+}
+
+.trait-chip {
+    padding: 6px 14px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 99px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+    background: white;
+    cursor: pointer;
+    transition: all 0.15s;
+    user-select: none;
+}
+
+.trait-chip:hover {
+    border-color: #86efac;
+    color: #15803d;
+}
+
+.trait-chip.selected {
+    background: #16a34a;
+    border-color: #16a34a;
+    color: white;
+}
+
+/* AI chip variant */
+.trait-chip.ai-chip {
+    border-style: dashed;
+    border-color: #6ee7b7;
+    color: #065f46;
+}
+
+.trait-chip.ai-chip:hover {
+    background: #d1fae5;
+    border-style: solid;
+}
+
+.trait-chip.ai-chip.selected {
+    background: #059669;
+    border-color: #059669;
+    color: white;
+    border-style: solid;
+}
+
+#qualityBar {
+    transition: width 0.4s ease, background-color 0.4s ease;
+}
+
+.ai-loading {
+    animation: shimmer 1.2s infinite linear;
+    background: linear-gradient(90deg, #f0fdf4 25%, #dcfce7 50%, #f0fdf4 75%);
+    background-size: 200% 100%;
+    border-radius: 99px;
+    height: 28px;
+    width: 100px;
+    display: inline-block;
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: 200% 0;
+    }
+
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+@keyframes shake {
+
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+
+    25% {
+        transform: translateX(-6px);
+    }
+
+    75% {
+        transform: translateX(6px);
+    }
+}
+
+.shake {
+    animation: shake 0.3s ease;
+}

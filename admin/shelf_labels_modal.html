@@ -1,0 +1,449 @@
+<div id="shelfLabelsModal"
+    class="fixed inset-0 z-[70] hidden items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+
+    <div id="shelfLabelsCard" class="bg-white rounded-3xl w-full max-w-3xl max-h-[90vh] shadow-2xl overflow-hidden flex flex-col
+                transition-all duration-300 scale-95 opacity-0">
+
+        <!-- Modal header -->
+        <div class="bg-cmu-blue px-8 py-6 flex items-center justify-between flex-shrink-0">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-white/15 rounded-xl flex items-center justify-center">
+                    <i class="fas fa-print text-white"></i>
+                </div>
+                <div>
+                    <h3 class="text-white font-black text-base uppercase tracking-widest leading-none">
+                        Shelf Labels
+                    </h3>
+                    <p class="text-blue-200 text-[10px] mt-0.5 font-semibold uppercase tracking-wider">
+                        Print labels for items in OSA custody
+                    </p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <button onclick="printShelfLabels()" id="printLabelsBtn" class="flex items-center gap-2 px-4 py-2 bg-cmu-gold text-cmu-blue rounded-xl
+                               text-xs font-black uppercase tracking-wide hover:opacity-90 transition">
+                    <i class="fas fa-print"></i> Print All
+                </button>
+                <button onclick="closeShelfLabelsModal()" class="w-9 h-9 flex items-center justify-center rounded-full bg-white/10
+                               text-white hover:bg-white/20 transition text-sm">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Filter / controls bar -->
+        <div class="px-8 py-4 border-b border-slate-100 flex flex-wrap items-center gap-3 flex-shrink-0 bg-slate-50/60">
+
+            <!-- Search -->
+            <div class="relative flex-grow min-w-[180px]">
+                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 text-xs"></i>
+                <input type="text" id="labelSearchInput" placeholder="Search by title or tracking ID..."
+                    oninput="filterLabels()" class="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl
+                              text-sm outline-none focus:ring-2 focus:ring-cmu-blue transition">
+            </div>
+
+            <!-- Shelf filter -->
+            <select id="labelShelfFilter" onchange="filterLabels()" class="bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold
+                           text-slate-600 outline-none appearance-none cursor-pointer pr-8">
+                <option value="all">All Shelves</option>
+                <option value="A">Shelf A — Electronics</option>
+                <option value="B">Shelf B — Books/Paper</option>
+                <option value="C">Shelf C — Accessories</option>
+                <option value="D">Shelf D — Bags/Clothes</option>
+                <option value="V">Vault — Valuables</option>
+                <option value="unassigned">Unassigned</option>
+            </select>
+
+            <!-- Select all toggle -->
+            <label class="flex items-center gap-2 cursor-pointer select-none">
+                <input type="checkbox" id="selectAllLabels" onchange="toggleSelectAll(this)"
+                    class="w-4 h-4 rounded accent-cmu-blue">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wide">Select All</span>
+            </label>
+
+            <!-- Selected count pill -->
+            <span id="selectedCount"
+                class="hidden text-[10px] font-black bg-cmu-blue text-white px-3 py-1 rounded-full uppercase">
+                0 selected
+            </span>
+        </div>
+
+        <!-- Loading state -->
+        <div id="labelsLoading" class="flex-grow flex items-center justify-center py-16">
+            <div class="text-center text-slate-400">
+                <i class="fas fa-spinner fa-spin text-3xl mb-3 block text-cmu-blue"></i>
+                <p class="text-sm font-bold">Loading items in custody...</p>
+            </div>
+        </div>
+
+        <!-- Empty state -->
+        <div id="labelsEmpty" class="hidden flex-grow flex items-center justify-center py-16">
+            <div class="text-center">
+                <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-box-open text-slate-300 text-2xl"></i>
+                </div>
+                <p class="text-sm font-bold text-slate-600">No items match your filters</p>
+                <p class="text-xs text-slate-400 mt-1">Try adjusting your search or shelf filter.</p>
+            </div>
+        </div>
+
+        <!-- Label grid (scrollable) -->
+        <div id="labelGrid" class="hidden flex-grow overflow-y-auto p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <!-- Populated by JS -->
+        </div>
+
+        <!-- Footer -->
+        <div class="px-8 py-4 border-t border-slate-100 flex items-center justify-between flex-shrink-0 bg-slate-50/40">
+            <p class="text-[10px] text-slate-400 font-semibold italic">
+                Labels include tracking ID, item name, shelf, and a QR code for easy scanning.
+            </p>
+            <button onclick="closeShelfLabelsModal()" class="px-5 py-2.5 border border-slate-200 text-slate-600 rounded-xl
+                           font-bold text-xs hover:bg-slate-50 transition">
+                Close
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ── Print stylesheet injected dynamically ──────────────────────────────── -->
+<style id="shelfLabelPrintStyles">
+    @media print {
+        body>*:not(#shelfLabelsPrintArea) {
+            display: none !important;
+        }
+
+        #shelfLabelsPrintArea {
+            display: block !important;
+            position: fixed;
+            inset: 0;
+            background: white;
+            padding: 12mm;
+            z-index: 9999;
+        }
+
+        .print-label-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8mm;
+        }
+
+        .print-label {
+            border: 1.5px solid #000;
+            border-radius: 4mm;
+            padding: 5mm;
+            page-break-inside: avoid;
+            display: flex;
+            gap: 4mm;
+            align-items: flex-start;
+        }
+
+        .print-label-qr img {
+            width: 22mm;
+            height: 22mm;
+        }
+
+        .print-label-info {
+            flex: 1;
+        }
+
+        .print-label-tracking {
+            font-family: monospace;
+            font-size: 9pt;
+            font-weight: 900;
+            color: #003366;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .print-label-title {
+            font-size: 10pt;
+            font-weight: 700;
+            margin: 1.5mm 0;
+            line-height: 1.3;
+        }
+
+        .print-label-meta {
+            font-size: 7.5pt;
+            color: #555;
+        }
+
+        .print-label-shelf {
+            display: inline-block;
+            background: #003366;
+            color: white;
+            font-size: 7pt;
+            font-weight: 900;
+            text-transform: uppercase;
+            padding: 1mm 3mm;
+            border-radius: 2mm;
+            margin-top: 2mm;
+            letter-spacing: 0.05em;
+        }
+
+        @page {
+            size: A4;
+            margin: 0;
+        }
+    }
+</style>
+
+<!-- Hidden print area (lives outside the modal DOM) -->
+<div id="shelfLabelsPrintArea" style="display:none;"></div>
+
+<!-- ── Shelf Labels Scripts ───────────────────────────────────────────────── -->
+<script>
+    let _slAllItems = [];
+    let _slFiltered = [];
+    let _slSelected = new Set();
+
+    function openShelfLabelsModal() {
+        const modal = document.getElementById('shelfLabelsModal');
+        const card = document.getElementById('shelfLabelsCard');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        document.body.style.overflow = 'hidden';
+        requestAnimationFrame(() => {
+            card.classList.remove('scale-95', 'opacity-0');
+            card.classList.add('scale-100', 'opacity-100');
+        });
+        loadShelfItems();
+    }
+
+    function closeShelfLabelsModal() {
+        const modal = document.getElementById('shelfLabelsModal');
+        const card = document.getElementById('shelfLabelsCard');
+        card.classList.remove('scale-100', 'opacity-100');
+        card.classList.add('scale-95', 'opacity-0');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            document.body.style.overflow = '';
+            document.getElementById('labelSearchInput').value = '';
+            document.getElementById('labelShelfFilter').value = 'all';
+            document.getElementById('selectAllLabels').checked = false;
+            _slSelected.clear();
+            updateSelectedCount();
+            showLabelsLoading();
+        }, 250);
+    }
+
+    async function loadShelfItems() {
+        showLabelsLoading();
+        try {
+            const res = await fetch('get_custody_items.php');
+            const data = await res.json();
+            _slAllItems = data.success ? data.items : [];
+        } catch (e) {
+            _slAllItems = [];
+        }
+        _slFiltered = [..._slAllItems];
+        renderLabelGrid();
+    }
+
+    function filterLabels() {
+        const q = document.getElementById('labelSearchInput').value.toLowerCase().trim();
+        const shelf = document.getElementById('labelShelfFilter').value;
+
+        _slFiltered = _slAllItems.filter(item => {
+            const matchesSearch = !q
+                || item.title.toLowerCase().includes(q)
+                || item.tracking_id.toLowerCase().includes(q);
+            const matchesShelf = shelf === 'all'
+                || (shelf === 'unassigned' && !item.shelf)
+                || (item.shelf && item.shelf.toUpperCase() === shelf);
+            return matchesSearch && matchesShelf;
+        });
+
+        const visibleIds = new Set(_slFiltered.map(i => i.tracking_id));
+        for (const id of _slSelected) {
+            if (!visibleIds.has(id)) _slSelected.delete(id);
+        }
+        renderLabelGrid();
+    }
+
+    function toggleSelectAll(checkbox) {
+        if (checkbox.checked) {
+            _slFiltered.forEach(item => _slSelected.add(item.tracking_id));
+        } else {
+            _slFiltered.forEach(item => _slSelected.delete(item.tracking_id));
+        }
+        renderLabelGrid(false);
+        updateSelectedCount();
+    }
+
+    function slToggleItem(trackingId, checkbox) {
+        if (checkbox.checked) {
+            _slSelected.add(trackingId);
+        } else {
+            _slSelected.delete(trackingId);
+            document.getElementById('selectAllLabels').checked = false;
+        }
+        updateSelectedCount();
+    }
+
+    function slHandleCardClick(trackingId) {
+        const safeId = trackingId.replace('-', '_');
+        const chk = document.getElementById('chk_' + safeId);
+        if (!chk) return;
+        chk.checked = !chk.checked;
+        slToggleItem(trackingId, chk);
+        const card = chk.closest('[data-tracking]');
+        if (card) {
+            card.classList.toggle('border-cmu-blue', chk.checked);
+            card.classList.toggle('bg-blue-50/50', chk.checked);
+            card.classList.toggle('border-slate-100', !chk.checked);
+        }
+    }
+
+    function updateSelectedCount() {
+        const pill = document.getElementById('selectedCount');
+        if (_slSelected.size > 0) {
+            pill.textContent = `${_slSelected.size} selected`;
+            pill.classList.remove('hidden');
+        } else {
+            pill.classList.add('hidden');
+        }
+    }
+
+    function renderLabelGrid(resetScroll = true) {
+        const grid = document.getElementById('labelGrid');
+
+        if (_slFiltered.length === 0) {
+            showLabelsEmpty();
+            return;
+        }
+
+        showLabelsGrid();
+        if (resetScroll) grid.scrollTop = 0;
+
+        grid.innerHTML = _slFiltered.map(item => {
+            const isSelected = _slSelected.has(item.tracking_id);
+            const shelfLabel = item.shelf
+                ? `${item.shelf}${item.row_bin ? ' · ' + item.row_bin : ''}`
+                : 'Unassigned';
+            const shelfColor = item.shelf
+                ? 'bg-green-100 text-green-700'
+                : 'bg-amber-100 text-amber-600';
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${encodeURIComponent(item.tracking_id)}`;
+            const catIcon = slCategoryIcon(item.category);
+            const date = item.date_found
+                ? new Date(item.date_found).toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' })
+                : '—';
+            const safeId = item.tracking_id.replace('-', '_');
+
+            return `
+            <div data-tracking="${slEsc(item.tracking_id)}"
+                onclick="slHandleCardClick('${slEsc(item.tracking_id)}')"
+                class="relative group border-2 rounded-2xl p-4 flex gap-4 items-start transition cursor-pointer
+                        ${isSelected ? 'border-cmu-blue bg-blue-50/50' : 'border-slate-100 hover:border-slate-300 bg-white'}">
+
+                <input type="checkbox"
+                    id="chk_${safeId}"
+                    ${isSelected ? 'checked' : ''}
+                    onchange="slToggleItem('${slEsc(item.tracking_id)}', this)"
+                    onclick="event.stopPropagation()"
+                    class="absolute top-3 right-3 w-4 h-4 rounded accent-cmu-blue">
+
+                <div class="w-16 h-16 flex-shrink-0 bg-white border border-slate-100 rounded-xl overflow-hidden flex items-center justify-center shadow-sm">
+                    <img src="${qrUrl}" alt="QR" class="w-full h-full object-contain" loading="lazy">
+                </div>
+
+                <div class="flex-grow min-w-0 pr-6">
+                    <p class="font-mono text-[10px] font-black text-cmu-blue uppercase tracking-widest">
+                        ${slEsc(item.tracking_id)}
+                    </p>
+                    <p class="text-sm font-bold text-slate-800 mt-0.5 truncate">
+                        ${slEsc(item.title)}
+                    </p>
+                    <p class="text-[11px] text-slate-400 mt-1 flex items-center gap-1.5 flex-wrap">
+                        <i class="${catIcon} text-[9px]"></i>
+                        ${slEsc(item.category || 'Uncategorized')}
+                        <span class="text-slate-200">·</span>
+                        <i class="fas fa-calendar-alt text-[9px]"></i>
+                        ${date}
+                    </p>
+                    <span class="inline-flex items-center gap-1 mt-2 px-2 py-0.5 rounded-full text-[10px] font-black ${shelfColor}">
+                        <i class="fas fa-layer-group text-[8px]"></i>
+                        ${slEsc(shelfLabel)}
+                    </span>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    function printShelfLabels() {
+        const toPrint = _slSelected.size > 0
+            ? _slAllItems.filter(i => _slSelected.has(i.tracking_id))
+            : _slFiltered;
+
+        if (toPrint.length === 0) {
+            alert('No items to print. Select at least one label or remove your filters.');
+            return;
+        }
+
+        const printArea = document.getElementById('shelfLabelsPrintArea');
+        printArea.innerHTML = `
+            <div class="print-label-grid">
+                ${toPrint.map(item => {
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=90x90&data=${encodeURIComponent(item.tracking_id)}`;
+            const shelf = item.shelf ? `${item.shelf}${item.row_bin ? '-' + item.row_bin : ''}` : 'UNASSIGNED';
+            const date = item.date_found
+                ? new Date(item.date_found).toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' })
+                : '—';
+            return `
+                    <div class="print-label">
+                        <div class="print-label-qr"><img src="${qrUrl}" alt="QR"></div>
+                        <div class="print-label-info">
+                            <div class="print-label-tracking">${slEsc(item.tracking_id)}</div>
+                            <div class="print-label-title">${slEsc(item.title)}</div>
+                            <div class="print-label-meta">${slEsc(item.category || 'Other')} · Found: ${date}</div>
+                            <div class="print-label-meta">By: ${slEsc(item.finder_name || 'Unknown')}</div>
+                            <div class="print-label-shelf">Shelf: ${slEsc(shelf)}</div>
+                        </div>
+                    </div>`;
+        }).join('')}
+            </div>`;
+
+        window.print();
+        setTimeout(() => { printArea.innerHTML = ''; }, 1000);
+    }
+
+    function showLabelsLoading() {
+        document.getElementById('labelsLoading').classList.remove('hidden');
+        document.getElementById('labelsEmpty').classList.add('hidden');
+        document.getElementById('labelGrid').classList.add('hidden');
+    }
+    function showLabelsEmpty() {
+        document.getElementById('labelsLoading').classList.add('hidden');
+        document.getElementById('labelsEmpty').classList.remove('hidden');
+        document.getElementById('labelGrid').classList.add('hidden');
+    }
+    function showLabelsGrid() {
+        document.getElementById('labelsLoading').classList.add('hidden');
+        document.getElementById('labelsEmpty').classList.add('hidden');
+        document.getElementById('labelGrid').classList.remove('hidden');
+    }
+
+    function slCategoryIcon(cat) {
+        const map = {
+            'Electronics': 'fas fa-mobile-screen',
+            'Valuables': 'fas fa-wallet',
+            'Documents': 'fas fa-id-card',
+            'Books': 'fas fa-book',
+            'Clothing': 'fas fa-shirt',
+            'Personal': 'fas fa-bag-shopping',
+        };
+        return map[cat] || 'fas fa-box';
+    }
+
+    function slEsc(str) {
+        return String(str ?? '').replace(/[&<>"']/g, c =>
+            ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        document.getElementById('shelfLabelsModal').addEventListener('click', function (e) {
+            if (e.target === this) closeShelfLabelsModal();
+        });
+    });
+</script>

@@ -1,0 +1,271 @@
+<!--DETAIL MODAL-->
+<div id="detailModal"
+    class="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm opacity-0 pointer-events-none">
+    <div id="detailModalCard"
+        class="bg-white rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden scale-95 opacity-0 flex flex-col max-h-[92vh]">
+
+        <!-- Modal Header -->
+        <div class="flex items-start justify-between p-6 pb-4 border-b border-slate-100 flex-shrink-0">
+            <div>
+                <div class="flex items-center gap-2 mb-1">
+                    <span id="dm-type-badge" class="text-[10px] font-black uppercase px-2 py-0.5 rounded-full"></span>
+                    <span id="dm-tracking" class="font-mono text-[10px] text-slate-400"></span>
+                </div>
+                <h2 id="dm-title" class="text-xl font-black text-slate-900 leading-tight"></h2>
+            </div>
+            <button onclick="closeDetailModal()"
+                class="ml-4 flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-red-100 hover:text-red-500 transition">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <!-- Modal Body -->
+        <div class="overflow-y-auto flex-1">
+            <div class="flex flex-col md:flex-row">
+
+                <!-- Left: Image -->
+                <div id="dm-image-container" class="md:w-56 flex-shrink-0">
+                    <img id="dm-image" src="" alt="Item photo" class="w-full h-56 md:h-full object-cover">
+                </div>
+                <div id="dm-no-image"
+                    class="hidden md:w-56 flex-shrink-0 h-56 bg-slate-100 flex items-center justify-center text-slate-300 flex-col gap-2">
+                    <i class="fas fa-image text-4xl"></i>
+                    <p class="text-xs font-bold">No Photo</p>
+                </div>
+
+                <!-- Right: Details -->
+                <div class="flex-1 p-6 space-y-5">
+
+                    <!-- Status pill + progress -->
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <span id="dm-status-badge"
+                                class="px-3 py-1 rounded-full text-[10px] font-bold border"></span>
+                            <span id="dm-step" class="text-[10px] font-bold text-slate-400 uppercase"></span>
+                        </div>
+                        <div class="h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                            <div id="dm-progress-bar" class="h-full rounded-full transition-all duration-700"></div>
+                        </div>
+                    </div>
+
+                    <!-- Info rows -->
+                    <div class="grid grid-cols-1 gap-3">
+                        <div class="flex items-start gap-3 p-3 bg-slate-50 rounded-xl">
+                            <div
+                                class="w-8 h-8 bg-white rounded-lg flex items-center justify-center border border-slate-100 flex-shrink-0">
+                                <i class="fas fa-tag text-cmu-blue text-xs"></i>
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Category</p>
+                                <p id="dm-category" class="text-sm font-semibold text-slate-800"></p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3 p-3 bg-slate-50 rounded-xl">
+                            <div
+                                class="w-8 h-8 bg-white rounded-lg flex items-center justify-center border border-slate-100 flex-shrink-0">
+                                <i class="fas fa-map-marker-alt text-cmu-blue text-xs"></i>
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Location</p>
+                                <p id="dm-location" class="text-sm font-semibold text-slate-800"></p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3 p-3 bg-slate-50 rounded-xl">
+                            <div
+                                class="w-8 h-8 bg-white rounded-lg flex items-center justify-center border border-slate-100 flex-shrink-0">
+                                <i class="fas fa-calendar-alt text-cmu-blue text-xs"></i>
+                            </div>
+                            <div>
+                                <p id="dm-date-label"
+                                    class="text-[10px] font-black text-slate-400 uppercase tracking-wider"></p>
+                                <p id="dm-date" class="text-sm font-semibold text-slate-800"></p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3 p-3 bg-slate-50 rounded-xl">
+                            <div
+                                class="w-8 h-8 bg-white rounded-lg flex items-center justify-center border border-slate-100 flex-shrink-0">
+                                <i class="fas fa-calendar-plus text-cmu-blue text-xs"></i>
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Date Reported
+                                </p>
+                                <p id="dm-created" class="text-sm font-semibold text-slate-800"></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Private description -->
+                    <div>
+                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">
+                            <i class="fas fa-user-shield mr-1 text-amber-500"></i> Private Details (only visible to you
+                            & SAO)
+                        </p>
+                        <p id="dm-description"
+                            class="text-sm text-slate-700 bg-amber-50 border border-amber-100 p-3 rounded-xl leading-relaxed italic">
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Timeline section -->
+            <!-- <div class="px-6 pb-2">
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Status Timeline</p>
+                <div id="dm-timeline" class="space-y-3 pl-2"></div>
+            </div> -->
+        </div>
+
+        <!-- Modal Footer Actions -->
+        <div id="dm-footer" class="p-6 border-t border-slate-100 flex gap-3 flex-shrink-0"></div>
+    </div>
+</div>
+
+<!--QR MODAL-->
+<div id="qrModal" class="fixed inset-0 z-[80] hidden items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm">
+    <div id="qrModalContent" class="bg-white rounded-3xl max-w-sm w-full p-8 shadow-2xl text-center">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="font-bold text-slate-800">Turnover QR Code</h3>
+            <button id="closeQrBtn" onclick="closeQRModal()"
+                class="text-slate-400 hover:text-slate-600 w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 transition">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <div class="bg-slate-50 p-6 rounded-2xl mb-6">
+            <div
+                class="w-48 h-48 bg-white border-8 border-white shadow-sm mx-auto flex items-center justify-center p-2">
+                <img id="qrImage" src="" alt="QR Code" class="w-full h-full grayscale">
+            </div>
+            <p id="qrTrackingId" class="mt-4 font-mono text-sm text-slate-500 tracking-widest uppercase">---</p>
+        </div>
+
+        <div class="space-y-3 text-left mb-6">
+            <div class="flex gap-3 items-start">
+                <i class="fas fa-id-card text-cmu-blue mt-1 flex-shrink-0"></i>
+                <p class="text-xs text-slate-600">Present this code to the <strong>SAO Admin</strong> upon surrendering
+                    the physical item.</p>
+            </div>
+            <div class="flex gap-3 items-start">
+                <i class="fas fa-clock text-amber-500 mt-1 flex-shrink-0"></i>
+                <p class="text-xs text-slate-600 italic">This code expires in <strong>24 hours</strong>. Please turn
+                    over immediately.</p>
+            </div>
+        </div>
+
+        <button id="saveBtn" onclick="window.print()"
+            class="w-full py-3 bg-slate-100 text-slate-700 rounded-xl font-bold text-sm hover:bg-slate-200 transition">
+            <i class="fas fa-print mr-2"></i>Save / Print QR Code
+        </button>
+    </div>
+</div>
+
+<!-- SAO VERIFY MODAL -->
+<div id="sao-verify-modal" class="fixed inset-0 z-[100] hidden overflow-y-auto" role="dialog" aria-modal="true">
+    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 sm:p-0">
+        <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeSaoModal()"></div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+        <div
+            class="inline-block align-bottom bg-white rounded-3xl overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full border border-slate-200">
+
+            <!-- Header -->
+            <div class="bg-cmu-blue px-8 py-6 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-white/15 rounded-xl flex items-center justify-center">
+                        <i class="fas fa-user-check text-white text-sm"></i>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-black text-blue-300 uppercase tracking-widest">Student Affairs Office
+                        </p>
+                        <h3 class="text-white font-black text-base uppercase tracking-widest leading-none mt-0.5">
+                            Claiming Instructions</h3>
+                    </div>
+                </div>
+                <button onclick="closeSaoModal()"
+                    class="w-9 h-9 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition text-sm">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="flex flex-col">
+
+                <div class="p-6">
+                    <div
+                        class="flex flex-col md:flex-row gap-6 mb-8 p-4 bg-indigo-50/50 rounded-2xl border border-indigo-100">
+                        <div
+                            class="w-full md:w-48 h-48 rounded-xl bg-white overflow-hidden shadow-sm flex-shrink-0 border border-slate-200">
+                            <img id="sao-item-image" src="" alt="Item Image" class="w-full h-full object-cover">
+                            <div id="sao-image-placeholder"
+                                class="hidden w-full h-full items-center justify-center text-slate-300">
+                                <i class="fas fa-image text-5xl"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow">
+                            <span class="text-[10px] font-black text-indigo-500 uppercase tracking-widest">Matched
+                                Item</span>
+                            <h4 id="sao-item-title" class="text-2xl font-bold text-slate-800 mb-2"></h4>
+                            <p class="text-sm text-slate-600 leading-relaxed italic">
+                                "Please examine the photo carefully. If this looks like your missing item, follow the
+                                steps
+                                below to complete the recovery."
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-6">
+                        <div class="flex gap-4">
+                            <div
+                                class="flex-shrink-0 w-10 h-10 bg-cmu-blue text-white rounded-full flex items-center justify-center font-bold">
+                                1</div>
+                            <div>
+                                <h5 class="font-bold text-slate-800">Visit the SAO Office</h5>
+                                <p class="text-sm text-slate-500">Go to the Student Affairs Office during office
+                                    hours
+                                    (Mon-Fri, 8:00 AM - 5:00 PM).</p>
+                            </div>
+                        </div>
+
+                        <div class="flex gap-4">
+                            <div
+                                class="flex-shrink-0 w-10 h-10 bg-cmu-blue text-white rounded-full flex items-center justify-center font-bold">
+                                2</div>
+                            <div>
+                                <h5 class="font-bold text-slate-800">Present Valid Identification</h5>
+                                <p class="text-sm text-slate-500">Bring your CMU Student ID
+                                    for
+                                    identity verification.</p>
+                            </div>
+                        </div>
+
+                        <div class="flex gap-4">
+                            <div
+                                class="flex-shrink-0 w-10 h-10 bg-cmu-blue text-white rounded-full flex items-center justify-center font-bold">
+                                3</div>
+                            <div>
+                                <h5 class="font-bold text-slate-800">Verify Ownership</h5>
+                                <p class="text-sm text-slate-500">Be prepared to describe unique markings, passwords
+                                    (for
+                                    gadgets), or contents that prove the item is yours.</p>
+                            </div>
+                        </div>
+
+                        <!-- Warning notice -->
+                        <div class="bg-amber-50 border border-amber-100 rounded-2xl p-4 flex gap-3 mt-4">
+                            <i class="fas fa-triangle-exclamation text-amber-500 mt-0.5 flex-shrink-0 text-sm"></i>
+                            <p class="text-[11px] text-amber-800 leading-relaxed">
+                                Items are held for a maximum of <strong>60 days</strong>. If unclaimed, they will be
+                                donated or disposed of per university policy. Please visit SAO as soon as possible.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end">
+                    <button onclick="closeSaoModal()"
+                        class="px-6 py-2.5 bg-cmu-blue text-white rounded-xl text-sm font-bold hover:bg-slate-800 transition shadow-sm">
+                        Understood
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
