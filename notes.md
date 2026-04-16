@@ -8,11 +8,8 @@ TO FIX:
 * Fix matching_engine and others to fetch the system_settings table and all it's details
 * Fix the PRINT RECEIPT in claim_verify (it's not even showing anything)
 * Fix the shelves' bin to be a select-type not text-type.
-* Turn TERMS AND PRIVACY POLICY (legal.html) into a modal
 * I just noticed that in matches table in the DB, the resolved/claimed items stays in the matches table even though it was already moved to the archive. 
 * As for the matching portal, maybe consider adding "title match"???
-* In reporting lost/found items, prevent users from entering date beyond the current date
-* Do 'admin_settings' in the dashboard
 * Fix export_log function in the dashboard
 * In Physical Inventory, the 'surrendered' items table should also include their shelf and bin location 
 * In index.php, improve the search function to allow searching like this (cat sticker + 100 peso bill)

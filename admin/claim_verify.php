@@ -89,6 +89,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['match_id'])) {
 
         // 2. Generate unique claim serial
         $claim_serial = generateClaimSerial($pdo);
+        date_default_timezone_set('Asia/Manila'); 
         $release_date = date('Y-m-d');
         $release_ts   = date('F d, Y \a\t g:i A');
 
@@ -271,16 +272,17 @@ $icon_map = [
 
         /* ── Print styles: only the receipt shows ── */
         @media print {
-            body * {
+            /* Hide everything by making it invisible — does NOT affect children */
+            body > *:not(#receiptPrintArea) {
                 display: none !important;
             }
 
             #receiptPrintArea {
                 display: block !important;
-                position: absolute;
-                top: 0;
-                left: 0;
-                width: 100%;
+                position: static !important;
+                left: auto !important;
+                top: auto !important;
+                width: 100% !important;
             }
 
             @page {
@@ -761,7 +763,7 @@ $icon_map = [
 </main>
 
 <?php if ($receipt): ?>
-    <div id="receiptPrintArea" style="position:absolute; left:-9999px;">
+    <div id="receiptPrintArea" style="display:none;">
         <div style="font-family:'Segoe UI',Arial,sans-serif;max-width:148mm;margin:0 auto;">
             <div style="background:#003366;color:white;padding:12mm 10mm 8mm;border-radius:4mm 4mm 0 0;">
                 <p style="margin:0 0 2mm;font-size:8pt;color:#93c5fd;text-transform:uppercase;letter-spacing:.08em;font-weight:900;">
@@ -880,9 +882,11 @@ $icon_map = [
     update();
 })();
 
-// ── Print receipt ─────────────────────────────────────────────────────────────
 function printReceipt() {
+    const el = document.getElementById('receiptPrintArea');
+    el.style.display = 'block';
     window.print();
+    el.style.display = 'none';
 }
 </script>
 

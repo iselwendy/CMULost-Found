@@ -237,7 +237,7 @@ function resolveImagePath(?string $path): ?string {
     </aside>
 
     <!-- ── Main ─────────────────────────────────────────────────────────── -->
-    <main class="flex-grow flex flex-col min-w-0 overflow-hidden relative" style="height:200vh;">
+    <main class="flex-grow flex flex-col min-w-0 overflow-hidden relative" style="height:150vh;">
 
         <!-- Page header -->
         <header class="bg-white border-b border-slate-200 px-8 py-4 flex items-center justify-between flex-shrink-0">
