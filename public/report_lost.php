@@ -18,11 +18,20 @@ if ($prefill && !empty($_GET['date'])) {
     if ($ts) $pre_date = date('Y-m-d\T00:00', $ts);
 }
 
-// Map location name → select option value (must match the <select> options exactly)
-$location_options = [
-    'Other', 'Innovation Bldg', 'ERC Bldg', 'University Canteen', 'Main Library'
-];
-$pre_location_val = in_array($pre_location, $location_options) ? $pre_location : 'Other';
+try {
+    $loc_stmt = $pdo->query("SELECT location_id, location_name FROM locations ORDER BY location_id DESC");
+    $locations = $loc_stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    $locations = []; // Fallback to empty if table doesn't exist yet
+}
+
+$pre_location_id = 0;
+foreach ($locations as $loc) {
+    if ($loc['location_name'] === $pre_location) {
+        $pre_location_id = $loc['location_id'];
+        break;
+    }
+}
 
 // Map category name → select option value
 $category_options = [
@@ -161,16 +170,22 @@ $pre_category_val = in_array($pre_category, $category_options) ? $pre_category :
                         </div>
                     </div>
 
+
                     <div>
-                        <label class="block text-sm font-semibold mb-1.5 text-slate-700">Location Last Seen</label>
-                        <select name="location" id="itemLocation" required
-                                class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white outline-none">
+                        <label class="block text-sm font-semibold mb-1.5 text-slate-700">Where was it found?</label>
+                        <select name="location_id" id="itemLocation" required
+                                class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white outline-none focus:ring-2 focus:ring-cmu-blue transition">
                             <option value="">Select location</option>
-                            <?php foreach ($location_options as $loc):
-                                $sel = ($loc === $pre_location_val) ? 'selected' : '';
+                            
+                            <?php foreach ($locations as $loc): 
+                                // Select if it matches the prefilled ID
+                                $selected = ($loc['location_id'] == $pre_location_id) ? 'selected' : '';
                             ?>
-                            <option value="<?php echo $loc; ?>" <?php echo $sel; ?>><?php echo $loc; ?></option>
+                                <option value="<?php echo htmlspecialchars($loc['location_id']); ?>" <?php echo $selected; ?>>
+                                    <?php echo htmlspecialchars($loc['location_name']); ?>
+                                </option>
                             <?php endforeach; ?>
+                            
                         </select>
                     </div>
                 </section>

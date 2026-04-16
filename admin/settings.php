@@ -6,7 +6,7 @@
 
 session_start();
 
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
+if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'admin') {
     header("Location: ../core/auth.php");
     exit();
 }
@@ -205,7 +205,7 @@ if (isset($_SESSION['settings_msg'])) {
 
 // ── Load data ─────────────────────────────────────────────────────────────
 $all_admins = $pdo->query("
-    SELECT user_id, full_name, cmu_email, department, created_at
+    SELECT user_id, full_name, cmu_email, department, created_at, role
     FROM users WHERE role = 'admin'
     ORDER BY created_at ASC
 ")->fetchAll();
