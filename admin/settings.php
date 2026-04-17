@@ -292,6 +292,10 @@ $action_log = $pdo->query("
         <a href="qr_scanner.php"      class="sidebar-link flex items-center gap-3 p-3 rounded-xl transition"><i class="fas fa-qrcode w-5"></i><span class="text-sm font-medium">QR Intake Scanner</span></a>
         <a href="matching_portal.php" class="sidebar-link flex items-center gap-3 p-3 rounded-xl transition"><i class="fas fa-sync w-5"></i><span class="text-sm font-medium">Matching Portal</span></a>
         <a href="claim_verify.php"    class="sidebar-link flex items-center gap-3 p-3 rounded-xl transition"><i class="fas fa-user-check w-5"></i><span class="text-sm font-medium">Claim Verification</span></a>
+        <a href="manage_reports.php" class="sidebar-link flex items-center gap-3 p-3 rounded-xl transition">
+                <i class="fas fa-shield w-5"></i>
+                <span class="text-sm font-medium">Manage Reports</span>
+            </a>
         <div class="pt-4 mt-4 border-t border-white/10">
             <a href="archive.php"       class="sidebar-link flex items-center gap-3 p-3 rounded-xl transition"><i class="fas fa-archive w-5 text-blue-300"></i><span class="text-sm font-medium text-blue-100">Records Archive</span></a>
             <a href="record_merger.php" class="sidebar-link flex items-center gap-3 p-3 rounded-xl transition mt-1"><i class="fas fa-code-merge w-5 text-blue-300"></i><span class="text-sm font-medium text-blue-100">Record Merger</span></a>

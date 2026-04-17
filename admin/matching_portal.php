@@ -21,6 +21,11 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'admin') {
 require_once '../core/db_config.php';
 require_once '../core/matching_engine.php';
 
+$settings = fetchSystemSettings($pdo);
+    
+$threshold = (int)($settings['matching_auto_threshold'] ?? 80);
+$minScore  = (int)($settings['matching_min_score'] ?? 30);
+
 // ── Active tab & selected match ───────────────────────────────────────────
 $active_tab  = $_GET['tab']      ?? 'review';
 $selected_id = $_GET['match_id'] ?? null;
@@ -90,14 +95,14 @@ $stmt_auto = $pdo->prepare("
     JOIN  lost_reports  l ON m.lost_id     = l.lost_id
     LEFT JOIN categories c ON f.category_id = c.category_id
     JOIN  users         u ON l.user_id     = u.user_id
-    WHERE (m.confidence_score >= 80 OR m.status = 'confirmed')
+    WHERE (m.confidence_score >= :threshold OR m.status = 'confirmed')
         AND m.status NOT IN ('rejected', 'completed')
         AND f.status != 'surrendered'
         AND l.status != 'resolved'
     ORDER  BY m.matched_at DESC
     LIMIT  20
 ");
-$stmt_auto->execute();
+$stmt->execute(['threshold' => $threshold]);
 $auto_queue = $stmt_auto->fetchAll();
 
 // ── Today's rejected / confirmed counts (for stat cards) ─────────────────
@@ -248,7 +253,7 @@ function resolveImagePath(?string $path): ?string {
             <div>
                 <h2 class="text-xl font-black text-slate-800 tracking-tight uppercase">AI Matching Portal</h2>
                 <p class="text-xs text-slate-500 mt-0.5">
-                    Matches ≥80% are auto-notified via SMS &nbsp;·&nbsp; Below 80% requires your review
+                    Matches ≥<?= $threshold ?>% are auto-notified via SMS &nbsp;·&nbsp; Below <?= $threshold ?>% requires your review
                 </p>
             </div>
             <div class="flex items-center gap-3">
@@ -423,7 +428,7 @@ function resolveImagePath(?string $path): ?string {
                                     </div>
                                 </div>
                                 <p style="font-size:10px;color:#94a3b8;margin-top:4px;text-align:center;">
-                                    Below 80% — review required
+                                    Below <?= $threshold ?>% — review required
                                 </p>
                             </div>
                         </div>
@@ -572,7 +577,7 @@ function resolveImagePath(?string $path): ?string {
                         </button>
                         <div class="auto-note">
                             <span style="width:8px;height:8px;border-radius:50%;background:#639922;display:inline-block;"></span>
-                            Matches ≥80% skip this step and notify automatically
+                            Matches ≥<?= $threshold ?>% skip this step and notify automatically
                         </div>
                     </div>
 
@@ -584,7 +589,7 @@ function resolveImagePath(?string $path): ?string {
                                 Auto-Notified Matches
                             </p>
                             <p class="text-sm text-slate-500 mb-6">
-                                These matches scored ≥80% confidence. Email notifications were sent automatically.
+                                These matches scored ≥<?= $threshold ?>% confidence. Email notifications were sent automatically.
                                 No action is needed unless a match must be manually overridden.
                             </p>
 
