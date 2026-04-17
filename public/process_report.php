@@ -68,7 +68,6 @@ $user_id     = (int) $_SESSION['user_id'];
 $report_type = $_POST['report_type'] ?? 'lost'; // 'lost' | 'found'
 $title       = trim($_POST['title'] ?? 'Untitled Item');
 $category_n  = trim($_POST['category'] ?? 'Other');
-$location_n  = trim($_POST['location'] ?? 'Other');
 $description = trim($_POST['hidden_marks'] ?? ''); // compiled private marks from JS
 
 $raw_date   = $_POST['date_lost'] ?? $_POST['date_found'] ?? date('Y-m-d');
@@ -87,14 +86,15 @@ $category_map = [
 ];
 $category_id = $category_map[$category_n] ?? 7;
 
-$location_map = [
-    'Main Library'       => 1,
-    'Innovation Bldg'    => 2,
-    'ERC Bldg'           => 3,
-    'University Canteen' => 4,
-    'Other'              => 5,
-];
-$location_id = $location_map[$location_n] ?? 5;
+$location_id = (int)($_POST['location_id'] ?? 0);
+// Validate it exists in the DB
+if ($location_id > 0) {
+    $loc_check = $pdo->prepare("SELECT 1 FROM locations WHERE location_id = ? LIMIT 1");
+    $loc_check->execute([$location_id]);
+    if (!$loc_check->fetchColumn()) {
+        $location_id = 0; // fallback if invalid
+    }
+}
 
 // ── 3. Photo Upload Helper ────────────────────────────────────────────────
 

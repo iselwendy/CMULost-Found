@@ -5,7 +5,7 @@
 
 ----------------
 TO FIX:
-* Fix the locations in report_lost.php and report_found.php; the location selection in the file is defaulting to "Main Library" even though I clicked "Student Lounge"
+<!-- * Fix the locations in report_lost.php and report_found.php; the location selection in the file is defaulting to "Main Library" even though I clicked "Student Lounge" -->
 * My_reports dashboard, QR code not showing after a succesful found report
 * Fix the filters in index.php (not working), also the search function is not working
 * Fix the shelves' bin to be a select-type not text-type.

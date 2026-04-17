@@ -13,7 +13,6 @@ $pre_location   = $prefill ? trim($_GET['location'] ?? '') : '';
 $pre_found_id   = $prefill ? (int)($_GET['found_id'] ?? 0) : 0;
 // Build a datetime-local value from the date (time defaults to midnight)
 $pre_date       = '';
-$pre_location_id = 0;
 
 if ($prefill && !empty($_GET['date'])) {
     $ts = strtotime($_GET['date']);
@@ -24,15 +23,14 @@ try {
     $loc_stmt = $pdo->query("SELECT location_id, location_name FROM locations ORDER BY location_id ASC");
     $locations = $loc_stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
-    $locations = []; // Fallback to empty if table doesn't exist yet
+    $locations = [];
 }
 
-if (!$pre_location_id) {
-    foreach ($locations as $loc) {
-        if (strcasecmp(trim($loc['location_name']), $pre_location) === 0) {
-            $pre_location_id = $loc['location_id'];
-            break;
-        }
+$pre_location_id = 0;
+foreach ($locations as $loc) {
+    if (strcasecmp(trim($loc['location_name']), $pre_location) === 0) {
+        $pre_location_id = $loc['location_id'];
+        break;
     }
 }
 
@@ -188,7 +186,6 @@ $pre_category_val = in_array($pre_category, $category_options) ? $pre_category :
                                     <?php echo htmlspecialchars($loc['location_name']); ?>
                                 </option>
                             <?php endforeach; ?>
-                            
                         </select>
                     </div>
                 </section>
