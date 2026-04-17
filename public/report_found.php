@@ -12,6 +12,8 @@ $pre_category   = $prefill ? trim($_GET['category'] ?? '') : '';
 $pre_location   = $prefill ? trim($_GET['location'] ?? '') : '';
 $pre_lost_id    = $prefill ? (int)($_GET['lost_id'] ?? 0) : 0;
 $pre_date       = '';
+$pre_location_id = 0;
+
 if ($prefill && !empty($_GET['date'])) {
     $ts = strtotime($_GET['date']);
     if ($ts) $pre_date = date('Y-m-d\T00:00', $ts);
@@ -20,17 +22,18 @@ if ($prefill && !empty($_GET['date'])) {
 // ... after your $user_id fetch ...
 
 try {
-    $loc_stmt = $pdo->query("SELECT location_id, location_name FROM locations ORDER BY location_id DESC");
+    $loc_stmt = $pdo->query("SELECT location_id, location_name FROM locations ORDER BY location_id ASC");
     $locations = $loc_stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
     $locations = []; // Fallback to empty if table doesn't exist yet
 }
 
-$pre_location_id = 0;
-foreach ($locations as $loc) {
-    if ($loc['location_name'] === $pre_location) {
-        $pre_location_id = $loc['location_id'];
-        break;
+if (!$pre_location_id) {
+    foreach ($locations as $loc) {
+        if (strcasecmp(trim($loc['location_name']), $pre_location) === 0) {
+            $pre_location_id = $loc['location_id'];
+            break;
+        }
     }
 }
 
@@ -177,7 +180,7 @@ $pre_category_val = in_array($pre_category, $category_options) ? $pre_category :
                             
                             <?php foreach ($locations as $loc): 
                                 // Select if it matches the prefilled ID
-                                $selected = ($loc['location_id'] == $pre_location_id) ? 'selected' : '';
+                                $selected = ((int)$loc['location_id'] === $pre_location_id) ? 'selected' : '';
                             ?>
                                 <option value="<?php echo htmlspecialchars($loc['location_id']); ?>" <?php echo $selected; ?>>
                                     <?php echo htmlspecialchars($loc['location_name']); ?>

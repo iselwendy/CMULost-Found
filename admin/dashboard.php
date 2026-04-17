@@ -347,10 +347,11 @@ $admin_name = htmlspecialchars($_SESSION['full_name'] ?? 'Admin');
                     <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
                         <h4 class="font-black text-slate-800 uppercase text-sm tracking-widest mb-4">Admin Shortcuts</h4>
                         <div class="grid grid-cols-2 gap-3">
-                            <button class="p-4 bg-slate-50 rounded-2xl flex flex-col items-center gap-2 hover:bg-blue-50 hover:text-cmu-blue transition">
-                                <i class="fas fa-file-export"></i>
-                                <span class="text-[10px] font-bold uppercase">Export Log</span>
-                            </button>
+                            <a href="export_log.php"
+                                class="p-4 bg-slate-50 rounded-2xl flex flex-col items-center gap-2 hover:bg-blue-50 hover:text-cmu-blue transition">
+                                    <i class="fas fa-file-export"></i>
+                                    <span class="text-[10px] font-bold uppercase">Export Log</span>
+                                </a>
                             <button onclick="openShelfLabelsModal()" 
                                     class="p-4 bg-slate-50 rounded-2xl flex flex-col items-center gap-2 hover:bg-blue-50 hover:text-cmu-blue transition">
                                 <i class="fas fa-print"></i>
