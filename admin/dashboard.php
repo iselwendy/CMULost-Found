@@ -142,6 +142,10 @@ $admin_name = htmlspecialchars($_SESSION['full_name'] ?? 'Admin');
                 <i class="fas fa-user-check w-5"></i>
                 <span class="text-sm font-medium">Claim Verification</span>
             </a>
+            <a href="manage_reports.php" class="sidebar-link flex items-center gap-3 p-3 rounded-xl transition">
+                <i class="fas fa-shield w-5"></i>
+                <span class="text-sm font-medium">Manage Reports</span>
+            </a>
             <div class="pt-4 mt-4 border-t border-white/10">
                 <a href="archive.php" class="sidebar-link flex items-center gap-3 p-3 rounded-xl transition">
                     <i class="fas fa-archive w-5 text-blue-300"></i>
