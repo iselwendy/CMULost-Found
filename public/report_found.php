@@ -283,7 +283,7 @@ $pre_category_val = in_array($pre_category, $category_options) ? $pre_category :
                         <label class="block text-sm font-semibold mb-1.5 text-slate-700">
                             Reference Photo <span class="text-xs font-normal text-slate-400">(Required)</span>
                         </label>
-                        <div id="dropZone" class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-slate-200 border-dashed rounded-xl hover:border-green-400 transition-all cursor-pointer group relative overflow-hidden">
+                        <div id="dropZone" class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-slate-200 border-dashed rounded-xl hover:border-green-400 transition-all cursor-pointer group relative min-h-[140px]">
                             <div class="space-y-1 text-center" id="uploadPlaceholder">
                                 <i class="fas fa-cloud-upload-alt text-slate-300 text-3xl mb-2 group-hover:text-green-500 transition-colors"></i>
                                 <div class="flex text-sm text-slate-600 justify-center">

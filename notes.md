@@ -6,7 +6,8 @@
 ----------------
 TO FIX:
 * Fix matching_engine and others to fetch the system_settings table and all it's details
-* Fix the PRINT RECEIPT in claim_verify (it's not even showing anything)
+* Fix the upload in report lost/found to add a attach/reattach image
+* In admin_action_log, add REPORT_VOIDED for admin action
 * Fix the shelves' bin to be a select-type not text-type.
 * I just noticed that in matches table in the DB, the resolved/claimed items stays in the matches table even though it was already moved to the archive. 
 * As for the matching portal, maybe consider adding "title match"???

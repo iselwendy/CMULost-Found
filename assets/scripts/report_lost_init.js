@@ -249,6 +249,7 @@ function updateQuality() {
     if (selectedColors.size > 0) score += 25;
     score += Math.min(selectedTraits.size * 5, 25);
     score += Math.min(tagInput.getTags().length * 10, 30);
+    if (document.getElementById('exactSpot')?.value.trim().length > 5) score += 10;
     if (document.getElementById('file-upload').files.length > 0) score += 20;
 
     const bar = document.getElementById('qualityBar');
@@ -316,5 +317,7 @@ document.getElementById('lostItemForm').addEventListener('submit', function (e) 
     if (selectedColors.size > 0) parts.push('Colors: ' + [...selectedColors].join(', '));
     if (selectedTraits.size > 0) parts.push('Traits: ' + [...selectedTraits].join(', '));
     if (tagInput) parts.push(tagInput.getCompiledKeywords());
+    const spot = document.getElementById('exactSpot')?.value.trim();
+    if (spot) parts.push('Exact Spot: ' + spot);
     document.getElementById('compiledMarks').value = parts.join(' | ');
 });

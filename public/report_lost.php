@@ -256,6 +256,18 @@ $pre_category_val = in_array($pre_category, $category_options) ? $pre_category :
                         </div>
                     </div>
 
+                    <!-- ❹ EXACT SPOT (OPTIONAL) -->
+                    <div>
+                        <label class="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1">
+                            <i class="fas fa-map-pin mr-1 text-indigo-400"></i> Exact Spot Lost
+                            <span class="text-slate-400 text-[10px] normal-case font-normal ml-1">(optional — where you think you lost it)</span>
+                        </label>
+                        <input type="text" name="exact_spot" id="exactSpot"
+                            placeholder="e.g. Left side bench near the entrance, Table 3 second floor canteen..."
+                            class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm">
+                        <p class="text-[10px] text-slate-400 mt-1">Kept private — helps the matching engine narrow down location signals.</p>
+                    </div>
+
                     <!-- ❹ QUALITY METER -->
                     <div id="qualityMeter" class="p-3 bg-slate-50 rounded-xl border border-slate-100">
                         <div class="flex items-center justify-between mb-1.5">
@@ -271,7 +283,7 @@ $pre_category_val = in_array($pre_category, $category_options) ? $pre_category :
                     <!-- ❺ PHOTO -->
                     <div>
                         <label class="block text-sm font-semibold mb-1.5 text-indigo-600">Reference Photo</label>
-                        <div id="dropZone" class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-slate-200 border-dashed rounded-xl hover:border-indigo-400 transition-all cursor-pointer group relative overflow-hidden">
+                        <div id="dropZone" class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-slate-200 border-dashed rounded-xl hover:border-indigo-400 transition-all cursor-pointer group relative min-h-[140px]">
                             <div class="space-y-1 text-center" id="uploadPlaceholder">
                                 <i class="fas fa-cloud-upload-alt text-slate-300 text-3xl mb-2 group-hover:text-indigo-500 transition-colors"></i>
                                 <div class="flex text-sm text-slate-600 justify-center">
@@ -283,13 +295,14 @@ $pre_category_val = in_array($pre_category, $category_options) ? $pre_category :
                                 </div>
                                 <p class="text-[10px] text-slate-400 uppercase tracking-widest">PNG, JPG up to 5MB</p>
                             </div>
-                            <div id="attachedStatus" class="hidden absolute inset-0 bg-white/90 flex flex-col items-center justify-center p-4 text-center z-10">
+                            <div id="attachedStatus" class="hidden absolute inset-0 bg-white/90 flex flex-col items-center justify-center p-4 text-center
+                            z-10">
                                 <div class="w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-2">
                                     <i class="fas fa-check"></i>
                                 </div>
                                 <p class="text-sm font-bold text-slate-800" id="fileNameDisplay">image.jpg</p>
                                 <p class="text-xs text-slate-500">File attached successfully</p>
-                                <button type="button" onclick="clearPreview()" class="mt-3 text-xs text-red-500 font-semibold hover:underline">Change photo</button>
+                                <button type="button" onclick="clearPreview()" class="mt-3 text-xs text-red-500 font-semibold hover:underline cursor-pointer relative z-30">Change photo</button>
                             </div>
                         </div>
                     </div>

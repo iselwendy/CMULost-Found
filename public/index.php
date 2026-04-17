@@ -125,6 +125,17 @@ try {
     $items = [];
     $error_msg = "Error fetching items: " . $e->getMessage();
 }
+
+try {
+    // We order by name or ID as per your preference; ASC usually makes more sense for users
+    $loc_stmt = $pdo->query("SELECT location_id, location_name FROM locations ORDER BY location_name ASC");
+    $locations = $loc_stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    $locations = []; // Fallback 
+}
+
+// Get the currently selected location from the URL/GET request
+$selected_location_id = isset($_GET['location']) ? $_GET['location'] : 'all';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -182,12 +193,18 @@ try {
                             <option <?php echo $selected_category == 'Personal' ? 'selected' : ''; ?>>Personal</option>
                             <option <?php echo $selected_category == 'Other' ? 'selected' : ''; ?>>Other</option>
                         </select>
-                        <select name="location" class="filter-select w-full md:w-48 pl-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 outline-none focus:ring-2 focus:ring-cmu-blue transition cursor-pointer">
-                            <option <?php echo $selected_location == 'All Locations' ? 'selected' : ''; ?>>All Locations</option>
-                            <option <?php echo $selected_location == 'Main Library' ? 'selected' : ''; ?>>Main Library</option>
-                            <option <?php echo $selected_location == 'Innovation Bldg' ? 'selected' : ''; ?>>Innovation Bldg</option>
-                            <option <?php echo $selected_location == 'ERC Bldg' ? 'selected' : ''; ?>>ERC Bldg</option>
-                            <option <?php echo $selected_location == 'University Canteen' ? 'selected' : ''; ?>>University Canteen</option>
+                        <select name="location" 
+                                class="filter-select w-full md:w-48 pl-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 outline-none focus:ring-2 focus:ring-cmu-blue transition cursor-pointer"
+                                onchange="this.form.submit()"> <option value="all" <?php echo $selected_location_id == 'all' ? 'selected' : ''; ?>>
+                                All Locations
+                            </option>
+
+                            <?php foreach ($locations as $loc): ?>
+                                <option value="<?php echo htmlspecialchars($loc['location_id']); ?>" 
+                                    <?php echo ($selected_location_id == $loc['location_id']) ? 'selected' : ''; ?>>
+                                    <?php echo htmlspecialchars($loc['location_name']); ?>
+                                </option>
+                            <?php endforeach; ?>
                         </select>
                         <select name="time" class="filter-select w-full md:w-48 pl-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 outline-none focus:ring-2 focus:ring-cmu-blue transition cursor-pointer">
                             <option <?php echo $selected_time == 'Anytime' ? 'selected' : ''; ?>>Anytime</option>
