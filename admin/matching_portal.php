@@ -102,7 +102,7 @@ $stmt_auto = $pdo->prepare("
     ORDER  BY m.matched_at DESC
     LIMIT  20
 ");
-$stmt->execute(['threshold' => $threshold]);
+$stmt_auto->execute(['threshold' => $threshold]);
 $auto_queue = $stmt_auto->fetchAll();
 
 // ── Today's rejected / confirmed counts (for stat cards) ─────────────────
