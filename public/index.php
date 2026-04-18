@@ -9,7 +9,7 @@ require_once '../core/db_config.php';
 $view_mode = isset($_GET['view']) && $_GET['view'] === 'lost' ? 'lost' : 'found'; 
 $search_query = isset($_GET['search']) ? trim($_GET['search']) : '';
 $selected_category = isset($_GET['category']) ? $_GET['category'] : 'All Categories';
-$selected_location = isset($_GET['location']) ? $_GET['location'] : 'All Locations';
+$selected_location_id = isset($_GET['location']) && $_GET['location'] !== 'all' ? (int)$_GET['location'] : 0;
 $selected_time = isset($_GET['time']) ? $_GET['time'] : 'Anytime';
 
 function fetchSystemSettings(PDO $pdo): array {
@@ -28,6 +28,14 @@ try {
     $settings = fetchSystemSettings($db);
     $gallery_enabled = isset($settings['gallery_open']) ? (int)$settings['gallery_open'] : 1;
 
+    // Load locations for the dropdown
+    try {
+        $loc_stmt = $db->query("SELECT location_id, location_name FROM locations ORDER BY location_name ASC");
+        $locations = $loc_stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        $locations = [];
+    }
+
     // Only run the heavy query if the gallery is actually open
     if ($gallery_enabled == 1) {
         $base_sql = "
@@ -37,6 +45,7 @@ try {
                 f.title as item_name,
                 c.name as category,
                 loc.location_name as location,
+                loc.location_id as location_id,
                 f.private_description as description,
                 f.status as status,
                 f.date_found as created_at,
@@ -66,6 +75,7 @@ try {
                 l.title as item_name,
                 c.name as category,
                 loc.location_name as location,
+                loc.location_id as location_id,
                 l.private_description as description,
                 l.status as status,
                 l.date_lost as created_at,
@@ -88,23 +98,30 @@ try {
             WHERE l.status IN ('open', 'matched')
         ";
 
-        $sql = "SELECT * FROM ($base_sql) as combined_gallery WHERE type = :view_mode";
+        // Build outer WHERE conditions
+        $where_clauses = ['type = :view_mode'];
         $params = [':view_mode' => $view_mode];
 
         if (!empty($search_query)) {
-            $sql .= " AND (item_name LIKE :search1 OR description LIKE :search2)";
+            $where_clauses[] = "(item_name LIKE :search1 OR description LIKE :search2)";
             $params[':search1'] = '%' . $search_query . '%';
             $params[':search2'] = '%' . $search_query . '%';
         }
 
         if ($selected_category !== 'All Categories') {
-            $sql .= " AND category = :category";
+            $where_clauses[] = "category = :category";
             $params[':category'] = $selected_category;
         }
 
-        if ($selected_location !== 'All Locations') {
-            $sql .= " AND location = :location";
-            $params[':location'] = $selected_location;
+        // Filter by location_id (now stored in the subquery result)
+        if ($selected_location_id > 0) {
+            $where_clauses[] = "location_id = :location_id";
+            $params[':location_id'] = $selected_location_id;
+        }
+
+        $sql = "SELECT * FROM ($base_sql) as combined_gallery";
+        if (!empty($where_clauses)) {
+            $sql .= " WHERE " . implode(' AND ', $where_clauses);
         }
 
         if ($selected_time === 'Today') {
@@ -123,19 +140,19 @@ try {
     }
 } catch (PDOException $e) {
     $items = [];
+    $locations = [];
     $error_msg = "Error fetching items: " . $e->getMessage();
 }
 
-try {
-    // We order by name or ID as per your preference; ASC usually makes more sense for users
-    $loc_stmt = $pdo->query("SELECT location_id, location_name FROM locations ORDER BY location_name ASC");
-    $locations = $loc_stmt->fetchAll(PDO::FETCH_ASSOC);
-} catch (PDOException $e) {
-    $locations = []; // Fallback 
+// Build the base query string for toggle links (preserves all current filters)
+function buildToggleHref(string $view, string $search, string $category, int $location_id, string $time): string {
+    $params = ['view' => $view];
+    if (!empty($search))              $params['search']   = $search;
+    if ($category !== 'All Categories') $params['category'] = $category;
+    if ($location_id > 0)             $params['location'] = $location_id;
+    if ($time !== 'Anytime')          $params['time']     = $time;
+    return 'index.php?' . http_build_query($params);
 }
-
-// Get the currently selected location from the URL/GET request
-$selected_location_id = isset($_GET['location']) ? $_GET['location'] : 'all';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -184,46 +201,45 @@ $selected_location_id = isset($_GET['location']) ? $_GET['location'] : 'all';
                     </div>
                     <div class="flex flex-wrap md:flex-nowrap gap-3">
                         <select name="category" class="filter-select w-full md:w-48 pl-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 outline-none focus:ring-2 focus:ring-cmu-blue transition cursor-pointer">
-                            <option <?php echo $selected_category == 'All Categories' ? 'selected' : ''; ?>>All Categories</option>
-                            <option <?php echo $selected_category == 'Electronics' ? 'selected' : ''; ?>>Electronics</option>
-                            <option <?php echo $selected_category == 'Valuables' ? 'selected' : ''; ?>>Valuables</option>
-                            <option <?php echo $selected_category == 'Documents' ? 'selected' : ''; ?>>Documents</option>
-                            <option <?php echo $selected_category == 'Books' ? 'selected' : ''; ?>>Books</option>
-                            <option <?php echo $selected_category == 'Clothing' ? 'selected' : ''; ?>>Clothing</option>
-                            <option <?php echo $selected_category == 'Personal' ? 'selected' : ''; ?>>Personal</option>
-                            <option <?php echo $selected_category == 'Other' ? 'selected' : ''; ?>>Other</option>
+                            <option value="All Categories" <?php echo $selected_category === 'All Categories' ? 'selected' : ''; ?>>All Categories</option>
+                            <option value="Electronics" <?php echo $selected_category === 'Electronics' ? 'selected' : ''; ?>>Electronics</option>
+                            <option value="Valuables" <?php echo $selected_category === 'Valuables' ? 'selected' : ''; ?>>Valuables</option>
+                            <option value="Documents" <?php echo $selected_category === 'Documents' ? 'selected' : ''; ?>>Documents</option>
+                            <option value="Books" <?php echo $selected_category === 'Books' ? 'selected' : ''; ?>>Books</option>
+                            <option value="Clothing" <?php echo $selected_category === 'Clothing' ? 'selected' : ''; ?>>Clothing</option>
+                            <option value="Personal" <?php echo $selected_category === 'Personal' ? 'selected' : ''; ?>>Personal</option>
+                            <option value="Other" <?php echo $selected_category === 'Other' ? 'selected' : ''; ?>>Other</option>
                         </select>
-                        <select name="location" 
-                                class="filter-select w-full md:w-48 pl-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 outline-none focus:ring-2 focus:ring-cmu-blue transition cursor-pointer"
-                                onchange="this.form.submit()"> <option value="all" <?php echo $selected_location_id == 'all' ? 'selected' : ''; ?>>
-                                All Locations
-                            </option>
 
+                        <select name="location" class="filter-select w-full md:w-48 pl-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 outline-none focus:ring-2 focus:ring-cmu-blue transition cursor-pointer">
+                            <option value="all" <?php echo $selected_location_id === 0 ? 'selected' : ''; ?>>All Locations</option>
                             <?php foreach ($locations as $loc): ?>
-                                <option value="<?php echo htmlspecialchars($loc['location_id']); ?>" 
-                                    <?php echo ($selected_location_id == $loc['location_id']) ? 'selected' : ''; ?>>
+                                <option value="<?php echo (int)$loc['location_id']; ?>"
+                                    <?php echo $selected_location_id === (int)$loc['location_id'] ? 'selected' : ''; ?>>
                                     <?php echo htmlspecialchars($loc['location_name']); ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
+
                         <select name="time" class="filter-select w-full md:w-48 pl-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 outline-none focus:ring-2 focus:ring-cmu-blue transition cursor-pointer">
-                            <option <?php echo $selected_time == 'Anytime' ? 'selected' : ''; ?>>Anytime</option>
-                            <option <?php echo $selected_time == 'Today' ? 'selected' : ''; ?>>Today</option>
-                            <option <?php echo $selected_time == 'Last 7 Days' ? 'selected' : ''; ?>>Last 7 Days</option>
+                            <option value="Anytime" <?php echo $selected_time === 'Anytime' ? 'selected' : ''; ?>>Anytime</option>
+                            <option value="Today" <?php echo $selected_time === 'Today' ? 'selected' : ''; ?>>Today</option>
+                            <option value="Last 7 Days" <?php echo $selected_time === 'Last 7 Days' ? 'selected' : ''; ?>>Last 7 Days</option>
                         </select>
+
                         <button type="submit" class="bg-cmu-blue text-white px-6 rounded-xl font-bold hover:bg-opacity-90 transition">
                             Filter
                         </button>
                     </div>
                 </div>
 
-                <!-- Toggle -->
+                <!-- Found / Lost Toggle — preserves all active filters -->
                 <div class="flex bg-gray-100 p-1 rounded-xl w-fit">
-                    <a href="?view=found&search=<?php echo urlencode($search_query); ?>&category=<?php echo urlencode($selected_category); ?>&location=<?php echo urlencode($selected_location); ?>&time=<?php echo urlencode($selected_time); ?>" 
+                    <a href="<?php echo htmlspecialchars(buildToggleHref('found', $search_query, $selected_category, $selected_location_id, $selected_time)); ?>"
                        class="px-6 py-2 rounded-lg text-sm font-bold transition <?php echo $view_mode === 'found' ? 'bg-white text-cmu-blue shadow-sm' : 'text-gray-500'; ?>">
                         Found Items
                     </a>
-                    <a href="?view=lost&search=<?php echo urlencode($search_query); ?>&category=<?php echo urlencode($selected_category); ?>&location=<?php echo urlencode($selected_location); ?>&time=<?php echo urlencode($selected_time); ?>" 
+                    <a href="<?php echo htmlspecialchars(buildToggleHref('lost', $search_query, $selected_category, $selected_location_id, $selected_time)); ?>"
                        class="px-6 py-2 rounded-lg text-sm font-bold transition <?php echo $view_mode === 'lost' ? 'bg-white text-cmu-blue shadow-sm' : 'text-gray-500'; ?>">
                         Lost Reports
                     </a>
@@ -246,17 +262,13 @@ $selected_location_id = isset($_GET['location']) ? $_GET['location'] : 'all';
             </div>
         </main>
     <?php else: ?>
-        <!-- <div class="bg-white border-b border-gray-200 top-0 z-10 shadow-sm">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            </div>
-        </div> -->
         <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
             <?php if (empty($items)): ?>
                 <div class="text-center py-20 bg-white rounded-3xl border border-gray-100 shadow-sm">
                     <div class="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
                         <i class="fas fa-box-open text-blue-200 text-3xl"></i>
                     </div>
-                    <h3 class="text-xl font-bold text-gray-900">No items reported yet</h3>
+                    <h3 class="text-xl font-bold text-gray-900">No items found</h3>
                     <p class="text-gray-500 mt-2">Try adjusting your filters or check back later.</p>
                 </div>
             <?php else: ?>
@@ -268,7 +280,6 @@ $selected_location_id = isset($_GET['location']) ? $_GET['location'] : 'all';
                         $date_label     = $item['type'] === 'found' ? 'Date Found' : 'Date Lost';
                         $formatted_date = date('M d, Y', strtotime($item['created_at']));
                         $status_display = str_replace('_', ' ', $item['status']);
-                        // ISO date for datetime-local prefill (time defaults to 00:00)
                         $raw_date       = !empty($item['raw_date'])
                             ? date('Y-m-d', strtotime($item['raw_date']))
                             : '';
@@ -289,7 +300,7 @@ $selected_location_id = isset($_GET['location']) ? $_GET['location'] : 'all';
                                 <div class="space-y-2 text-sm text-gray-500 mb-6">
                                     <div class="flex items-center gap-2">
                                         <i class="fas fa-map-marker-alt w-4 text-gray-300"></i>
-                                        <span class="truncate"><?php echo htmlspecialchars($item['location']); ?></span>
+                                        <span class="truncate"><?php echo htmlspecialchars($item['location'] ?? '—'); ?></span>
                                     </div>
                                     <div class="flex items-center gap-2">
                                         <i class="fas fa-calendar-alt w-4 text-gray-300"></i>
@@ -301,7 +312,6 @@ $selected_location_id = isset($_GET['location']) ? $_GET['location'] : 'all';
                                     </div>
                                 </div>
 
-                                <!-- View Details button — triggers modal -->
                                 <button
                                     onclick="openModal(<?php echo htmlspecialchars(json_encode([
                                         'id'         => $item['id'],
