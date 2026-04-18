@@ -81,8 +81,12 @@ try {
             WHERE report_type = 'found' GROUP BY report_id
         ) img ON fr.found_id = img.report_id
         LEFT JOIN inventory inv ON inv.found_id = fr.found_id
-        LEFT JOIN matches m
-            ON m.found_id = fr.found_id AND m.status = 'confirmed'
+        LEFT JOIN (
+            SELECT found_id, MIN(match_id) AS match_id, matched_at
+            FROM matches
+            WHERE status = 'confirmed'
+            GROUP BY found_id
+        ) m ON m.found_id = fr.found_id
         WHERE fr.reported_by = ? AND fr.status NOT IN ('claimed', 'disposed', 'returned'))
 
         ORDER BY created_at DESC
@@ -92,7 +96,7 @@ try {
 
     $stmt_matches = $pdo->prepare("
         SELECT
-            m.match_id,
+            MIN(m.match_id)     AS match_id,
             fr.title            AS found_item,
             fr.date_found,
             loc.location_name,
@@ -111,6 +115,7 @@ try {
         ) img ON fr.found_id = img.report_id
         WHERE  m.status = 'confirmed'
           AND  (lr.user_id = ? OR fr.reported_by = ?)
+        GROUP BY fr.found_id, lr.lost_id
         ORDER  BY m.matched_at DESC
     ");
     $stmt_matches->execute([$user_id, $user_id]);
