@@ -97,7 +97,7 @@ $stmt_auto = $pdo->prepare("
     JOIN  users         u ON l.user_id     = u.user_id
     WHERE (m.confidence_score >= :threshold OR m.status = 'confirmed')
         AND m.status NOT IN ('rejected', 'completed')
-        AND f.status != 'surrendered'
+        AND f.status IN ('surrendered', 'matched')
         AND l.status != 'resolved'
     ORDER  BY m.matched_at DESC
     LIMIT  20

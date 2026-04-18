@@ -169,6 +169,12 @@ function textSimilarity(string $a, string $b): int
 $merge_success = null;
 $merge_error   = null;
 
+// Pick up flash message from redirect
+if (isset($_SESSION['merge_success'])) {
+    $merge_success = $_SESSION['merge_success'];
+    unset($_SESSION['merge_success']);
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['primary_ref'], $_POST['duplicate_ref'])) {
 
     $pRef  = parseRef($_POST['primary_ref']   ?? '');
@@ -200,25 +206,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['primary_ref'], $_POST
                 $matches_moved = 0;
 
                 if ($type === 'found') {
-                    // 1. Re-link images
-                    $imgs_moved = (int) $pdo->prepare("
+                    // 1. Re-link images — use the statement object to call rowCount()
+                    $img_stmt = $pdo->prepare("
                         UPDATE item_images SET report_id = ?
                         WHERE report_type = 'found' AND report_id = ?
-                    ")->execute([$pid, $did]) ? $pdo->rowCount() : 0;
-
-                    // Re-execute to get actual row count (PDO::rowCount() after execute is fine)
-                    $s = $pdo->prepare("UPDATE item_images SET report_id = ? WHERE report_type = 'found' AND report_id = ?");
-                    // Already done above, count from a fresh query instead
-                    $imgs_moved_stmt = $pdo->prepare("SELECT COUNT(*) FROM item_images WHERE report_type = 'found' AND report_id = ?");
+                    ");
+                    $img_stmt->execute([$pid, $did]);
+                    $imgs_moved = $img_stmt->rowCount();
 
                     // 2. Re-link matches (avoid duplicating existing found_id+lost_id pairs)
-                    $dup_matches = $pdo->prepare("SELECT match_id, lost_id FROM matches WHERE found_id = ?")->execute([$did])
-                        ? (function() use ($pdo, $did) {
-                            $s = $pdo->prepare("SELECT match_id, lost_id FROM matches WHERE found_id = ?");
-                            $s->execute([$did]);
-                            return $s->fetchAll();
-                          })()
-                        : [];
                     $dup_matches_stmt = $pdo->prepare("SELECT match_id, lost_id FROM matches WHERE found_id = ?");
                     $dup_matches_stmt->execute([$did]);
                     $dup_matches = $dup_matches_stmt->fetchAll();
@@ -227,7 +223,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['primary_ref'], $_POST
                         $exists = $pdo->prepare("SELECT 1 FROM matches WHERE found_id = ? AND lost_id = ? LIMIT 1");
                         $exists->execute([$pid, $m['lost_id']]);
                         if ($exists->fetchColumn()) {
-                            // Delete duplicate match row
                             $pdo->prepare("DELETE FROM matches WHERE match_id = ?")->execute([$m['match_id']]);
                         } else {
                             $pdo->prepare("UPDATE matches SET found_id = ? WHERE match_id = ?")->execute([$pid, $m['match_id']]);
@@ -240,33 +235,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['primary_ref'], $_POST
 
                     // 4. Soft-delete the duplicate
                     $pdo->prepare("UPDATE found_reports SET status = 'disposed' WHERE found_id = ?")->execute([$did]);
-
-                    // Count images actually moved
-                    $ic = $pdo->prepare("SELECT COUNT(*) FROM item_images WHERE report_type = 'found' AND report_id = ?");
-                    $ic->execute([$pid]);
-
-                } else { // lost
-                    // 1. Re-link images
-                    $pdo->prepare("UPDATE item_images SET report_id = ? WHERE report_type = 'lost' AND report_id = ?")->execute([$pid, $did]);
-
-                    // 2. Re-link matches
-                    $dup_matches_stmt = $pdo->prepare("SELECT match_id, found_id FROM matches WHERE lost_id = ?");
-                    $dup_matches_stmt->execute([$did]);
-                    $dup_matches = $dup_matches_stmt->fetchAll();
-
-                    foreach ($dup_matches as $m) {
-                        $exists = $pdo->prepare("SELECT 1 FROM matches WHERE lost_id = ? AND found_id = ? LIMIT 1");
-                        $exists->execute([$pid, $m['found_id']]);
-                        if ($exists->fetchColumn()) {
-                            $pdo->prepare("DELETE FROM matches WHERE match_id = ?")->execute([$m['match_id']]);
-                        } else {
-                            $pdo->prepare("UPDATE matches SET lost_id = ? WHERE match_id = ?")->execute([$pid, $m['match_id']]);
-                            $matches_moved++;
-                        }
-                    }
-
-                    // 3. Soft-delete the duplicate
-                    $pdo->prepare("UPDATE lost_reports SET status = 'closed' WHERE lost_id = ?")->execute([$did]);
                 }
 
                 // 5. Write merge log
@@ -278,12 +246,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['primary_ref'], $_POST
 
                 $pdo->commit();
 
-                $merge_success = [
+                $_SESSION['merge_success'] = [
                     'primary'   => strtoupper($type === 'found' ? 'FND' : 'LST') . '-' . str_pad($pid, 5, '0', STR_PAD_LEFT),
                     'duplicate' => strtoupper($type === 'found' ? 'FND' : 'LST') . '-' . str_pad($did, 5, '0', STR_PAD_LEFT),
                     'imgs'      => $imgs_moved,
                     'matches'   => $matches_moved,
                 ];
+                header("Location: record_merger.php");
+                exit();
 
             } catch (Throwable $e) {
                 if ($pdo->inTransaction()) $pdo->rollBack();

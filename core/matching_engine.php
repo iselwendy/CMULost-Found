@@ -108,12 +108,6 @@ function runMatchingEngine(int $found_id, int $admin_id = 0): array
                     SET status = 'matched' 
                     WHERE lost_id = ? AND status = 'open'
                 ")->execute([$lost['lost_id']]);
-
-                $pdo->prepare("
-                    UPDATE found_reports
-                    SET status = 'matched'
-                    WHERE found_id = ? AND status IN ('in custody', 'surrendered')
-                ")->execute([$found_id]);
             } catch (Throwable $e) {
                 error_log("[MatchingEngine] Failed to update lost_report status for lost_id={$lost['lost_id']}: " . $e->getMessage());
             }
