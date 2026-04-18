@@ -202,7 +202,7 @@ function buildPageHref(int $page): string {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Records Archive | OSA Admin</title>
+    <title>Records Archive | SAO Admin</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="../assets/styles/root.css">
@@ -215,9 +215,9 @@ function buildPageHref(int $page): string {
     <div class="p-6 flex items-center gap-3 border-b border-white/10">
         <img src="../assets/images/system-icon.png" alt="Logo"
              class="w-10 h-10 bg-white rounded-lg p-1"
-             onerror="this.src='https://ui-avatars.com/api/?name=OSA&background=fff&color=003366';">
+             onerror="this.src='https://ui-avatars.com/api/?name=SAO&background=fff&color=003366';">
         <div>
-            <h1 class="font-bold text-sm leading-tight">OSA Admin</h1>
+            <h1 class="font-bold text-sm leading-tight">SAO Admin</h1>
             <p class="text-[10px] text-blue-200 uppercase tracking-widest">Management Portal</p>
         </div>
     </div>

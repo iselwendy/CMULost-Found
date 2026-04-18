@@ -412,9 +412,9 @@ function simLabel(int $sim): string {
 <aside class="w-64 bg-cmu-blue text-white flex-shrink-0 hidden lg:flex flex-col shadow-xl sticky top-0 h-screen">
     <div class="p-6 flex items-center gap-3 border-b border-white/10">
         <img src="../assets/images/system-icon.png" alt="Logo" class="w-10 h-10 bg-white rounded-lg p-1"
-             onerror="this.src='https://ui-avatars.com/api/?name=OSA&background=fff&color=003366';">
+             onerror="this.src='https://ui-avatars.com/api/?name=SAO&background=fff&color=003366';">
         <div>
-            <h1 class="font-bold text-sm leading-tight">OSA Admin</h1>
+            <h1 class="font-bold text-sm leading-tight">SAO Admin</h1>
             <p class="text-[10px] text-blue-200 uppercase tracking-widest">Management Portal</p>
         </div>
     </div>

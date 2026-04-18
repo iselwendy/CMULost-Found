@@ -202,9 +202,9 @@ function categoryIcon(string $category): string {
         <div class="p-6 flex items-center gap-3 border-b border-white/10">
             <img src="../assets/images/system-icon.png" alt="Logo"
                  class="w-10 h-10 bg-white rounded-lg p-1"
-                 onerror="this.src='https://ui-avatars.com/api/?name=OSA&background=fff&color=003366';">
+                 onerror="this.src='https://ui-avatars.com/api/?name=SAO&background=fff&color=003366';">
             <div>
-                <h1 class="font-bold text-sm leading-tight">OSA Admin</h1>
+                <h1 class="font-bold text-sm leading-tight">SAO Admin</h1>
                 <p class="text-[10px] text-blue-200 uppercase tracking-widest">Management Portal</p>
             </div>
         </div>
@@ -265,7 +265,7 @@ function categoryIcon(string $category): string {
         <header class="bg-white border-b border-slate-200 px-8 py-4 flex items-center justify-between flex-shrink-0">
             <div>
                 <h2 class="text-xl font-black text-slate-800 tracking-tight uppercase">Physical Inventory</h2>
-                <p class="text-xs text-slate-500">Track item locations and manage OSA custody records.</p>
+                <p class="text-xs text-slate-500">Track item locations and manage SAO custody records.</p>
             </div>
 
             <div class="flex items-center gap-4">
@@ -546,7 +546,7 @@ function categoryIcon(string $category): string {
                     <div class="p-4 bg-blue-50 rounded-2xl flex gap-3 border border-blue-100">
                         <i class="fas fa-info-circle text-cmu-blue mt-1"></i>
                         <p class="text-[11px] text-blue-700 leading-relaxed italic">
-                            Assigning a location updates the record immediately, helping other OSA staff locate the item.
+                            Assigning a location updates the record immediately, helping other SAO staff locate the item.
                         </p>
                     </div>
                 </div>

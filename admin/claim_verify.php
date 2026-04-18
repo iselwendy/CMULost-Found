@@ -152,7 +152,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['match_id'])) {
             'claimant_dept'   => $match['claimant_dept'],
             'claimant_phone'  => $match['claimant_phone'],
             'release_ts'      => $release_ts,
-            'admin_name'      => $_SESSION['full_name'] ?? 'OSA Admin',
+            'admin_name'      => $_SESSION['full_name'] ?? 'SAO Admin',
             'image_path'      => $match['image_path'],
         ];
 
@@ -257,7 +257,7 @@ $icon_map = [
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Claim Verification | OSA Admin</title>
+    <title>Claim Verification | SAO Admin</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="../assets/styles/root.css">
@@ -300,9 +300,9 @@ $icon_map = [
 <aside class="w-64 bg-cmu-blue text-white flex-shrink-0 hidden lg:flex flex-col shadow-xl">
     <div class="p-6 flex items-center gap-3 border-b border-white/10">
         <img src="../assets/images/system-icon.png" alt="Logo" class="w-10 h-10 bg-white rounded-lg p-1"
-             onerror="this.src='https://ui-avatars.com/api/?name=OSA&background=fff&color=003366';">
+             onerror="this.src='https://ui-avatars.com/api/?name=SAO&background=fff&color=003366';">
         <div>
-            <h1 class="font-bold text-sm leading-tight">OSA Admin</h1>
+            <h1 class="font-bold text-sm leading-tight">SAO Admin</h1>
             <p class="text-[10px] text-blue-200 uppercase tracking-widest">Management Portal</p>
         </div>
     </div>
@@ -465,7 +465,7 @@ $icon_map = [
                             <p class="text-sm font-bold text-slate-800"><?php echo htmlspecialchars($receipt['release_ts']); ?></p>
                         </div>
                         <div class="bg-slate-50 rounded-2xl p-4">
-                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Released By (OSA)</p>
+                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Released By (SAO)</p>
                             <p class="text-sm font-bold text-slate-800"><?php echo htmlspecialchars($receipt['admin_name']); ?></p>
                         </div>
                     </div>
@@ -475,7 +475,7 @@ $icon_map = [
                         <i class="fas fa-shield-alt text-amber-500 mt-0.5 flex-shrink-0"></i>
                         <p class="text-[11px] text-amber-800 leading-relaxed">
                             The Claim Serial <strong><?php echo htmlspecialchars($receipt['claim_serial']); ?></strong> is
-                            permanently recorded in the OSA archive. In the event of a dispute, this serial can be used
+                            permanently recorded in the SAO archive. In the event of a dispute, this serial can be used
                             to verify that the item was collected by the person named above.
                         </p>
                     </div>
@@ -821,7 +821,7 @@ $icon_map = [
                             <p style="margin:1mm 0 0;font-weight:700;color:#0f172a;"><?php echo htmlspecialchars($receipt['release_ts']); ?></p>
                         </td>
                         <td style="padding:3mm 0 3mm 3mm;vertical-align:top;">
-                            <p style="margin:0;font-size:7pt;font-weight:900;text-transform:uppercase;color:#94a3b8;">Released By (OSA Officer)</p>
+                            <p style="margin:0;font-size:7pt;font-weight:900;text-transform:uppercase;color:#94a3b8;">Released By (SAO Officer)</p>
                             <p style="margin:1mm 0 0;font-weight:700;color:#0f172a;"><?php echo htmlspecialchars($receipt['admin_name']); ?></p>
                         </td>
                     </tr>
@@ -839,7 +839,7 @@ $icon_map = [
                         <td style="width:10%;"></td>
                         <td style="width:45%;padding-left:5mm;text-align:center;">
                             <div style="border-top:1px solid #334155;padding-top:2mm;">
-                                <p style="margin:0;font-size:7pt;font-weight:900;text-transform:uppercase;color:#64748b;">OSA Officer's Signature</p>
+                                <p style="margin:0;font-size:7pt;font-weight:900;text-transform:uppercase;color:#64748b;">SAO Officer's Signature</p>
                             </div>
                         </td>
                     </tr>
@@ -849,7 +849,7 @@ $icon_map = [
                     <p style="margin:0;font-size:7pt;color:#92400e;line-height:1.5;">
                         <strong>Dispute Notice:</strong> The Claim Serial
                         <strong style="font-family:monospace;"><?php echo htmlspecialchars($receipt['claim_serial']); ?></strong>
-                        is permanently recorded in the OSA archive. This document serves as proof that the item described
+                        is permanently recorded in the SAO archive. This document serves as proof that the item described
                         above was released to the person named herein. No further claims for this item will be entertained.
                     </p>
                 </div>
