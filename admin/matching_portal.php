@@ -207,9 +207,9 @@ function resolveImagePath(?string $path): ?string {
         <div class="p-6 flex items-center gap-3 border-b border-white/10">
             <img src="../assets/images/system-icon.png" alt="Logo"
                  class="w-10 h-10 bg-white rounded-lg p-1"
-                 onerror="this.src='https://ui-avatars.com/api/?name=OSA&background=fff&color=003366';">
+                 onerror="this.src='https://ui-avatars.com/api/?name=SAO&background=fff&color=003366';">
             <div>
-                <h1 class="font-bold text-sm leading-tight">OSA Admin</h1>
+                <h1 class="font-bold text-sm leading-tight">SAO Admin</h1>
                 <p class="text-[10px] text-blue-200 uppercase tracking-widest">Management Portal</p>
             </div>
         </div>
@@ -253,7 +253,7 @@ function resolveImagePath(?string $path): ?string {
             <div>
                 <h2 class="text-xl font-black text-slate-800 tracking-tight uppercase">AI Matching Portal</h2>
                 <p class="text-xs text-slate-500 mt-0.5">
-                    Matches ≥<?= $threshold ?>% are auto-notified via SMS &nbsp;·&nbsp; Below <?= $threshold ?>% requires your review
+                    Matches ≥<?= $threshold ?>% are auto-notified via GMAIL &nbsp;·&nbsp; Below <?= $threshold ?>% requires your review
                 </p>
             </div>
             <div class="flex items-center gap-3">
@@ -667,7 +667,7 @@ function resolveImagePath(?string $path): ?string {
                         Email Preview
                     </strong>
                     "Hi <span id="modal-name-sms">—</span>, a potential match for your lost
-                    <strong id="modal-item">—</strong> may be at the OSA.
+                    <strong id="modal-item">—</strong> may be at the SAO.
                     Please visit the Office of Student Affairs with a valid ID to verify and claim your item."
                 </div>
                 <div style="display:flex;gap:10px;">
