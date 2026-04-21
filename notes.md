@@ -5,9 +5,9 @@
 
 ----------------
 TO FIX:
-<!-- * Fix the locations in report_lost.php and report_found.php; the location selection in the file is defaulting to "Main Library" even though I clicked "Student Lounge" -->
+* 
+* Add a function for forgot_password
 * My_reports dashboard, QR code not showing after a succesful found report
-* Fix the filters in index.php (not working), also the search function is not working
 * Fix the shelves' bin to be a select-type not text-type.
 * I just noticed that in matches table in the DB, the resolved/claimed items stays in the matches table even though it was already moved to the archive. 
 * As for the matching portal, maybe consider adding "title match"???

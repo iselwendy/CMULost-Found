@@ -19,18 +19,15 @@ if ($prefill && !empty($_GET['date'])) {
 }
 
 try {
-    $loc_stmt = $pdo->query("SELECT location_id, location_name FROM locations ORDER BY location_id ASC");
+    $loc_stmt = $pdo->query("SELECT location_id, location_name, building FROM locations ORDER BY building, location_name ASC");
     $locations = $loc_stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
     $locations = [];
 }
 
-$pre_location_id = 0;
+$grouped = [];
 foreach ($locations as $loc) {
-    if (strcasecmp(trim($loc['location_name']), $pre_location) === 0) {
-        $pre_location_id = $loc['location_id'];
-        break;
-    }
+    $grouped[$loc['building']][] = $loc;
 }
 
 $category_options = [
@@ -170,20 +167,19 @@ $pre_category_val = in_array($pre_category, $category_options) ? $pre_category :
 
                     <div>
                         <label class="block text-sm font-semibold mb-1.5 text-slate-700">Where was it found?</label>
-                        <select name="location_id" id="itemLocation" required
-                                class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white outline-none focus:ring-2 focus:ring-cmu-blue transition">
-                            <option value="">Select location</option>
-                            
-                            <?php foreach ($locations as $loc): 
-                                // Select if it matches the prefilled ID
-                                $selected = ((int)$loc['location_id'] === $pre_location_id) ? 'selected' : '';
-                            ?>
-                                <option value="<?php echo htmlspecialchars($loc['location_id']); ?>" <?php echo $selected; ?>>
-                                    <?php echo htmlspecialchars($loc['location_name']); ?>
-                                </option>
-                            <?php endforeach; ?>
-                            
-                        </select>
+                            <select id="buildingSelect" onchange="filterRooms()" 
+                                class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white outline-none">
+                                <option value="">Select building</option>
+                                <?php foreach ($grouped as $building => $rooms): ?>
+                                    <option value="<?= htmlspecialchars($building) ?>"><?= htmlspecialchars($building) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+
+                            <!-- Room dropdown (hidden until building is selected) -->
+                            <select id="itemLocation" name="location_id" required
+                                class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white outline-none hidden">
+                                <option value="">Select room</option>
+                            </select>
                     </div>
                 </section>
 
@@ -356,6 +352,49 @@ $pre_category_val = in_array($pre_category, $category_options) ? $pre_category :
             const catSelect = document.getElementById('itemCategory');
             if (catSelect.value) onCategoryChange();
         });
+
+        const locationData = <?= json_encode($grouped) ?>;
+
+        function filterRooms() {
+            const building = document.getElementById('buildingSelect').value;
+            const roomSelect = document.getElementById('itemLocation');
+            
+            roomSelect.innerHTML = '<option value="">Select room</option>';
+            
+            if (!building) {
+                roomSelect.classList.add('hidden');
+                return;
+            }
+
+            const rooms = locationData[building] || [];
+            rooms.forEach(room => {
+                const opt = document.createElement('option');
+                opt.value = room.location_id;
+                opt.textContent = room.location_name;
+                roomSelect.appendChild(opt);
+            });
+
+            // Add "Other" option
+            const other = document.createElement('option');
+            other.value = '1'; // your existing "Other" location_id
+            other.textContent = 'Other / Not listed';
+            roomSelect.appendChild(other);
+
+            roomSelect.classList.remove('hidden');
+        }
+
+        <?php if ($pre_location_id): ?>
+        document.addEventListener('DOMContentLoaded', function() {
+            for (const [building, rooms] of Object.entries(locationData)) {
+                if (rooms.some(r => r.location_id == <?= $pre_location_id ?>)) {
+                    document.getElementById('buildingSelect').value = building;
+                    filterRooms();
+                    document.getElementById('itemLocation').value = '<?= $pre_location_id ?>';
+                    break;
+                }
+            }
+        });
+        <?php endif; ?>
     </script>
     <?php endif; ?>
 </body>

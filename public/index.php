@@ -30,8 +30,8 @@ try {
 
     // Load locations for the dropdown
     try {
-        $loc_stmt = $db->query("SELECT location_id, location_name FROM locations ORDER BY location_name ASC");
-        $locations = $loc_stmt->fetchAll(PDO::FETCH_ASSOC);
+        $loc_stmt = $pdo->query("SELECT DISTINCT building FROM locations WHERE building IS NOT NULL ORDER BY building ASC");
+        $buildings = $loc_stmt->fetchAll(PDO::FETCH_ASSOC);
     } catch (PDOException $e) {
         $locations = [];
     }
@@ -113,10 +113,9 @@ try {
             $params[':category'] = $selected_category;
         }
 
-        // Filter by location_id (now stored in the subquery result)
-        if ($selected_location_id > 0) {
-            $where_clauses[] = "location_id = :location_id";
-            $params[':location_id'] = $selected_location_id;
+        if (!empty($_GET['location']) && $_GET['location'] !== 'all') {
+            $where_clauses[] = "location_id IN (SELECT location_id FROM locations WHERE building = :building)";
+            $params[':building'] = $_GET['location'];
         }
 
         $sql = "SELECT * FROM ($base_sql) as combined_gallery";
@@ -211,12 +210,12 @@ function buildToggleHref(string $view, string $search, string $category, int $lo
                             <option value="Other" <?php echo $selected_category === 'Other' ? 'selected' : ''; ?>>Other</option>
                         </select>
 
-                        <select name="location" class="filter-select w-full md:w-48 pl-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 outline-none focus:ring-2 focus:ring-cmu-blue transition cursor-pointer">
-                            <option value="all" <?php echo $selected_location_id === 0 ? 'selected' : ''; ?>>All Locations</option>
-                            <?php foreach ($locations as $loc): ?>
-                                <option value="<?php echo (int)$loc['location_id']; ?>"
-                                    <?php echo $selected_location_id === (int)$loc['location_id'] ? 'selected' : ''; ?>>
-                                    <?php echo htmlspecialchars($loc['location_name']); ?>
+                        <select name="location" class="filter-select ...">
+                            <option value="all">All Locations</option>
+                            <?php foreach ($buildings as $b): ?>
+                                <option value="<?= htmlspecialchars($b['building']) ?>"
+                                    <?= ($_GET['location'] ?? '') === $b['building'] ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($b['building']) ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>

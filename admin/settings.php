@@ -154,14 +154,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     elseif ($action === 'save_location') {
-        $loc_name = trim($_POST['location_name'] ?? '');
+        $loc_name     = trim($_POST['location_name'] ?? '');
+        $building_name = trim($_POST['building_name'] ?? 'Other');
         if ($loc_name) {
             try {
-                $pdo->prepare("INSERT INTO locations (location_name) VALUES (?)")
-                    ->execute([$loc_name]);
-                $pdo->prepare("INSERT INTO admin_action_log (admin_id, action_type, description) VALUES (?, 'location_added', ?)")
-                    ->execute([$admin_id, "Added location: $loc_name"]);
-                $save_success = "Location \"$loc_name\" added.";
+                $pdo->prepare("INSERT INTO locations (location_name, building) VALUES (?, ?)")
+                    ->execute([$loc_name, $building_name]);
+                $save_success = "Location \"$loc_name\" added to \"$building_name\".";
             } catch (Throwable $e) {
                 $save_error = 'Could not add location: ' . $e->getMessage();
             }
@@ -169,14 +168,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     elseif ($action === 'rename_location') {
-        $loc_id   = (int)($_POST['loc_id']   ?? 0);
-        $loc_name = trim($_POST['location_name'] ?? '');
+        $loc_id        = (int)($_POST['loc_id']   ?? 0);
+        $loc_name      = trim($_POST['location_name'] ?? '');
+        $building_name = trim($_POST['building_name'] ?? '');
         if ($loc_id && $loc_name) {
-            $pdo->prepare("UPDATE locations SET location_name = ? WHERE location_id = ?")
-                ->execute([$loc_name, $loc_id]);
-            $pdo->prepare("INSERT INTO admin_action_log (admin_id, action_type, description) VALUES (?, 'location_renamed', ?)")
-                ->execute([$admin_id, "Renamed location #$loc_id to: $loc_name"]);
-            $save_success = "Location renamed.";
+            $pdo->prepare("UPDATE locations SET location_name = ?, building = ? WHERE location_id = ?")
+                ->execute([$loc_name, $building_name, $loc_id]);
+            $save_success = "Location updated.";
         }
     }
 
@@ -761,13 +759,15 @@ $action_log = $pdo->query("
                     <form method="POST" class="px-7 py-3 flex items-center gap-3">
                         <input type="hidden" name="action" value="rename_location">
                         <input type="hidden" name="scroll_target" value="locations">
-                        <input type="hidden" name="loc_id" value="<?php echo (int)$loc['location_id']; ?>">
-                        <span class="text-[10px] font-black text-slate-300 w-8 flex-shrink-0 text-right">#<?php echo $loc['location_id']; ?></span>
-                        <input type="text" name="location_name"
-                               value="<?php echo htmlspecialchars($loc['location_name']); ?>"
-                               class="flex-1 px-3 py-2 text-sm font-medium text-slate-700 border border-transparent rounded-xl bg-transparent hover:bg-slate-50 hover:border-slate-200 focus:bg-white focus:border-cmu-blue outline-none transition">
-                        <button type="submit" class="text-[10px] font-black text-slate-400 hover:text-cmu-blue px-3 py-1.5 rounded-lg hover:bg-blue-50 transition flex items-center gap-1">
-                            <i class="fas fa-check text-[9px]"></i> Rename
+                        <input type="hidden" name="loc_id" value="<?= (int)$loc['location_id'] ?>">
+                        <span class="text-[10px] font-black text-slate-300 w-8 flex-shrink-0 text-right">#<?= $loc['location_id'] ?></span>
+                        <input type="text" name="building_name" value="<?= htmlspecialchars($loc['building'] ?? '') ?>"
+                            placeholder="Building"
+                            class="w-36 px-3 py-2 text-sm font-medium text-slate-500 border border-transparent rounded-xl bg-transparent hover:bg-slate-50 hover:border-slate-200 focus:bg-white focus:border-cmu-blue outline-none transition">
+                        <input type="text" name="location_name" value="<?= htmlspecialchars($loc['location_name']) ?>"
+                            class="flex-1 px-3 py-2 text-sm font-medium text-slate-700 border border-transparent rounded-xl bg-transparent hover:bg-slate-50 hover:border-slate-200 focus:bg-white focus:border-cmu-blue outline-none transition">
+                        <button type="submit" class="text-[10px] font-black text-slate-400 hover:text-cmu-blue px-3 py-1.5 rounded-lg hover:bg-blue-50 transition">
+                            <i class="fas fa-check text-[9px]"></i> Save
                         </button>
                     </form>
                     <?php endforeach; ?>
