@@ -154,11 +154,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     elseif ($action === 'save_location') {
-        $loc_name     = trim($_POST['location_name'] ?? '');
-        $building_name = trim($_POST['building_name'] ?? 'Other');
+        $loc_name      = trim($_POST['location_name']  ?? '');
+        $building_name = trim($_POST['building_name']  ?? 'Others');
         if ($loc_name) {
             try {
-                $pdo->prepare("INSERT INTO locations (location_name, building) VALUES (?, ?)")
+                $pdo->prepare("INSERT INTO locations (location_name, building, is_active) VALUES (?, ?, 1)")
                     ->execute([$loc_name, $building_name]);
                 $save_success = "Location \"$loc_name\" added to \"$building_name\".";
             } catch (Throwable $e) {
@@ -168,9 +168,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     elseif ($action === 'rename_location') {
-        $loc_id        = (int)($_POST['loc_id']   ?? 0);
-        $loc_name      = trim($_POST['location_name'] ?? '');
-        $building_name = trim($_POST['building_name'] ?? '');
+        $loc_id        = (int)($_POST['loc_id']        ?? 0);
+        $loc_name      = trim($_POST['location_name']  ?? '');
+        $building_name = trim($_POST['building_name']  ?? 'Others');
         if ($loc_id && $loc_name) {
             $pdo->prepare("UPDATE locations SET location_name = ?, building = ? WHERE location_id = ?")
                 ->execute([$loc_name, $building_name, $loc_id]);
@@ -208,7 +208,7 @@ $all_admins = $pdo->query("
     ORDER BY created_at ASC
 ")->fetchAll();
 
-$locations = $pdo->query("SELECT * FROM locations ORDER BY location_id ASC")->fetchAll();
+$locations = $pdo->query("SELECT * FROM locations ORDER BY FIELD(building, 'ERC Building', 'Administration Building', 'Innovation Building', 'CBA Building', 'ADC Building', 'Others'), location_name ASC")->fetchAll();
 
 $action_log = $pdo->query("
     SELECT l.*, u.full_name AS admin_name

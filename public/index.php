@@ -9,7 +9,7 @@ require_once '../core/db_config.php';
 $view_mode = isset($_GET['view']) && $_GET['view'] === 'lost' ? 'lost' : 'found'; 
 $search_query = isset($_GET['search']) ? trim($_GET['search']) : '';
 $selected_category = isset($_GET['category']) ? $_GET['category'] : 'All Categories';
-$selected_location_id = isset($_GET['location']) && $_GET['location'] !== 'all' ? (int)$_GET['location'] : 0;
+$selected_building = isset($_GET['location']) && $_GET['location'] !== 'all' ? trim($_GET['location']) : '';
 $selected_time = isset($_GET['time']) ? $_GET['time'] : 'Anytime';
 
 function fetchSystemSettings(PDO $pdo): array {
@@ -30,7 +30,7 @@ try {
 
     // Load locations for the dropdown
     try {
-        $loc_stmt = $pdo->query("SELECT DISTINCT building FROM locations WHERE building IS NOT NULL ORDER BY building ASC");
+        $loc_stmt = $db->query("SELECT DISTINCT building FROM locations WHERE building IS NOT NULL AND is_active = 1 ORDER BY FIELD(building, 'ERC Building', 'Administration Building', 'Innovation Building', 'CBA Building', 'ADC Building', 'Others')");
         $buildings = $loc_stmt->fetchAll(PDO::FETCH_ASSOC);
     } catch (PDOException $e) {
         $locations = [];
@@ -113,9 +113,9 @@ try {
             $params[':category'] = $selected_category;
         }
 
-        if (!empty($_GET['location']) && $_GET['location'] !== 'all') {
+        if (!empty($selected_building)) {
             $where_clauses[] = "location_id IN (SELECT location_id FROM locations WHERE building = :building)";
-            $params[':building'] = $_GET['location'];
+            $params[':building'] = $selected_building;
         }
 
         $sql = "SELECT * FROM ($base_sql) as combined_gallery";
@@ -144,12 +144,12 @@ try {
 }
 
 // Build the base query string for toggle links (preserves all current filters)
-function buildToggleHref(string $view, string $search, string $category, int $location_id, string $time): string {
+function buildToggleHref(string $view, string $search, string $category, string $selected_building, string $time): string {
     $params = ['view' => $view];
-    if (!empty($search))              $params['search']   = $search;
+    if (!empty($search))                $params['search']   = $search;
     if ($category !== 'All Categories') $params['category'] = $category;
-    if ($location_id > 0)             $params['location'] = $location_id;
-    if ($time !== 'Anytime')          $params['time']     = $time;
+    if (!empty($selected_building))     $params['location'] = $selected_building;
+    if ($time !== 'Anytime')            $params['time']     = $time;
     return 'index.php?' . http_build_query($params);
 }
 ?>
@@ -210,12 +210,12 @@ function buildToggleHref(string $view, string $search, string $category, int $lo
                             <option value="Other" <?php echo $selected_category === 'Other' ? 'selected' : ''; ?>>Other</option>
                         </select>
 
-                        <select name="location" class="filter-select ...">
-                            <option value="all">All Locations</option>
+                        <select name="location" class="filter-select w-full md:w-48 pl-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 outline-none focus:ring-2 focus:ring-cmu-blue transition cursor-pointer">
+                            <option value="all" <?php echo ($_GET['location'] ?? 'all') === 'all' ? 'selected' : ''; ?>>All Locations</option>
                             <?php foreach ($buildings as $b): ?>
-                                <option value="<?= htmlspecialchars($b['building']) ?>"
-                                    <?= ($_GET['location'] ?? '') === $b['building'] ? 'selected' : '' ?>>
-                                    <?= htmlspecialchars($b['building']) ?>
+                                <option value="<?php echo htmlspecialchars($b['building']); ?>"
+                                    <?php echo ($_GET['location'] ?? '') === $b['building'] ? 'selected' : ''; ?>>
+                                    <?php echo htmlspecialchars($b['building']); ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
@@ -234,11 +234,11 @@ function buildToggleHref(string $view, string $search, string $category, int $lo
 
                 <!-- Found / Lost Toggle — preserves all active filters -->
                 <div class="flex bg-gray-100 p-1 rounded-xl w-fit">
-                    <a href="<?php echo htmlspecialchars(buildToggleHref('found', $search_query, $selected_category, $selected_location_id, $selected_time)); ?>"
+                    <a href="<?php echo htmlspecialchars(buildToggleHref('found', $search_query, $selected_category, $selected_building, $selected_time)); ?>"
                        class="px-6 py-2 rounded-lg text-sm font-bold transition <?php echo $view_mode === 'found' ? 'bg-white text-cmu-blue shadow-sm' : 'text-gray-500'; ?>">
                         Found Items
                     </a>
-                    <a href="<?php echo htmlspecialchars(buildToggleHref('lost', $search_query, $selected_category, $selected_location_id, $selected_time)); ?>"
+                    <a href="<?php echo htmlspecialchars(buildToggleHref('lost',  $search_query, $selected_category, $selected_building, $selected_time)); ?>"
                        class="px-6 py-2 rounded-lg text-sm font-bold transition <?php echo $view_mode === 'lost' ? 'bg-white text-cmu-blue shadow-sm' : 'text-gray-500'; ?>">
                         Lost Reports
                     </a>
