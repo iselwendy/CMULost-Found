@@ -175,14 +175,6 @@ $pre_category_val = in_array($pre_category, $category_options) ? $pre_category :
 
                     <div>
                         <label class="block text-sm font-semibold mb-1.5 text-slate-700">Where was it found?</label>
-                            <select id="buildingSelect" onchange="filterRooms()" 
-                                class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white outline-none">
-                                <option value="">Select building</option>
-                                <?php foreach ($grouped as $building => $rooms): ?>
-                                    <option value="<?= htmlspecialchars($building) ?>"><?= htmlspecialchars($building) ?></option>
-                                <?php endforeach; ?>
-                            </select>
-
                             <!-- Room dropdown (hidden until building is selected) -->
                             <select id="buildingSelect" onchange="filterRooms()"
                                     class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white outline-none focus:ring-2 focus:ring-cmu-blue transition">
