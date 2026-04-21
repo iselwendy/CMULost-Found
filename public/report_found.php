@@ -188,7 +188,7 @@ $pre_category_val = in_array($pre_category, $category_options) ? $pre_category :
 
                             <!-- Room dropdown -->
                             <select id="itemLocation" name="location_id" required
-                                    class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white outline-none focus:ring-2 focus:ring-cmu-blue transition hidden mt-2">
+                                    class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white outline-none focus:ring-2 focus:ring-cmu-blue hidden transition mt-2">
                                 <option value="">Select room / area</option>
                             </select>
                     </div>
@@ -357,13 +357,7 @@ $pre_category_val = in_array($pre_category, $category_options) ? $pre_category :
     <script src="../assets/scripts/item_image_upload.js"></script>
     <script src="../assets/scripts/smart_tag_input.js"></script>
     <script src="../assets/scripts/report_found_init.js"></script>
-    <?php if ($prefill && $pre_category_val): ?>
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const catSelect = document.getElementById('itemCategory');
-            if (catSelect.value) onCategoryChange();
-        });
-
         const locationData = <?php echo json_encode($grouped); ?>;
 
         function filterRooms() {
@@ -408,6 +402,5 @@ $pre_category_val = in_array($pre_category, $category_options) ? $pre_category :
         });
         <?php endif; ?>
     </script>
-    <?php endif; ?>
 </body>
 </html>
