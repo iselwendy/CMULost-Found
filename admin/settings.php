@@ -738,39 +738,90 @@ $action_log = $pdo->query("
                     </div>
                     <div>
                         <p class="font-black text-slate-800 text-sm uppercase tracking-tight">Campus Locations</p>
-                        <p class="text-[10px] text-slate-400">Manage the location dropdown used in all report forms</p>
+                        <p class="text-[10px] text-slate-400">Manage the location dropdown used in all report forms
+                            <span class="font-bold text-teal-600">(<?php echo count($locations); ?> total)</span>
+                        </p>
                     </div>
                 </div>
 
                 <!-- Add new location -->
-                <form method="POST" class="px-7 py-5 border-b border-slate-100 flex gap-3">
+                <form method="POST" class="px-7 py-5 border-b border-slate-100 flex flex-wrap gap-3">
                     <input type="hidden" name="action" value="save_location">
                     <input type="hidden" name="scroll_target" value="locations">
-                    <input type="text" name="location_name" required placeholder="New location name, e.g. Gymnasium"
-                           class="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-cmu-blue transition">
+                    <select name="building_name" required
+                            class="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold outline-none appearance-none cursor-pointer w-56">
+                        <option value="">— Select Building —</option>
+                        <?php
+                        $buildings_list = ['ERC Building', 'Administration Building', 'Innovation Building', 'CBA Building', 'ADC Building', 'Others'];
+                        foreach ($buildings_list as $b): ?>
+                        <option value="<?= htmlspecialchars($b) ?>"><?= htmlspecialchars($b) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <input type="text" name="location_name" required placeholder="Room / area name, e.g. Room 301"
+                        class="flex-1 min-w-[180px] px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-cmu-blue transition">
                     <button type="submit" class="px-5 py-2.5 bg-teal-600 text-white rounded-xl text-xs font-black hover:bg-teal-700 transition flex items-center gap-2">
                         <i class="fas fa-plus"></i> Add Location
                     </button>
                 </form>
 
-                <!-- List existing -->
-                <div class="divide-y divide-slate-50">
+                <!-- Filter/search bar -->
+                <div class="px-7 py-4 border-b border-slate-100 flex flex-wrap gap-3 bg-slate-50/40">
+                    <div class="relative flex-grow min-w-[180px]">
+                        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 text-xs"></i>
+                        <input type="text" id="locSearch" placeholder="Search locations..."
+                            oninput="filterLocations()"
+                            class="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-cmu-blue transition">
+                    </div>
+                    <select id="locBuildingFilter" onchange="filterLocations()"
+                            class="bg-white border border-slate-200 rounded-xl px-4 py-2 text-sm font-bold outline-none appearance-none cursor-pointer">
+                        <option value="">All Buildings</option>
+                        <?php foreach ($buildings_list as $b): ?>
+                        <option value="<?= htmlspecialchars($b) ?>"><?= htmlspecialchars($b) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <span id="locCountBadge" class="self-center text-[10px] font-black text-slate-400 uppercase tracking-widest"></span>
+                </div>
+
+                <!-- Location list (paginated via JS) -->
+                <div id="locList" class="divide-y divide-slate-50 min-h-[60px]">
                     <?php foreach ($locations as $loc): ?>
-                    <form method="POST" class="px-7 py-3 flex items-center gap-3">
+                    <form method="POST"
+                        class="loc-row px-7 py-3 flex items-center gap-3"
+                        data-building="<?= htmlspecialchars($loc['building'] ?? 'Others') ?>"
+                        data-name="<?= htmlspecialchars(strtolower($loc['location_name'])) ?>">
                         <input type="hidden" name="action" value="rename_location">
                         <input type="hidden" name="scroll_target" value="locations">
                         <input type="hidden" name="loc_id" value="<?= (int)$loc['location_id'] ?>">
                         <span class="text-[10px] font-black text-slate-300 w-8 flex-shrink-0 text-right">#<?= $loc['location_id'] ?></span>
-                        <input type="text" name="building_name" value="<?= htmlspecialchars($loc['building'] ?? '') ?>"
-                            placeholder="Building"
-                            class="w-36 px-3 py-2 text-sm font-medium text-slate-500 border border-transparent rounded-xl bg-transparent hover:bg-slate-50 hover:border-slate-200 focus:bg-white focus:border-cmu-blue outline-none transition">
+                        <select name="building_name"
+                                class="w-44 px-3 py-2 text-sm font-medium text-slate-500 border border-transparent rounded-xl bg-transparent hover:bg-slate-50 hover:border-slate-200 focus:bg-white focus:border-cmu-blue outline-none transition appearance-none cursor-pointer">
+                            <?php foreach ($buildings_list as $b): ?>
+                            <option value="<?= htmlspecialchars($b) ?>" <?= ($loc['building'] ?? '') === $b ? 'selected' : '' ?>><?= htmlspecialchars($b) ?></option>
+                            <?php endforeach; ?>
+                        </select>
                         <input type="text" name="location_name" value="<?= htmlspecialchars($loc['location_name']) ?>"
                             class="flex-1 px-3 py-2 text-sm font-medium text-slate-700 border border-transparent rounded-xl bg-transparent hover:bg-slate-50 hover:border-slate-200 focus:bg-white focus:border-cmu-blue outline-none transition">
-                        <button type="submit" class="text-[10px] font-black text-slate-400 hover:text-cmu-blue px-3 py-1.5 rounded-lg hover:bg-blue-50 transition">
+                        <button type="submit" class="text-[10px] font-black text-slate-400 hover:text-cmu-blue px-3 py-1.5 rounded-lg hover:bg-blue-50 transition whitespace-nowrap">
                             <i class="fas fa-check text-[9px]"></i> Save
                         </button>
                     </form>
                     <?php endforeach; ?>
+                </div>
+
+                <!-- Pagination controls -->
+                <div id="locPagination" class="px-7 py-4 bg-slate-50/40 border-t border-slate-100 flex items-center justify-between">
+                    <p id="locPageInfo" class="text-xs text-slate-500"></p>
+                    <div class="flex gap-1">
+                        <button onclick="locChangePage(-1)" id="locPrevBtn"
+                                class="w-8 h-8 flex items-center justify-center rounded-lg text-xs border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:pointer-events-none">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <div id="locPageBtns" class="flex gap-1"></div>
+                        <button onclick="locChangePage(1)" id="locNextBtn"
+                                class="w-8 h-8 flex items-center justify-center rounded-lg text-xs border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:pointer-events-none">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
                 </div>
             </section>
 
@@ -910,91 +961,95 @@ $action_log = $pdo->query("
 <!-- ── Add Admin Modal (reuse from dashboard) ───────────────────────────── -->
 <?php include 'add_admin_modal.html'; ?>
 
+<script src="assets/scripts/admin_settings.js"></script>
 <script>
-// ── Weight sliders total ───────────────────────────────────────────────────
-function updateWeights() {
-    const keys = ['weight_category','weight_location','weight_keywords','weight_date'];
-    let total = 0;
-    keys.forEach(k => {
-        const s = document.getElementById('slider-' + k);
-        if (!s) return;
-        const v = parseInt(s.value);
-        total += v;
-        document.getElementById('val-' + k).textContent = v;
-        const bar = document.getElementById('bar-' + k);
-        if (bar) bar.style.width = Math.min(100, v * 100 / 60) + '%';
-    });
-    const el = document.getElementById('wTotal');
-    el.textContent = total;
-    el.className = total === 100 ? 'text-green-600' : (total > 100 ? 'text-red-500' : 'text-amber-500');
-}
-updateWeights();
+    // ── Campus Locations: filter + paginate ────────────────────────────────────
+    (function () {
+        const PER_PAGE = 10;
+        let currentPage = 1;
+        let filtered = [];
 
-// ── Password visibility toggle ─────────────────────────────────────────────
-function togglePwd(btn) {
-    const input = btn.previousElementSibling || btn.closest('.relative').querySelector('input');
-    const icon  = btn.querySelector('i');
-    if (input.type === 'password') {
-        input.type = 'text';
-        icon.classList.replace('fa-eye', 'fa-eye-slash');
-    } else {
-        input.type = 'password';
-        icon.classList.replace('fa-eye-slash', 'fa-eye');
-    }
-}
+        const allRows = Array.from(document.querySelectorAll('.loc-row'));
 
-// ── Password strength ──────────────────────────────────────────────────────
-function updatePwStrength(val) {
-    const wrap = document.getElementById('pw-strength-wrap');
-    if (!val) { wrap.classList.add('hidden'); return; }
-    wrap.classList.remove('hidden');
+        function getFiltered() {
+            const q = (document.getElementById('locSearch')?.value || '').toLowerCase().trim();
+            const b = document.getElementById('locBuildingFilter')?.value || '';
+            return allRows.filter(row => {
+                const matchName = !q || row.dataset.name.includes(q);
+                const matchBuilding = !b || row.dataset.building === b;
+                return matchName && matchBuilding;
+            });
+        }
 
-    let s = 0;
-    if (val.length >= 8) s++;
-    if (/[A-Z]/.test(val)) s++;
-    if (/[0-9]/.test(val)) s++;
-    if (/[^A-Za-z0-9]/.test(val)) s++;
+        function render() {
+            filtered = getFiltered();
+            const total = filtered.length;
+            const totalPages = Math.max(1, Math.ceil(total / PER_PAGE));
+            if (currentPage > totalPages) currentPage = totalPages;
 
-    const colors  = ['bg-red-400','bg-orange-400','bg-yellow-400','bg-green-500'];
-    const labels  = ['Weak','Fair','Good','Strong'];
-    const tColors = ['text-red-500','text-orange-500','text-yellow-500','text-green-600'];
+            const start = (currentPage - 1) * PER_PAGE;
+            const end = start + PER_PAGE;
 
-    for (let i = 1; i <= 4; i++) {
-        const bar = document.getElementById('ps' + i);
-        bar.className = 'h-1 flex-1 rounded-full transition-all duration-300 ' + (i <= s ? colors[s-1] : 'bg-slate-200');
-    }
-    const lbl = document.getElementById('pw-strength-label');
-    lbl.textContent  = labels[s - 1] || '';
-    lbl.className    = 'text-[10px] font-black uppercase ' + (tColors[s - 1] || '');
-}
+            // Show/hide rows
+            allRows.forEach(r => r.style.display = 'none');
+            filtered.slice(start, end).forEach(r => r.style.display = '');
 
-// ── Side nav active state on scroll ───────────────────────────────────────
-const sections = ['gallery','matching','email','password','admins','locations','aging','log'];
+            // Count badge
+            const badge = document.getElementById('locCountBadge');
+            if (badge) badge.textContent = `${total} location${total !== 1 ? 's' : ''}`;
 
-function setActiveNav(clickedEl) {
-    // Visual-only update on click; scroll listener handles the rest
-}
+            // Page info
+            const info = document.getElementById('locPageInfo');
+            if (info) info.textContent = total === 0
+                ? 'No locations match your filters'
+                : `Showing ${start + 1}–${Math.min(end, total)} of ${total}`;
 
-function updateNavOnScroll() {
-    let current = sections[0];
-    sections.forEach(id => {
-        const el = document.getElementById(id);
-        if (!el) return;
-        const rect = el.getBoundingClientRect();
-        if (rect.top <= 120) current = id;
-    });
-    sections.forEach(id => {
-        const dot = document.getElementById('dot-' + id);
-        if (dot) dot.classList.toggle('active', id === current);
-    });
-}
+            // Prev / Next buttons
+            const prevBtn = document.getElementById('locPrevBtn');
+            const nextBtn = document.getElementById('locNextBtn');
+            if (prevBtn) prevBtn.disabled = currentPage <= 1;
+            if (nextBtn) nextBtn.disabled = currentPage >= totalPages;
 
-window.addEventListener('scroll', updateNavOnScroll, { passive: true });
-updateNavOnScroll();
+            // Page number buttons (show up to 5)
+            const pageBtns = document.getElementById('locPageBtns');
+            if (pageBtns) {
+                pageBtns.innerHTML = '';
+                const startP = Math.max(1, currentPage - 2);
+                const endP = Math.min(totalPages, startP + 4);
+                for (let p = startP; p <= endP; p++) {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = `w-8 h-8 flex items-center justify-center rounded-lg text-xs font-bold transition ${p === currentPage
+                        ? 'bg-cmu-blue text-white shadow-sm'
+                        : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                        }`;
+                    btn.textContent = p;
+                    btn.onclick = () => { currentPage = p; render(); };
+                    pageBtns.appendChild(btn);
+                }
+            }
 
-// ── Auto-dismiss flash banner after 4s ────────────────────────────────────
-const flash = document.getElementById('flashBanner');
-if (flash) setTimeout(() => { flash.style.opacity = '0'; flash.style.transition = 'opacity .4s'; setTimeout(() => flash.remove(), 400); }, 4000);
+            // Hide pagination bar entirely if only 1 page
+            const bar = document.getElementById('locPagination');
+            if (bar) bar.style.display = totalPages <= 1 && total <= PER_PAGE ? 'none' : '';
+        }
+
+        window.filterLocations = function () {
+            currentPage = 1;
+            render();
+        };
+
+        window.locChangePage = function (delta) {
+            const filtered = getFiltered();
+            const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
+            currentPage = Math.min(Math.max(1, currentPage + delta), totalPages);
+            render();
+        };
+
+        // Initial render
+        render();
+    })();
+
 </script>
 
 </body>
