@@ -5,7 +5,7 @@
 
 ----------------
 TO FIX:
-* Fix setting.php (the Campus Locations to have a limit, filter by buildings)
+* Add pagination to action log in admin settings
 * Add a function for forgot_password
 * My_reports dashboard, QR code not showing after a succesful found report
 * Fix the shelves' bin to be a select-type not text-type.
