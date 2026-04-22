@@ -6,20 +6,6 @@ use Dotenv\Dotenv;
 $dotenv = Dotenv::createImmutable(dirname(__DIR__));
 $dotenv->load();
 
-/**
- * CMU Lost & Found — AI Suggestion Endpoint (Gemini-first)
- * POST /core/get_suggestions.php
- *
- * Receives: { title, category, report_type }
- * Returns:  { traits: string[], keywords: string[], source: "ai" | "vocabulary" | "empty" }
- *
- * Strategy:
- *   1. Try Gemini 2.5 Flash first — it is the PRIMARY suggestion source.
- *   2. If Gemini fails (no key, timeout, parse error, rate limit) fall back
- *      to returning standard traits + keywords from vocabulary.json.
- */
-
-// Security 
 session_start();
 if (!isset($_SESSION['user_id'])) {
     http_response_code(401);
@@ -27,7 +13,6 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
-// Request validation 
 header('Content-Type: application/json');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -48,14 +33,12 @@ if (strlen($title) < 3 || empty($category)) {
     exit;
 }
 
-// Rate limiting (session-based, 100 calls per session)
 $_SESSION['ai_suggestion_calls'] = ($_SESSION['ai_suggestion_calls'] ?? 0) + 1;
 if ($_SESSION['ai_suggestion_calls'] > 100) {
     echo json_encode(vocabFallback($category) + ['source' => 'rate_limited']);
     exit;
 }
 
-// Load vocabulary.json (needed for context + fallback) 
 $vocab_path = __DIR__ . '/../assets/data/vocabulary.json';
 $vocab      = [];
 if (file_exists($vocab_path)) {
@@ -65,7 +48,6 @@ if (file_exists($vocab_path)) {
 $standard_traits   = $vocab['categories'][$category]['traits']   ?? [];
 $standard_keywords = $vocab['categories'][$category]['keywords'] ?? [];
 
-// Helper: return vocabulary fallback payload 
 function vocabFallback(string $category): array {
     global $vocab;
     $traits   = $vocab['categories'][$category]['traits']   ?? [];
@@ -76,26 +58,21 @@ function vocabFallback(string $category): array {
     ];
 }
 
-// Helper: sanitize a single suggestion string 
 function sanitize_suggestion(string $s): string {
     return substr(strip_tags(trim($s)), 0, 60);
 }
 
-// Check for Gemini API key 
-$api_key = $_ENV['GEMINI_API_KEY'];
+// ── Check for Mistral API key ─────────────────────────────────────────────
+$api_key = $_ENV['MISTRAL_API_KEY'] ?? '';
 
 if (empty($api_key)) {
-    error_log('GEMINI_API_KEY is not set');
-}
-
-if (empty($api_key)) {
-    // No key — fall back to vocabulary immediately
+    error_log('MISTRAL_API_KEY is not set');
     $fallback = vocabFallback($category);
     echo json_encode($fallback + ['source' => 'vocabulary']);
     exit;
 }
 
-// Build Gemini prompt ─
+// ── Build prompt ──────────────────────────────────────────────────────────
 $role_context = $report_type === 'found'
     ? "A university student FOUND this item and is describing what they observed."
     : "A university student LOST this item and is describing it from memory.";
@@ -130,37 +107,32 @@ Required JSON format:
 {"traits": ["trait one", "trait two"], "keywords": ["keyword one", "keyword two"]}
 PROMPT;
 
-// Call Gemini API 
-// Using the generateContent REST endpoint for gemini-2.5-flash
-$gemini_url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' . urlencode($api_key);
+// ── Call Mistral API ──────────────────────────────────────────────────────
+$mistral_url = 'https://api.mistral.ai/v1/chat/completions';
 
-$gemini_payload = json_encode([
-    'contents' => [
+$mistral_payload = json_encode([
+    'model'       => 'mistral-medium-latest',
+    'messages'    => [
         [
-            'parts' => [
-                ['text' => $prompt]
-            ]
+            'role'    => 'user',
+            'content' => $prompt,
         ]
     ],
-    'generationConfig' => [
-        'responseMimeType' => 'application/json',
-        'temperature'      => 0.4,
-        'maxOutputTokens'  => 2048,
-        'thinkingConfig'   => [
-            'thinkingBudget' => 0,  // Disable thinking for simple suggestion tasks
-        ],
-    ]
+    'temperature' => 0.4,
+    'max_tokens'  => 512,
+    'top_p'       => 1,
 ]);
 
-$ch = curl_init($gemini_url);
+$ch = curl_init($mistral_url);
 curl_setopt_array($ch, [
     CURLOPT_RETURNTRANSFER => true,
     CURLOPT_POST           => true,
-    CURLOPT_POSTFIELDS     => $gemini_payload,
+    CURLOPT_POSTFIELDS     => $mistral_payload,
     CURLOPT_HTTPHEADER     => [
         'Content-Type: application/json',
+        'Authorization: Bearer ' . $api_key,
     ],
-    CURLOPT_TIMEOUT        => 8,
+    CURLOPT_TIMEOUT        => 10,
 ]);
 
 $response  = curl_exec($ch);
@@ -168,20 +140,18 @@ $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 $curl_err  = curl_error($ch);
 curl_close($ch);
 
-
-// Parse Gemini response 
+// ── Parse Mistral response ────────────────────────────────────────────────
 if ($http_code !== 200 || !$response || $curl_err) {
-    // Network/API failure → fall back to vocabulary
+    error_log('[Mistral] HTTP ' . $http_code . ' | cURL: ' . $curl_err);
     $fallback = vocabFallback($category);
     echo json_encode($fallback + ['source' => 'vocabulary']);
     exit;
 }
 
-$gemini_data = json_decode($response, true);
+$mistral_data = json_decode($response, true);
 
-// Extract text from Gemini's response structure:
-// response.candidates[0].content.parts[0].text
-$raw_text = $gemini_data['candidates'][0]['content']['parts'][0]['text'] ?? '';
+// Mistral response structure: choices[0].message.content
+$raw_text = $mistral_data['choices'][0]['message']['content'] ?? '';
 
 if (empty($raw_text)) {
     $fallback = vocabFallback($category);
@@ -189,13 +159,12 @@ if (empty($raw_text)) {
     exit;
 }
 
-// Strip any accidental markdown fences (belt-and-suspenders)
+// Strip any accidental markdown fences
 $raw_text = preg_replace('/```(?:json)?|```/', '', $raw_text);
 $raw_text = trim($raw_text);
 
 $suggestions = json_decode($raw_text, true);
 
-// Validate structure
 if (
     !is_array($suggestions)
     || !isset($suggestions['traits'])
@@ -206,14 +175,12 @@ if (
     exit;
 }
 
-// Sanitize and limit output 
 $traits   = array_map('sanitize_suggestion', array_slice((array)$suggestions['traits'],   0, 8));
 $keywords = array_map('sanitize_suggestion', array_slice((array)$suggestions['keywords'], 0, 8));
 
 $traits   = array_values(array_filter($traits));
 $keywords = array_values(array_filter($keywords));
 
-// If Gemini returned empty arrays, still fall back to vocabulary
 if (empty($traits) && empty($keywords)) {
     $fallback = vocabFallback($category);
     echo json_encode($fallback + ['source' => 'vocabulary']);
