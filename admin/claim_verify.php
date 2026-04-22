@@ -78,7 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['match_id'])) {
                 WHERE report_type = 'found' GROUP BY report_id
             ) img ON img.report_id = f.found_id
             WHERE m.match_id = ? AND m.status = 'confirmed'
-                AND f.status IN ('surrendered', 'matched')
+                AND f.status NOT IN ('claimed', 'disposed', 'returned', 'void')
             LIMIT 1
         ");
         $stmt->execute([$match_id]);
@@ -230,7 +230,7 @@ if (!$receipt) {
             JOIN users         u ON lr.user_id  = u.user_id
             LEFT JOIN categories c ON f.category_id = c.category_id
             $where
-                AND f.status IN ('surrendered', 'matched')
+                AND f.status NOT IN ('claimed', 'disposed', 'returned', 'void')
             ORDER BY m.matched_at DESC
             LIMIT 20
         ");
