@@ -46,12 +46,14 @@ if ($status_filter === 'custody') {
 // Search
 if (!empty($search_query)) {
     $where_parts[] = "(
-        f.title LIKE :search
-        OR CONCAT('FND-', LPAD(f.found_id, 5, '0')) LIKE :search
-        OR u.full_name LIKE :search
-        OR c.name LIKE :search
+        f.title LIKE ?
+        OR CONCAT('FND-', LPAD(f.found_id, 5, '0')) LIKE ?
+        OR u.full_name LIKE ?
+        OR c.name LIKE ?
     )";
-    $params[':search'] = '%' . $search_query . '%';
+    $search_val = '%' . $search_query . '%';
+    // Add 4 positional values (one per column)
+    $search_params = [$search_val, $search_val, $search_val, $search_val];
 }
 
 $where_sql = $where_parts ? ('WHERE ' . implode(' AND ', $where_parts)) : '';
@@ -66,8 +68,12 @@ try {
         LEFT JOIN locations  loc ON f.location_id  = loc.location_id
         $where_sql
     ";
+    $all_params = [];
+    if (!empty($search_query)) {
+        $all_params = array_merge($all_params, $search_params);
+    }
     $count_stmt = $pdo->prepare($count_sql);
-    $count_stmt->execute($params);
+    $count_stmt->execute($all_params);
     $total_items = (int) $count_stmt->fetchColumn();
     $total_pages = max(1, (int) ceil($total_items / $per_page));
 } catch (PDOException $e) {
@@ -112,21 +118,18 @@ try {
         ) img ON img.report_id = f.found_id
         $where_sql
         ORDER BY f.created_at DESC
-        LIMIT :limit OFFSET :offset
+        LIMIT ? OFFSET ?
     ";
 
     $stmt = $pdo->prepare($sql);
 
     // PDO requires explicit binding for LIMIT/OFFSET when using named params
-    foreach ($params as $key => $value) {
-        if ($key === ':limit' || $key === ':offset') {
-            $stmt->bindValue($key, $value, PDO::PARAM_INT);
-        } else {
-            $stmt->bindValue($key, $value);
-        }
+    $main_params = [];
+    if (!empty($search_query)) {
+        $main_params = array_merge($main_params, $search_params);
     }
-
-    $stmt->execute();
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute(array_merge($main_params, [$per_page, $offset]));
     $items = $stmt->fetchAll();
 
 } catch (PDOException $e) {
