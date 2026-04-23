@@ -83,3 +83,144 @@ updateNavOnScroll();
 // ── Auto-dismiss flash banner after 4s ────────────────────────────────────
 const flash = document.getElementById('flashBanner');
 if (flash) setTimeout(() => { flash.style.opacity = '0'; flash.style.transition = 'opacity .4s'; setTimeout(() => flash.remove(), 400); }, 4000);
+
+
+// ── Campus Locations: filter + paginate ───────────────────────────────────
+(function () {
+    const PER_PAGE = 10;
+    let currentPage = 1;
+
+    const allRows = Array.from(document.querySelectorAll('.loc-row'));
+
+    function getFiltered() {
+        const q = (document.getElementById('locSearch')?.value || '').toLowerCase().trim();
+        const b = document.getElementById('locBuildingFilter')?.value || '';
+        return allRows.filter(row => {
+            const matchName = !q || row.dataset.name.includes(q);
+            const matchBuilding = !b || row.dataset.building === b;
+            return matchName && matchBuilding;
+        });
+    }
+
+    function render() {
+        const filtered = getFiltered();
+        const total = filtered.length;
+        const totalPages = Math.max(1, Math.ceil(total / PER_PAGE));
+        if (currentPage > totalPages) currentPage = totalPages;
+
+        const start = (currentPage - 1) * PER_PAGE;
+        const end = start + PER_PAGE;
+
+        allRows.forEach(r => r.style.display = 'none');
+        filtered.slice(start, end).forEach(r => r.style.display = '');
+
+        const badge = document.getElementById('locCountBadge');
+        if (badge) badge.textContent = `${total} location${total !== 1 ? 's' : ''}`;
+
+        const info = document.getElementById('locPageInfo');
+        if (info) info.textContent = total === 0
+            ? 'No locations match your filters'
+            : `Showing ${start + 1}–${Math.min(end, total)} of ${total}`;
+
+        const prevBtn = document.getElementById('locPrevBtn');
+        const nextBtn = document.getElementById('locNextBtn');
+        if (prevBtn) prevBtn.disabled = currentPage <= 1;
+        if (nextBtn) nextBtn.disabled = currentPage >= totalPages;
+
+        const pageBtns = document.getElementById('locPageBtns');
+        if (pageBtns) {
+            pageBtns.innerHTML = '';
+            const startP = Math.max(1, currentPage - 2);
+            const endP = Math.min(totalPages, startP + 4);
+            for (let p = startP; p <= endP; p++) {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = `w-8 h-8 flex items-center justify-center rounded-lg text-xs font-bold transition ${p === currentPage
+                        ? 'bg-cmu-blue text-white shadow-sm'
+                        : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                    }`;
+                btn.textContent = p;
+                btn.onclick = () => { currentPage = p; render(); };
+                pageBtns.appendChild(btn);
+            }
+        }
+
+        const bar = document.getElementById('locPagination');
+        if (bar) bar.style.display = totalPages <= 1 && total <= PER_PAGE ? 'none' : '';
+    }
+
+    window.filterLocations = function () {
+        currentPage = 1;
+        render();
+    };
+
+    window.locChangePage = function (delta) {
+        const filtered = getFiltered();
+        const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
+        currentPage = Math.min(Math.max(1, currentPage + delta), totalPages);
+        render();
+    };
+
+    render();
+})();
+
+
+// ── Action Log: paginate ───────────────────────────────────────────────────
+(function () {
+    const LOG_PER_PAGE = 5;
+    let logPage = 1;
+
+    const allLogRows = Array.from(document.querySelectorAll('.log-row'));
+    const total = allLogRows.length;
+
+    function renderLog() {
+        const totalPages = Math.max(1, Math.ceil(total / LOG_PER_PAGE));
+        if (logPage > totalPages) logPage = totalPages;
+
+        const start = (logPage - 1) * LOG_PER_PAGE;
+        const end = start + LOG_PER_PAGE;
+
+        allLogRows.forEach((row, i) => {
+            row.style.display = (i >= start && i < end) ? '' : 'none';
+        });
+
+        const info = document.getElementById('logPageInfo');
+        if (info) info.textContent = total === 0
+            ? 'No actions recorded'
+            : `Showing ${start + 1}–${Math.min(end, total)} of ${total} entries`;
+
+        const prevBtn = document.getElementById('logPrevBtn');
+        const nextBtn = document.getElementById('logNextBtn');
+        if (prevBtn) prevBtn.disabled = logPage <= 1;
+        if (nextBtn) nextBtn.disabled = logPage >= totalPages;
+
+        const pageBtns = document.getElementById('logPageBtns');
+        if (pageBtns) {
+            pageBtns.innerHTML = '';
+            const startP = Math.max(1, logPage - 2);
+            const endP = Math.min(totalPages, startP + 4);
+            for (let p = startP; p <= endP; p++) {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = `w-8 h-8 flex items-center justify-center rounded-lg text-xs font-bold transition ${p === logPage
+                        ? 'bg-cmu-blue text-white shadow-sm'
+                        : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                    }`;
+                btn.textContent = p;
+                btn.onclick = () => { logPage = p; renderLog(); };
+                pageBtns.appendChild(btn);
+            }
+        }
+
+        const bar = document.getElementById('logPagination');
+        if (bar) bar.style.display = totalPages <= 1 ? 'none' : '';
+    }
+
+    window.logChangePage = function (delta) {
+        const totalPages = Math.max(1, Math.ceil(total / LOG_PER_PAGE));
+        logPage = Math.min(Math.max(1, logPage + delta), totalPages);
+        renderLog();
+    };
+
+    renderLog();
+})();

@@ -920,7 +920,7 @@ $action_log = $pdo->query("
                             </td>
                         </tr>
                         <?php else: ?>
-                        <?php foreach ($action_log as $log):
+                        <?php foreach ($action_log as $i => $log):
                             $badge_map = [
                                 'settings_updated'   => 'bg-blue-100 text-blue-700',
                                 'password_changed'   => 'bg-green-100 text-green-700',
@@ -931,7 +931,7 @@ $action_log = $pdo->query("
                             ];
                             $badge_cls = $badge_map[$log['action_type']] ?? 'bg-slate-100 text-slate-500';
                         ?>
-                        <tr class="hover:bg-slate-50 transition">
+                        <tr class="log-row hover:bg-slate-50 transition" data-log-index="<?php echo $i; ?>">
                             <td class="px-7 py-3 text-slate-400 whitespace-nowrap">
                                 <?php echo date('M d, Y g:i A', strtotime($log['created_at'])); ?>
                             </td>
@@ -951,6 +951,20 @@ $action_log = $pdo->query("
                         <?php endif; ?>
                         </tbody>
                     </table>
+                    <div id="logPagination" class="px-7 py-4 bg-slate-50/40 border-t border-slate-100 flex items-center justify-between">
+                        <p id="logPageInfo" class="text-xs text-slate-500"></p>
+                        <div class="flex gap-1">
+                                <button onclick="logChangePage(-1)" id="logPrevBtn"
+                                        class="w-8 h-8 flex items-center justify-center rounded-lg text-xs border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:pointer-events-none">
+                                    <i class="fas fa-chevron-left"></i>
+                                </button>
+                                <div id="logPageBtns" class="flex gap-1"></div>
+                                <button onclick="logChangePage(1)" id="logNextBtn"
+                                        class="w-8 h-8 flex items-center justify-center rounded-lg text-xs border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:pointer-events-none">
+                                    <i class="fas fa-chevron-right"></i>
+                                </button>
+                        </div>
+                    </div>
                 </div>
             </section>
 
@@ -1050,6 +1064,71 @@ $action_log = $pdo->query("
         render();
     })();
 
+    (function () {
+        const LOG_PER_PAGE = 5;
+        let logPage = 1;
+
+        const allLogRows = Array.from(document.querySelectorAll('.log-row'));
+        const total = allLogRows.length;
+
+        function renderLog() {
+            const totalPages = Math.max(1, Math.ceil(total / LOG_PER_PAGE));
+            if (logPage > totalPages) logPage = totalPages;
+
+            const start = (logPage - 1) * LOG_PER_PAGE;
+            const end = start + LOG_PER_PAGE;
+
+            allLogRows.forEach((row, i) => {
+                row.style.display = (i >= start && i < end) ? '' : 'none';
+            });
+
+            // Page info
+            const info = document.getElementById('logPageInfo');
+            if (info) {
+                info.textContent = total === 0
+                    ? 'No actions recorded'
+                    : `Showing ${start + 1}–${Math.min(end, total)} of ${total} entries`;
+            }
+
+            // Prev / Next
+            const prevBtn = document.getElementById('logPrevBtn');
+            const nextBtn = document.getElementById('logNextBtn');
+            if (prevBtn) prevBtn.disabled = logPage <= 1;
+            if (nextBtn) nextBtn.disabled = logPage >= totalPages;
+
+            // Page number buttons
+            const pageBtns = document.getElementById('logPageBtns');
+            if (pageBtns) {
+                pageBtns.innerHTML = '';
+                const startP = Math.max(1, logPage - 2);
+                const endP = Math.min(totalPages, startP + 4);
+                for (let p = startP; p <= endP; p++) {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = `w-8 h-8 flex items-center justify-center rounded-lg text-xs font-bold transition ${
+                        p === logPage
+                            ? 'bg-cmu-blue text-white shadow-sm'
+                            : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                    }`;
+                    btn.textContent = p;
+                    btn.onclick = () => { logPage = p; renderLog(); };
+                    pageBtns.appendChild(btn);
+                }
+            }
+
+            // Hide pagination if only 1 page
+            const bar = document.getElementById('logPagination');
+            if (bar) bar.style.display = totalPages <= 1 ? 'none' : '';
+        }
+
+        window.logChangePage = function (delta) {
+            const totalPages = Math.max(1, Math.ceil(total / LOG_PER_PAGE));
+            logPage = Math.min(Math.max(1, logPage + delta), totalPages);
+            renderLog();
+        };
+
+        renderLog();
+    })();
 </script>
 
 </body>

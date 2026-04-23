@@ -5,7 +5,7 @@
 
 ----------------
 TO FIX:
-* Add pagination to action log in admin settings
+* Only the admin 1 should have the admin accounts available in their settings.php
 * My_reports dashboard, QR code not showing after a succesful found report
 * Fix the shelves' bin to be a select-type not text-type.
 * I just noticed that in matches table in the DB, the resolved/claimed items stays in the matches table even though it was already moved to the archive. 
