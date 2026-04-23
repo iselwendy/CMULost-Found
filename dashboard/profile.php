@@ -37,19 +37,16 @@ $user = [
 
 // ── Aggregate stats ───────────────────────────────────────────
 try {
-    // Count found reports submitted by this user
     $stmt = $pdo->prepare("SELECT COUNT(*) FROM found_reports WHERE reported_by = ? AND status = 'claimed'");
     $stmt->execute([$user_id]);
     $total_found = (int) $stmt->fetchColumn();
 
-    // Count lost reports submitted by this user
     $stmt = $pdo->prepare("SELECT COUNT(*) FROM lost_reports WHERE user_id = ? AND status = 'resolved'");
     $stmt->execute([$user_id]);
     $total_lost = (int) $stmt->fetchColumn();
 
     $total_reports = $total_found + $total_lost;
 
-    // Count successful returns: found items with status 'returned' OR lost items with status 'returned'
     $stmt = $pdo->prepare("SELECT COUNT(*) FROM found_reports WHERE reported_by = ? AND status = 'claimed'");
     $stmt->execute([$user_id]);
     $returned_found = (int) $stmt->fetchColumn();
@@ -67,7 +64,7 @@ try {
     $total_lost       = 0;
 }
 
-// ── Fetch found items reported by this user ───────────────────
+// ── Fetch found items reported by this user (all claimed) ─────
 try {
     $stmt = $pdo->prepare("
         SELECT
@@ -95,7 +92,6 @@ try {
         WHERE f.reported_by = ?
         AND f.status = 'claimed'
         ORDER BY f.date_found DESC
-        LIMIT 10
     ");
     $stmt->execute([$user_id]);
     $found_items = $stmt->fetchAll();
@@ -103,7 +99,7 @@ try {
     $found_items = [];
 }
 
-// ── Fetch lost reports by this user ──────────────────────────
+// ── Fetch lost reports by this user (all resolved) ────────────
 try {
     $stmt = $pdo->prepare("
         SELECT
@@ -131,7 +127,6 @@ try {
         WHERE l.user_id = ?
         AND l.status = 'resolved'
         ORDER BY l.date_lost DESC
-        LIMIT 10
     ");
     $stmt->execute([$user_id]);
     $lost_items = $stmt->fetchAll();
@@ -170,13 +165,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['profile_picture'])) 
                 $db_path = 'uploads/profiles/' . $new_filename;
 
                 try {
-                    // Grab the old path BEFORE overwriting it
                     $old_path = $freshUser['profile_picture'] ?? null;
 
                     $update = $pdo->prepare("UPDATE users SET profile_picture = ? WHERE user_id = ?");
                     $update->execute([$db_path, $user_id]);
 
-                    // Delete old file only after DB update succeeds
                     if ($old_path && strpos($old_path, 'uploads/profiles/') === 0) {
                         $old_file = dirname(__FILE__) . '/../' . $old_path;
                         if (file_exists($old_file)) {
@@ -202,9 +195,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['profile_picture'])) 
 // ── Helper: status badge classes ─────────────────────────────
 function statusBadgeClass(string $status): string {
     return match (strtolower($status)) {
-        'claimed'          => 'bg-green-100 text-green-700',
+        'claimed'   => 'bg-green-100 text-green-700',
         'resolved'  => 'bg-amber-100 text-amber-700',
-        default             => 'bg-slate-100 text-slate-500',
+        default     => 'bg-slate-100 text-slate-500',
     };
 }
 ?>
@@ -234,11 +227,25 @@ function statusBadgeClass(string $status): string {
         .avatar-wrapper:hover .avatar-overlay { opacity: 1; }
         .avatar-overlay { transition: opacity 0.2s; }
 
-        /* Shimmer loading for stats */
         @keyframes shimmer {
             0%   { background-position: -200% 0; }
             100% { background-position:  200% 0; }
         }
+
+        /* Pagination button */
+        .page-btn {
+            width: 32px; height: 32px;
+            display: inline-flex; align-items: center; justify-content: center;
+            border-radius: 8px; font-size: 12px; font-weight: 700;
+            border: 1.5px solid #e2e8f0; background: white; color: #64748b;
+            cursor: pointer; transition: all 0.15s;
+        }
+        .page-btn:hover { border-color: #94a3b8; color: #334155; }
+        .page-btn.active { background: #003366; border-color: #003366; color: white; }
+        .page-btn:disabled { opacity: 0.35; cursor: default; pointer-events: none; }
+
+        /* Report item hidden by pagination */
+        .report-item.hidden-page { display: none; }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
@@ -270,12 +277,10 @@ function statusBadgeClass(string $status): string {
                                 alt="Profile picture"
                                 class="w-full h-full object-cover">
                         </div>
-                        <!-- Hover overlay -->
                         <div class="avatar-overlay opacity-0 absolute inset-0 bg-black/50 rounded-2xl flex flex-col items-center justify-center text-white gap-1">
                             <i class="fas fa-camera text-lg"></i>
                             <span class="text-[10px] font-bold uppercase tracking-wide">Change</span>
                         </div>
-                        <!-- Camera badge -->
                         <div class="absolute -bottom-2 -right-2 bg-cmu-blue text-white p-2 rounded-xl shadow-md border-2 border-white pointer-events-none">
                             <i class="fas fa-camera text-xs"></i>
                         </div>
@@ -448,8 +453,8 @@ function statusBadgeClass(string $status): string {
                                 </a>
                             </div>
                         <?php else: ?>
-                            <div class="divide-y divide-gray-50">
-                                <?php foreach ($found_items as $item):
+                            <div id="found-list" class="divide-y divide-gray-50">
+                                <?php foreach ($found_items as $idx => $item):
                                     $img_src = !empty($item['image_path'])
                                         ? '../' . htmlspecialchars($item['image_path'])
                                         : null;
@@ -457,7 +462,7 @@ function statusBadgeClass(string $status): string {
                                     $badge_class    = statusBadgeClass($item['status'] ?? '');
                                     $date_formatted = date('M d, Y', strtotime($item['date']));
                                 ?>
-                                <div class="p-4 hover:bg-gray-50 rounded-xl transition group">
+                                <div class="report-item p-4 hover:bg-gray-50 rounded-xl transition group" data-idx="<?php echo $idx; ?>">
                                     <div class="flex items-center gap-4">
                                         <!-- Thumbnail -->
                                         <div class="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center text-gray-300 overflow-hidden shrink-0 border border-gray-100">
@@ -494,13 +499,6 @@ function statusBadgeClass(string $status): string {
 
                                         <!-- Actions -->
                                         <div class="flex gap-1 shrink-0">
-                                            <?php if (strtolower($item['status'] ?? '') === 'pending turnover'): ?>
-                                                <button title="Get QR Code"
-                                                        class="p-2 text-cmu-blue hover:bg-blue-50 rounded-lg transition text-sm"
-                                                        onclick="window.location.href='../dashboard/my_reports.php'">
-                                                    <i class="fas fa-qrcode"></i>
-                                                </button>
-                                            <?php endif; ?>
                                             <button title="Delete report"
                                                     class="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition text-sm"
                                                     onclick="confirmDelete('found', <?php echo (int)$item['id']; ?>)">
@@ -512,12 +510,13 @@ function statusBadgeClass(string $status): string {
                                 <?php endforeach; ?>
                             </div>
 
-                            <div class="mt-4 text-center">
-                                <a href="../dashboard/my_reports.php"
-                                   class="text-xs font-bold text-gray-400 hover:text-cmu-blue uppercase tracking-widest">
-                                    View All in Dashboard <i class="fas fa-arrow-right ml-1"></i>
-                                </a>
+                            <!-- Found pagination -->
+                            <?php if (count($found_items) > 5): ?>
+                            <div class="mt-4 flex items-center justify-between px-2">
+                                <p id="found-page-info" class="text-[11px] text-gray-400 font-semibold"></p>
+                                <div id="found-pagination" class="flex items-center gap-1"></div>
                             </div>
+                            <?php endif; ?>
                         <?php endif; ?>
                     </div>
 
@@ -536,8 +535,8 @@ function statusBadgeClass(string $status): string {
                                 </a>
                             </div>
                         <?php else: ?>
-                            <div class="divide-y divide-gray-50">
-                                <?php foreach ($lost_items as $item):
+                            <div id="lost-list" class="divide-y divide-gray-50">
+                                <?php foreach ($lost_items as $idx => $item):
                                     $img_src = !empty($item['image_path'])
                                         ? '../' . htmlspecialchars($item['image_path'])
                                         : null;
@@ -545,7 +544,7 @@ function statusBadgeClass(string $status): string {
                                     $badge_class    = statusBadgeClass($item['status'] ?? '');
                                     $date_formatted = date('M d, Y', strtotime($item['date']));
                                 ?>
-                                <div class="p-4 hover:bg-gray-50 rounded-xl transition group">
+                                <div class="report-item p-4 hover:bg-gray-50 rounded-xl transition group" data-idx="<?php echo $idx; ?>">
                                     <div class="flex items-center gap-4">
                                         <div class="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center text-gray-300 overflow-hidden shrink-0 border border-gray-100">
                                             <?php if ($img_src): ?>
@@ -580,13 +579,6 @@ function statusBadgeClass(string $status): string {
                                         </div>
 
                                         <div class="flex gap-1 shrink-0">
-                                            <?php if (strtolower($item['status'] ?? '') === 'open' || strtolower($item['status'] ?? '') === 'matched'): ?>
-                                                <a href="../dashboard/my_reports.php?tab=matches"
-                                                   title="View Matches"
-                                                   class="p-2 text-indigo-400 hover:bg-indigo-50 rounded-lg transition text-sm">
-                                                    <i class="fas fa-bolt"></i>
-                                                </a>
-                                            <?php endif; ?>
                                             <button title="Delete report"
                                                     class="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition text-sm"
                                                     onclick="confirmDelete('lost', <?php echo (int)$item['id']; ?>)">
@@ -598,12 +590,13 @@ function statusBadgeClass(string $status): string {
                                 <?php endforeach; ?>
                             </div>
 
-                            <div class="mt-4 text-center">
-                                <a href="../dashboard/my_reports.php"
-                                   class="text-xs font-bold text-gray-400 hover:text-cmu-blue uppercase tracking-widest">
-                                    View All in Dashboard <i class="fas fa-arrow-right ml-1"></i>
-                                </a>
+                            <!-- Lost pagination -->
+                            <?php if (count($lost_items) > 5): ?>
+                            <div class="mt-4 flex items-center justify-between px-2">
+                                <p id="lost-page-info" class="text-[11px] text-gray-400 font-semibold"></p>
+                                <div id="lost-pagination" class="flex items-center gap-1"></div>
                             </div>
+                            <?php endif; ?>
                         <?php endif; ?>
                     </div>
 
@@ -637,5 +630,76 @@ function statusBadgeClass(string $status): string {
 
     <script src="../assets/scripts/profile-dropdown.js"></script>
     <script src="../assets/scripts/profile.js"></script>
+
+    <script>
+    // ── Pagination ─────────────────────────────────────────────
+    const PER_PAGE = 5;
+
+    function initPagination(listId, paginationId, infoId) {
+        const list  = document.getElementById(listId);
+        if (!list) return;
+
+        const items = Array.from(list.querySelectorAll('.report-item'));
+        const total = items.length;
+        if (total <= PER_PAGE) return; // no pagination needed
+
+        const paginationEl = document.getElementById(paginationId);
+        const infoEl       = document.getElementById(infoId);
+        const totalPages   = Math.ceil(total / PER_PAGE);
+        let   currentPage  = 1;
+
+        function render() {
+            const start = (currentPage - 1) * PER_PAGE;
+            const end   = start + PER_PAGE;
+
+            items.forEach((item, i) => {
+                item.classList.toggle('hidden-page', i < start || i >= end);
+            });
+
+            // Update info text
+            if (infoEl) {
+                infoEl.textContent = `Showing ${start + 1}–${Math.min(end, total)} of ${total}`;
+            }
+
+            // Rebuild page buttons
+            paginationEl.innerHTML = '';
+
+            // Prev button
+            const prev = document.createElement('button');
+            prev.className = 'page-btn';
+            prev.innerHTML = '<i class="fas fa-chevron-left text-[10px]"></i>';
+            prev.disabled = currentPage <= 1;
+            prev.addEventListener('click', () => { currentPage--; render(); });
+            paginationEl.appendChild(prev);
+
+            // Page number buttons (up to 5 visible)
+            const startP = Math.max(1, currentPage - 2);
+            const endP   = Math.min(totalPages, startP + 4);
+            for (let p = startP; p <= endP; p++) {
+                const btn = document.createElement('button');
+                btn.className = 'page-btn' + (p === currentPage ? ' active' : '');
+                btn.textContent = p;
+                const page = p;
+                btn.addEventListener('click', () => { currentPage = page; render(); });
+                paginationEl.appendChild(btn);
+            }
+
+            // Next button
+            const next = document.createElement('button');
+            next.className = 'page-btn';
+            next.innerHTML = '<i class="fas fa-chevron-right text-[10px]"></i>';
+            next.disabled = currentPage >= totalPages;
+            next.addEventListener('click', () => { currentPage++; render(); });
+            paginationEl.appendChild(next);
+        }
+
+        render();
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        initPagination('found-list', 'found-pagination', 'found-page-info');
+        initPagination('lost-list',  'lost-pagination',  'lost-page-info');
+    });
+    </script>
 </body>
 </html>
