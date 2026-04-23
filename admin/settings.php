@@ -355,7 +355,7 @@ $action_log = $pdo->query("
                 ['id' => 'matching',   'icon' => 'fa-sliders',     'label' => 'Matching Engine'],
                 ['id' => 'email',      'icon' => 'fa-envelope',    'label' => 'Email Template'],
                 ['id' => 'password',   'icon' => 'fa-lock',        'label' => 'Change Password'],
-                ['id' => 'admins',     'icon' => 'fa-users-cog',   'label' => 'Admin Accounts'],
+                ...($admin_id === 1 ? [['id' => 'admins', 'icon' => 'fa-users-cog', 'label' => 'Admin Accounts']] : []),
                 ['id' => 'locations',  'icon' => 'fa-map-pin',     'label' => 'Campus Locations'],
                 ['id' => 'aging',      'icon' => 'fa-clock',       'label' => 'Aging Scan'],
                 ['id' => 'log',        'icon' => 'fa-history',     'label' => 'Action Log'],
@@ -668,6 +668,7 @@ $action_log = $pdo->query("
             <!-- ════════════════════════════════════════════════════════════
                  5. ADMIN ACCOUNTS
                  ════════════════════════════════════════════════════════════ -->
+            <?php if ($admin_id === 1): ?>
             <a class="section-anchor" id="admins"></a>
             <section class="settings-section bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
                 <div class="px-7 py-5 border-b border-slate-100 flex items-center justify-between">
@@ -726,6 +727,7 @@ $action_log = $pdo->query("
                     <?php endforeach; ?>
                 </div>
             </section>
+            <?php endif; ?>
 
             <!-- ════════════════════════════════════════════════════════════
                  6. CAMPUS LOCATIONS
