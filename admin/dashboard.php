@@ -322,7 +322,7 @@ $admin_name = htmlspecialchars($_SESSION['full_name'] ?? 'Admin');
                                     <span class="block text-xs font-mono font-bold text-slate-500 uppercase">
                                         <?php echo htmlspecialchars($item['tracking_id']); ?>
                                     </span>
-                                    <a href="qr_scanner.php?prefill=<?php echo urlencode($item['tracking_id']); ?>"
+                                    <a href="qr_scanner.php"
                                        class="mt-1 inline-block text-[10px] font-black text-indigo-600 uppercase tracking-tighter hover:underline">
                                         Process Receipt
                                     </a>
