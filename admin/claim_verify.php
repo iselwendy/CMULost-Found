@@ -79,6 +79,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['match_id'])) {
             ) img ON img.report_id = f.found_id
             WHERE m.match_id = ? AND m.status = 'confirmed'
                 AND f.status NOT IN ('claimed', 'disposed', 'returned', 'void')
+                AND EXISTS (SELECT 1 FROM inventory inv2 WHERE inv2.found_id = f.found_id)
             LIMIT 1
         ");
         $stmt->execute([$match_id]);
@@ -231,6 +232,7 @@ if (!$receipt) {
             LEFT JOIN categories c ON f.category_id = c.category_id
             $where
                 AND f.status NOT IN ('claimed', 'disposed', 'returned', 'void')
+                AND EXISTS (SELECT 1 FROM inventory inv2 WHERE inv2.found_id = f.found_id)
             ORDER BY m.matched_at DESC
             LIMIT 20
         ");

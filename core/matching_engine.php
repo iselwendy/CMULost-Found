@@ -54,7 +54,7 @@ function runMatchingEngine(int $found_id, int $admin_id = 0): array
     $pdo->prepare("
         DELETE m FROM matches m
         JOIN found_reports f ON m.found_id = f.found_id
-        WHERE f.status = 'surrendered'
+        WHERE f.status IN ('claimed', 'returned', 'disposed')
     ")->execute();
 
     $found = fetchFoundReport($pdo, $found_id);

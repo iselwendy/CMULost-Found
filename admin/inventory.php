@@ -25,22 +25,17 @@ $offset        = ($page - 1) * $per_page;
 $where_parts = [];
 $params      = [];
 
-// Status tab filter
-// 'custody'  → status = 'in custody'
-// 'pending'  → status = 'in custody' where no shelf assigned yet (we use
-//              the inventory table if it exists, but fall back to
-//              status = 'in custody' with no shelf in found_reports)
-// For simplicity we map the tabs to found_reports.status values:
-//   all      → no filter
-//   custody  → surrendered (physically on the shelf)
-//   pending  → in custody  (reported but not yet scanned / received)
 if ($status_filter === 'custody') {
-    $where_parts[] = "f.status = 'surrendered'";
+    // Items physically at OSA = has an inventory row (surrendered OR matched after surrender)
+    $where_parts[] = "EXISTS (SELECT 1 FROM inventory inv_check WHERE inv_check.found_id = f.found_id)";
+    $where_parts[] = "f.status NOT IN ('claimed', 'disposed', 'returned', 'void')";
 } elseif ($status_filter === 'pending') {
+    // Items reported but not yet physically received = no inventory row, still in custody
     $where_parts[] = "f.status = 'in custody'";
+    $where_parts[] = "NOT EXISTS (SELECT 1 FROM inventory inv_check WHERE inv_check.found_id = f.found_id)";
 } else {
-    // 'all' — show everything that hasn't been claimed or disposed
-    $where_parts[] = "f.status NOT IN ('claimed', 'disposed', 'returned')";
+    // 'all' — show everything not yet resolved
+    $where_parts[] = "f.status NOT IN ('claimed', 'disposed', 'returned', 'void')";
 }
 
 // Search
@@ -142,10 +137,16 @@ $stats = ['all' => 0, 'custody' => 0, 'pending' => 0];
 try {
     $s = $pdo->query("
         SELECT
-            SUM(status NOT IN ('claimed','disposed','returned'))            AS all_count,
-            SUM(status = 'surrendered')                                     AS custody_count,
-            SUM(status = 'in custody')                                      AS pending_count
-        FROM found_reports
+            SUM(f.status NOT IN ('claimed','disposed','returned','void'))  AS all_count,
+            SUM(
+                f.status NOT IN ('claimed','disposed','returned','void')
+                AND EXISTS (SELECT 1 FROM inventory i WHERE i.found_id = f.found_id)
+            )                                                               AS custody_count,
+            SUM(
+                f.status = 'in custody'
+                AND NOT EXISTS (SELECT 1 FROM inventory i2 WHERE i2.found_id = f.found_id)
+            )                                                               AS pending_count
+        FROM found_reports f
     ")->fetch();
     $stats['all']     = (int)($s['all_count']     ?? 0);
     $stats['custody'] = (int)($s['custody_count'] ?? 0);

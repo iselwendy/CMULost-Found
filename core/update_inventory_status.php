@@ -145,20 +145,11 @@ if (in_array($report['status'], ['claimed', 'disposed', 'returned'], true)) {
 try {
     $pdo->beginTransaction();
 
-    $match_check = $pdo->prepare("
-        SELECT COUNT(*) FROM matches 
-        WHERE found_id = ? AND status = 'confirmed'
-    ");
-    $match_check->execute([$found_id]);
-    $has_confirmed_match = (int)$match_check->fetchColumn() > 0;
-
-    $new_found_status = $has_confirmed_match ? 'matched' : 'surrendered';
-
     $pdo->prepare("
         UPDATE found_reports
-        SET    status = ?
+        SET    status = 'surrendered'
         WHERE  found_id = ?
-    ")->execute([$new_found_status, $found_id]);
+    ")->execute([$found_id]);
 
     // 2. Upsert inventory row (shelf + bin)
     //    ON DUPLICATE KEY UPDATE handles re-scanning the same item (e.g. moved to a different shelf)
