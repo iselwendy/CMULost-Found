@@ -7,7 +7,6 @@
 TO FIX:
 * Make the gallery display work in admin/inventory 
 * Add an admin merge in the action log
-* In user side profile.php, it only shows their succesful found returns and succesful lost returns (so remove the view all in dashboard, replace it with a pagination)
 * In user side settings.php, add functionality to the notification section, as well as the two-factor authentication
 * My_reports dashboard, QR code not showing after a succesful found report
 * Fix the shelves' bin to be a select-type not text-type.

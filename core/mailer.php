@@ -323,7 +323,6 @@ function sendTurnoverConfirmationEmail(
           Tracking ID
         </p>
         <p style="margin:0 0 12px;font-size:15px;font-weight:900;font-family:monospace;color:#16a34a;">{$tracking_id}</p>
-        <p style="margin:0;font-size:14px;font-weight:700;color:#0f172a;">Shelf {$shelf_location}</p>
       </div>
 
       <p style="margin:0 0 12px;font-size:13px;font-weight:900;color:#0f172a;text-transform:uppercase;letter-spacing:.05em;">
