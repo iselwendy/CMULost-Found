@@ -119,7 +119,7 @@ $prefill_id = htmlspecialchars($_GET['prefill'] ?? '');
             <!-- ── Left: Scanner ──────────────────────────────────────── -->
             <div class="space-y-6">
 
-                <!-- Manual tracking ID entry (also used when arriving from inventory.php via ?prefill=) -->
+                <!-- Manual tracking ID entry -->
                 <div class="bg-white p-5 rounded-3xl shadow-sm border border-slate-200">
                     <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">
                         Manual Lookup
@@ -192,11 +192,6 @@ $prefill_id = htmlspecialchars($_GET['prefill'] ?? '');
                             <h3 id="res-item-name" class="text-2xl font-black text-slate-800 mt-2 truncate">
                                 Item Verification
                             </h3>
-                            <p id="res-status-pill" class="mt-1 hidden">
-                                <span class="text-[10px] font-bold px-2.5 py-1 rounded-full border border-amber-200 bg-amber-50 text-amber-700 uppercase">
-                                    Pending Turnover
-                                </span>
-                            </p>
                         </div>
                         <button onclick="resetScannerUI()"
                                 class="text-xs font-bold text-slate-400 hover:text-red-500 underline flex-shrink-0 ml-4">
@@ -251,9 +246,11 @@ $prefill_id = htmlspecialchars($_GET['prefill'] ?? '');
                             </p>
 
                             <div class="bg-slate-50 p-5 rounded-2xl border border-slate-200 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <!-- Shelf select -->
                                 <div class="relative">
                                     <i class="fas fa-layer-group absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
                                     <select id="shelf-select"
+                                            onchange="updateBinOptions()"
                                             class="w-full bg-white border border-slate-200 rounded-xl pl-10 pr-4 py-3 text-sm font-bold focus:ring-2 focus:ring-cmu-blue outline-none appearance-none">
                                         <option value="">— Select Shelf —</option>
                                         <option value="A">Shelf A (Electronics)</option>
@@ -263,15 +260,20 @@ $prefill_id = htmlspecialchars($_GET['prefill'] ?? '');
                                         <option value="V">Vault (Valuables)</option>
                                     </select>
                                 </div>
+
+                                <!-- Bin select (populated dynamically based on shelf) -->
                                 <div class="relative">
                                     <i class="fas fa-hashtag absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
-                                    <input type="text" id="row-input"
-                                           placeholder="Row  e.g. 101"
-                                           class="w-full bg-white border border-slate-200 rounded-xl pl-10 pr-4 py-3 text-sm font-bold focus:ring-2 focus:ring-cmu-blue outline-none">
+                                    <select id="row-input"
+                                            onchange="updateShelfPreview()"
+                                            class="w-full bg-white border border-slate-200 rounded-xl pl-10 pr-4 py-3 text-sm font-bold focus:ring-2 focus:ring-cmu-blue outline-none appearance-none disabled:opacity-50 disabled:cursor-not-allowed"
+                                            disabled>
+                                        <option value="">— Select Bin —</option>
+                                    </select>
                                 </div>
                             </div>
 
-                            <!-- Shelf preview badge (updates live) -->
+                            <!-- Shelf/Bin preview badge (updates live) -->
                             <div id="shelf-preview" class="hidden text-center">
                                 <span class="inline-flex items-center gap-2 px-4 py-2 bg-green-50 border border-green-200 rounded-full text-sm font-black text-green-700">
                                     <i class="fas fa-map-pin text-xs"></i>
@@ -296,36 +298,97 @@ $prefill_id = htmlspecialchars($_GET['prefill'] ?? '');
 
     <script>
     (function () {
+        // ── Shelf → Bin mapping (101–105 per shelf) ───────────────────────
+        const SHELF_BINS = {
+            'A': [
+                { value: '101', label: 'Bin 101 — Electronics Row 1' },
+                { value: '102', label: 'Bin 102 — Electronics Row 2' },
+                { value: '103', label: 'Bin 103 — Electronics Row 3' },
+                { value: '104', label: 'Bin 104 — Electronics Row 4' },
+                { value: '105', label: 'Bin 105 — Electronics Row 5' },
+            ],
+            'B': [
+                { value: '101', label: 'Bin 101 — Books Row 1' },
+                { value: '102', label: 'Bin 102 — Books Row 2' },
+                { value: '103', label: 'Bin 103 — Books Row 3' },
+                { value: '104', label: 'Bin 104 — Books Row 4' },
+                { value: '105', label: 'Bin 105 — Books Row 5' },
+            ],
+            'C': [
+                { value: '101', label: 'Bin 101 — Personal Row 1' },
+                { value: '102', label: 'Bin 102 — Personal Row 2' },
+                { value: '103', label: 'Bin 103 — Personal Row 3' },
+                { value: '104', label: 'Bin 104 — Personal Row 4' },
+                { value: '105', label: 'Bin 105 — Personal Row 5' },
+            ],
+            'D': [
+                { value: '101', label: 'Bin 101 — Bags/Clothes Row 1' },
+                { value: '102', label: 'Bin 102 — Bags/Clothes Row 2' },
+                { value: '103', label: 'Bin 103 — Bags/Clothes Row 3' },
+                { value: '104', label: 'Bin 104 — Bags/Clothes Row 4' },
+                { value: '105', label: 'Bin 105 — Bags/Clothes Row 5' },
+            ],
+            'V': [
+                { value: '101', label: 'Bin 101 — Vault Section 1' },
+                { value: '102', label: 'Bin 102 — Vault Section 2' },
+                { value: '103', label: 'Bin 103 — Vault Section 3' },
+                { value: '104', label: 'Bin 104 — Vault Section 4' },
+                { value: '105', label: 'Bin 105 — Vault Section 5' },
+            ],
+        };
+
         // ── State ─────────────────────────────────────────────────────────
         const PREFILL = '<?php echo $prefill_id; ?>';
         let currentTrackingId = '';
         let html5QrCode = null;
 
         // ── DOM refs ──────────────────────────────────────────────────────
-        const processingPane   = document.getElementById('processing-pane');
-        const scanFeedback     = document.getElementById('scan-feedback');
-        const confirmBtn       = document.getElementById('confirm-btn');
-        const manualInput      = document.getElementById('manualTrackingId');
-        const shelfSelect      = document.getElementById('shelf-select');
-        const rowInput         = document.getElementById('row-input');
+        const processingPane    = document.getElementById('processing-pane');
+        const scanFeedback      = document.getElementById('scan-feedback');
+        const confirmBtn        = document.getElementById('confirm-btn');
+        const manualInput       = document.getElementById('manualTrackingId');
+        const shelfSelect       = document.getElementById('shelf-select');
+        const rowInput          = document.getElementById('row-input');
+        const resTrackingId     = document.getElementById('res-tracking-id');
+        const resItemName       = document.getElementById('res-item-name');
+        const resFinderName     = document.getElementById('res-finder-name');
+        const resFinderDept     = document.getElementById('res-finder-dept');
+        const resFoundLoc       = document.getElementById('res-found-loc');
+        const resCategory       = document.getElementById('res-category');
+        const resDate           = document.getElementById('res-date');
+        const resDescription    = document.getElementById('res-description');
+        const resImageContainer = document.getElementById('res-image-container');
+        const shelfPreview      = document.getElementById('shelf-preview');
+        const previewShelf      = document.getElementById('preview-shelf');
+        const previewBin        = document.getElementById('preview-bin');
 
-        const resTrackingId    = document.getElementById('res-tracking-id');
-        const resItemName      = document.getElementById('res-item-name');
-        const resFinderName    = document.getElementById('res-finder-name');
-        const resFinderDept    = document.getElementById('res-finder-dept');
-        const resFoundLoc      = document.getElementById('res-found-loc');
-        const resCategory      = document.getElementById('res-category');
-        const resDate          = document.getElementById('res-date');
-        const resDescription   = document.getElementById('res-description');
-        const resImageContainer= document.getElementById('res-image-container');
-        const shelfPreview     = document.getElementById('shelf-preview');
-        const previewShelf     = document.getElementById('preview-shelf');
-        const previewBin       = document.getElementById('preview-bin');
+        // ── Update bin dropdown when shelf changes ────────────────────────
+        window.updateBinOptions = function () {
+            const shelf = shelfSelect.value;
+            rowInput.innerHTML = '<option value="">— Select Bin —</option>';
 
-        // ── Shelf preview updates live ────────────────────────────────────
-        function updateShelfPreview() {
+            if (!shelf) {
+                rowInput.disabled = true;
+                shelfPreview.classList.add('hidden');
+                return;
+            }
+
+            const bins = SHELF_BINS[shelf] || [];
+            bins.forEach(bin => {
+                const opt = document.createElement('option');
+                opt.value       = bin.value;
+                opt.textContent = bin.label;
+                rowInput.appendChild(opt);
+            });
+
+            rowInput.disabled = false;
+            updateShelfPreview();
+        };
+
+        // ── Live shelf/bin preview badge ──────────────────────────────────
+        window.updateShelfPreview = function () {
             const s = shelfSelect.value;
-            const b = rowInput.value.trim();
+            const b = rowInput.value;
             if (s && b) {
                 previewShelf.textContent = s;
                 previewBin.textContent   = b;
@@ -333,9 +396,7 @@ $prefill_id = htmlspecialchars($_GET['prefill'] ?? '');
             } else {
                 shelfPreview.classList.add('hidden');
             }
-        }
-        shelfSelect.addEventListener('change', updateShelfPreview);
-        rowInput.addEventListener('input',  updateShelfPreview);
+        };
 
         // ── Camera scanner ────────────────────────────────────────────────
         const qrConfig = { fps: 15, qrbox: { width: 240, height: 240 }, aspectRatio: 1.0 };
@@ -375,13 +436,11 @@ $prefill_id = htmlspecialchars($_GET['prefill'] ?? '');
 
         // ── Pre-fill auto-lookup on page load ─────────────────────────────
         if (PREFILL) {
-            // Short delay so the camera has time to initialise first
             setTimeout(() => fetchItemDetails(PREFILL), 800);
         }
 
         // ── Fetch item from get_item_details.php ──────────────────────────
         async function fetchItemDetails(trackingId) {
-            // Normalise: accept "42", "FND-42", "FND-00042" etc.
             const normalised = normaliseTrackingId(trackingId);
 
             try {
@@ -405,19 +464,17 @@ $prefill_id = htmlspecialchars($_GET['prefill'] ?? '');
         }
 
         // ── Populate result fields ────────────────────────────────────────
-        // Field names match exactly what get_item_details.php returns.
         function populatePane(item, trackingId) {
             currentTrackingId = item.tracking_id || trackingId;
 
             resTrackingId.textContent  = currentTrackingId;
-            resItemName.textContent    = item.title        || 'Unknown Item';
-            resFinderName.textContent  = item.finder_name  || '—';
-            resFinderDept.textContent  = item.finder_dept  || '—';
-            resFoundLoc.textContent    = item.found_location || '—';
-            resCategory.textContent    = item.category_name  || item.category || '—';
+            resItemName.textContent    = item.title           || 'Unknown Item';
+            resFinderName.textContent  = item.finder_name     || '—';
+            resFinderDept.textContent  = item.finder_dept     || '—';
+            resFoundLoc.textContent    = item.found_location  || '—';
+            resCategory.textContent    = item.category_name   || item.category || '—';
             resDescription.textContent = item.private_description || 'No description provided.';
 
-            // Date
             if (item.date_reported) {
                 resDate.textContent = new Date(item.date_reported).toLocaleDateString('en-PH', {
                     year: 'numeric', month: 'short', day: 'numeric'
@@ -426,7 +483,6 @@ $prefill_id = htmlspecialchars($_GET['prefill'] ?? '');
                 resDate.textContent = '—';
             }
 
-            // Image
             if (item.image_path) {
                 resImageContainer.innerHTML =
                     `<img src="${item.image_path}" class="w-full h-full object-cover" alt="Item photo"
@@ -435,7 +491,6 @@ $prefill_id = htmlspecialchars($_GET['prefill'] ?? '');
                 resImageContainer.innerHTML = '<i class="fas fa-image text-4xl text-slate-200"></i>';
             }
 
-            // Sync manual input field
             manualInput.value = currentTrackingId;
         }
 
@@ -458,7 +513,7 @@ $prefill_id = htmlspecialchars($_GET['prefill'] ?? '');
         // ── Confirm button ────────────────────────────────────────────────
         confirmBtn.addEventListener('click', async () => {
             const shelf = shelfSelect.value;
-            const bin   = rowInput.value.trim();
+            const bin   = rowInput.value;
             const tid   = currentTrackingId || resTrackingId.textContent;
 
             if (!tid || tid === 'Waiting for Scan') {
@@ -471,12 +526,11 @@ $prefill_id = htmlspecialchars($_GET['prefill'] ?? '');
                 return;
             }
             if (!bin) {
-                showToast('Please enter a bin / row number.', 'warning');
+                showToast('Please select a bin number.', 'warning');
                 rowInput.focus();
                 return;
             }
 
-            // Disable button to prevent double-submit
             confirmBtn.disabled = true;
             confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Updating...';
 
@@ -496,7 +550,6 @@ $prefill_id = htmlspecialchars($_GET['prefill'] ?? '');
 
                 if (result.success) {
                     showToast(result.message || 'Turnover confirmed! Inventory updated.', 'success');
-                    // Redirect to inventory after short delay so the toast is visible
                     setTimeout(() => {
                         window.location.href = `inventory.php?status=custody&highlight=${encodeURIComponent(tid)}`;
                     }, 1800);
@@ -519,9 +572,13 @@ $prefill_id = htmlspecialchars($_GET['prefill'] ?? '');
         window.resetScannerUI = function () {
             currentTrackingId = '';
             processingPane.classList.remove('processing-active');
-            shelfSelect.value   = '';
-            rowInput.value      = '';
-            manualInput.value   = '';
+
+            // Reset shelf/bin selects
+            shelfSelect.value     = '';
+            rowInput.innerHTML    = '<option value="">— Select Bin —</option>';
+            rowInput.disabled     = true;
+            manualInput.value     = '';
+
             shelfPreview.classList.add('hidden');
             resTrackingId.textContent  = 'Waiting for Scan';
             resItemName.textContent    = 'Item Verification';
@@ -539,27 +596,25 @@ $prefill_id = htmlspecialchars($_GET['prefill'] ?? '');
         // ── Helpers ───────────────────────────────────────────────────────
         function normaliseTrackingId(raw) {
             raw = raw.trim().toUpperCase();
-            // Plain integer → pad to FND-XXXXX
             if (/^\d+$/.test(raw)) return `FND-${raw.padStart(5, '0')}`;
-            // Already FND-X or FND-XXXXX
             if (/^FND-\d+$/.test(raw)) {
                 const num = raw.replace('FND-', '');
                 return `FND-${num.padStart(5, '0')}`;
             }
-            return raw; // pass through as-is
+            return raw;
         }
 
         function simulateData(trackingId) {
             populatePane({
-                tracking_id:         trackingId,
-                title:               'Demo Item (Simulation Mode)',
-                finder_name:         'Test Finder',
-                finder_dept:         'CCS — BSIT',
-                found_location:      'Main Lobby',
-                category_name:       'Personal',
-                private_description: 'API endpoint not yet connected. This is simulated data for UI testing.',
-                image_path:          null,
-                date_reported:       new Date().toISOString(),
+                tracking_id:          trackingId,
+                title:                'Demo Item (Simulation Mode)',
+                finder_name:          'Test Finder',
+                finder_dept:          'CCS — BSIT',
+                found_location:       'Main Lobby',
+                category_name:        'Personal',
+                private_description:  'API endpoint not yet connected. This is simulated data for UI testing.',
+                image_path:           null,
+                date_reported:        new Date().toISOString(),
             }, trackingId);
         }
 
